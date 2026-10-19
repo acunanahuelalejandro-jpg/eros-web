@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f5">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f4b8c1'/%3E%3Cpath d='M32 49S12 37 12 24c0-10 13-14 20-4 7-10 20-6 20 4 0 13-20 25-20 25Z' fill='%23fffaf6'/%3E%3C/svg%3E">
+  <title>Carta para vos | Eros Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --cream: #fff8f5;
+      --paper: #fffdfb;
+      --pink: #f4b8c1;
+      --pink-pale: #ffe9eb;
+      --blue: #dcecf5;
+      --blue-deep: #315b70;
+      --wine: #8b3d52;
+      --wine-rgb: 139,61,82;
+      --ink: #302b31;
+      --muted: #665f67;
+      --line: #eadfe0;
+      --shadow: 0 18px 50px rgba(75, 48, 57, .12);
+      --content: 850px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { min-width: 320px; scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--ink); background: var(--cream); font-family: "DM Sans", sans-serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    button, audio { font: inherit; }
+    button { color: inherit; }
+    img, svg { display: block; max-width: 100%; }
+    :focus-visible { outline: 3px solid #215f7b; outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    .screen { min-height: 100svh; }
+    .button { display: inline-flex; min-width: 190px; min-height: 58px; align-items: center; justify-content: center; gap: 9px; padding: 14px 23px; border: 0; border-radius: 999px; color: #fff; background: var(--wine); box-shadow: 0 9px 22px rgba(75,48,57,.16); font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: transform .2s ease, filter .2s ease, box-shadow .2s ease; }
+    .button:hover { transform: translateY(-2px); filter: brightness(.92); box-shadow: 0 12px 25px rgba(75,48,57,.2); }
+    .button:active { transform: translateY(0); }
+
+    .intro-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: max(28px, env(safe-area-inset-top)) 18px max(32px, env(safe-area-inset-bottom)); text-align: center; background: radial-gradient(ellipse at 18% 12%, #ffe7e8 0, transparent 36%), radial-gradient(ellipse at 90% 86%, #e3f1f7 0, transparent 34%), var(--cream); }
+    .intro-content { width: min(100%, 560px); margin: auto; }
+    .intro-heart { display: grid; width: 78px; height: 78px; place-items: center; margin: 0 auto 19px; border: 1px solid rgba(var(--wine-rgb),.13); border-radius: 28px; color: var(--wine); background: rgba(255,255,255,.74); box-shadow: var(--shadow); font-size: 2.45rem; }
+    .intro-title { margin: 0 0 27px; font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.9rem, 7vw, 2.7rem); font-weight: 600; letter-spacing: -.035em; line-height: 1.15; }
+    .intro-screen .button { width: min(100%, 290px); }
+
+    .letter-screen { position: relative; min-height: 100svh; overflow: clip; opacity: 0; background: radial-gradient(ellipse at 8% 10%, #ffe9eb 0, transparent 30%), radial-gradient(ellipse at 95% 47%, #e5f0f6 0, transparent 28%), var(--cream); transition: opacity .7s ease; }
+    .letter-screen.is-opening { transition: none; }
+    .letter-screen.is-open { opacity: 1; }
+    .letter-content { position: relative; z-index: 2; width: min(720px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0 30px; }
+    .ambient-hearts { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
+    .ambient-heart { position: absolute; top: -42px; left: var(--x); color: var(--heart-color); font-size: var(--size); line-height: 1; opacity: 0; animation: heart-rain var(--duration) linear var(--delay) infinite; will-change: transform; }
+    .tap-heart-layer { position: fixed; z-index: 12; inset: 0; overflow: hidden; pointer-events: none; }
+    .tap-heart { position: fixed; color: var(--wine); font-size: 28px; line-height: 1; text-shadow: 0 2px 9px rgba(var(--wine-rgb),.2); animation: tap-pop .95s ease-out both; }
+    .music-toggle { position: fixed; z-index: 30; top: max(14px, env(safe-area-inset-top)); right: 14px; display: inline-flex; min-width: 48px; min-height: 48px; align-items: center; justify-content: center; gap: 7px; padding: 8px 13px; border: 1px solid rgba(var(--wine-rgb),.18); border-radius: 999px; color: var(--wine); background: rgba(255,253,251,.94); box-shadow: 0 7px 20px rgba(75,48,57,.12); font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .music-toggle:hover { background: #fff; }
+
+    .letter-scene { position: relative; }
+    .letter-card { position: relative; z-index: 3; overflow: visible; width: min(100%, 575px); margin: 0 auto; padding: clamp(23px, 6vw, 52px); border: 1px solid rgba(var(--wine-rgb),.1); border-radius: 28px; background: rgba(255,253,251,.94); box-shadow: var(--shadow); }
+    .letter-heading { margin: 0 0 24px; color: var(--wine); font-family: "Playfair Display", Georgia, serif; font-size: clamp(2.35rem, 9vw, 4.4rem); font-weight: 600; letter-spacing: -.04em; line-height: 1.08; text-align: center; }
+    .letter-text { margin: 0 0 20px; font-size: clamp(1rem, 2.2vw, 1.08rem); }
+    .letter-text:last-child { margin-bottom: 0; }
+    .letter-petals { display: block; width: 54px; height: 31px; margin: -5px auto 15px; overflow: visible; color: var(--wine); pointer-events: none; }
+    .letter-petals path { fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity .65s ease, transform .65s ease; }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+    .photo-card { position: relative; z-index: 2; display: block; width: 55%; max-width: 260px; margin: 17px 0; padding: 7px 7px 12px; overflow: visible; border: 1px solid rgba(var(--wine-rgb),.1); border-radius: 7px; background: linear-gradient(145deg, #ffdce3, #dcecf5 55%, #f5dce1); box-shadow: 0 12px 26px rgba(75,48,57,.2); }
+    .photo-card.reveal { transform: rotate(var(--tilt)) translateY(12px); transition: opacity .7s ease, transform .7s ease; }
+    .photo-card.reveal.is-visible { transform: rotate(var(--tilt)) translateY(0); }
+    .photo-card img { position: relative; z-index: 1; width: 100%; aspect-ratio: 4 / 4.8; border-radius: 3px; background: linear-gradient(145deg, #ffdce3, #dcecf5); object-fit: cover; cursor: zoom-in; animation: photo-drift 7s ease-in-out infinite alternate; }
+    .photo-left { --tilt: -4deg; margin-right: auto; margin-left: 0; }
+    .photo-right { --tilt: 3deg; margin-right: 0; margin-left: auto; }
+    .photo-heart-doodle { position: absolute; z-index: 3; top: 50%; display: block; width: 34%; max-width: 70px; height: auto; overflow: visible; pointer-events: none; opacity: .92; transform: translateY(-50%) rotate(7deg); }
+    .photo-heart-doodle path { fill: none; stroke: var(--wine); stroke-linecap: round; stroke-linejoin: round; }
+    .photo-heart-doodle .doodle-heart { stroke-width: 2.15; }
+    .photo-heart-doodle .doodle-echo { stroke-width: 1.2; opacity: .52; }
+    .photo-heart-doodle .doodle-vein { stroke-width: 1.45; opacity: .7; }
+    .photo-heart-doodle .doodle-spark { stroke-width: 1.5; opacity: .58; }
+    .photo-left .photo-heart-doodle { left: calc(100% + 4px); }
+    .photo-right .photo-heart-doodle { right: calc(100% + 4px); transform: translateY(-50%) rotate(-7deg); }
+
+    .closing { padding: 38px 0 18px; text-align: center; }
+    .closing-heart { display: inline-block; color: var(--wine); font-size: 4.2rem; line-height: 1.1; animation: heartbeat 1.7s ease-in-out infinite; }
+    .signature { margin: 8px 0 0; color: var(--wine); font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; }
+    .site-footer { position: relative; z-index: 1; padding: 14px 0 max(20px, env(safe-area-inset-bottom)); color: var(--muted); font-size: .88rem; text-align: center; }
+
+    .confetti-layer { position: fixed; z-index: 40; inset: 0; overflow: hidden; pointer-events: none; }
+    .confetti-heart { position: absolute; top: 50%; left: 50%; color: var(--wine); font-size: var(--size); line-height: 1; opacity: .98; text-shadow: 0 3px 8px rgba(var(--wine-rgb),.18); animation: confetti-burst 1.55s cubic-bezier(.16,.72,.28,1) both; animation-delay: var(--delay); }
+    .photo-dialog { width: min(94vw, 1000px); max-width: none; max-height: 92svh; padding: 10px; overflow: visible; border: 1px solid rgba(255,255,255,.45); border-radius: 20px; background: var(--paper); box-shadow: 0 24px 90px rgba(20,14,17,.38); }
+    .photo-dialog::backdrop { background: rgba(35,26,31,.82); backdrop-filter: blur(4px); }
+    .photo-dialog img { width: 100%; max-height: calc(92svh - 20px); border-radius: 13px; object-fit: contain; cursor: zoom-out; }
+    .dialog-close { position: absolute; top: -13px; right: -8px; display: grid; width: 46px; height: 46px; place-items: center; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--wine); font-size: 1.7rem; line-height: 1; cursor: pointer; }
+
+    @keyframes confetti-burst { 0% { opacity: 0; transform: translate3d(0,0,0) scale(.3) rotate(0deg); } 14% { opacity: .98; } 100% { opacity: 0; transform: translate3d(var(--drift),var(--fall),0) scale(1.08) rotate(var(--turn)); } }
+    @keyframes heart-rain { 0% { opacity: 0; transform: translate3d(0,-6vh,0) rotate(-8deg); } 8% { opacity: var(--alpha); transform: translate3d(0,0,0) rotate(-4deg); } 50% { opacity: var(--alpha); transform: translate3d(var(--mid-sway),52vh,0) rotate(var(--turn)); } 92% { opacity: var(--alpha); } 100% { opacity: 0; transform: translate3d(var(--sway),110vh,0) rotate(var(--turn)); } }
+    @keyframes tap-pop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.3); } 22% { opacity: 1; transform: translate(-50%,-65%) scale(1.12); } 100% { opacity: 0; transform: translate(-50%,-130%) scale(.8); } }
+    @keyframes photo-drift { from { translate: 0 0; } to { translate: 0 -8px; } }
+    @keyframes heartbeat { 0%,100% { transform: scale(1); } 12% { transform: scale(1.12); } 24% { transform: scale(1); } 36% { transform: scale(1.08); } 52% { transform: scale(1); } }
+
+    @media (min-width: 700px) {
+      .letter-content { padding-top: 76px; }
+    }
+    @media (max-width: 380px) {
+      .intro-screen { padding-right: 13px; padding-left: 13px; }
+      .button { min-height: 54px; }
+      .letter-content { width: calc(100% - 24px); padding-top: 78px; }
+      .letter-card { padding: 22px; }
+      .photo-card { width: 55%; }
+      .photo-card img { aspect-ratio: 4 / 4.5; }
+      .photo-heart-doodle { width: 32%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .button, .letter-screen, .reveal, .progress-heart { transition-duration: .01ms !important; }
+      .tap-heart, .confetti-heart, .closing-heart, .photo-card img { animation: none !important; }
+      .tap-heart { opacity: .5; }
+      .confetti-heart { animation-name: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="screen intro-screen" id="introScreen" aria-labelledby="introTitle">
+      <div class="intro-content">
+        <div class="intro-heart" aria-hidden="true">♡</div>
+        <h1 class="intro-title" id="introTitle">Un regalo para vos</h1>
+        <button class="button" id="startButton" type="button">Tocá para empezar</button>
+      </div>
+    </section>
+
+    <section class="letter-screen" id="letterScreen" aria-labelledby="letterTitle" hidden>
+      <div class="ambient-hearts" id="ambientHearts" aria-hidden="true"></div>
+      <div class="tap-heart-layer" id="tapHeartLayer" aria-hidden="true"></div>
+      <button class="music-toggle" id="musicToggle" type="button" aria-pressed="false" aria-label="Pausar música" hidden>
+        <span aria-hidden="true">♫</span><span id="musicText">Pausar música</span>
+      </button>
+      <audio id="backgroundMusic" preload="none" loop></audio>
+      <div class="letter-content">
+        <div class="letter-scene">
+          <article class="letter-card" id="letterCard" aria-labelledby="letterTitle">
+            <h1 class="letter-heading" id="letterTitle" tabindex="-1">Una carta para vos</h1>
+            <div id="letterBlocks"></div>
+          </article>
+        </div>
+        <div class="closing reveal" id="closingBlock">
+          <span class="closing-heart" aria-hidden="true">♥</span>
+          <p class="signature" id="signature"></p>
+        </div>
+        <footer class="site-footer" id="siteFooter">Eros Web</footer>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="photo-dialog" id="photoDialog" aria-label="Foto ampliada">
+    <button class="dialog-close" id="closePhoto" type="button" aria-label="Cerrar foto">×</button>
+    <img id="lightboxImage" alt="">
+  </dialog>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+
+  <script src="datos.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const raw = window.DATOS && typeof window.DATOS === "object" ? window.DATOS : {};
+      const asText = (value) => typeof value === "string" ? value.trim() : "";
+      const safeRelativeFile = (value) => {
+        const path = asText(value).replace(/\\/g, "/");
+        if (!path || path.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.split("/").includes("..")) return "";
+        return path;
+      };
+      const para = asText(raw.para);
+      const de = asText(raw.de);
+      const inicio = raw.inicio && typeof raw.inicio === "object" ? raw.inicio : {};
+      const carta = raw.carta && typeof raw.carta === "object" ? raw.carta : {};
+      const introTitle = asText(inicio.titulo) || (para ? "Un regalo para " + para : "Un regalo para vos");
+      const introButton = asText(inicio.boton) || "Tocá para empezar";
+      const letterTitle = asText(carta.titulo) || (para ? "Una carta para " + para : "Una carta para vos");
+      const signature = asText(raw.firma);
+      const musicPath = safeRelativeFile(raw.musica);
+      const color = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(asText(raw.colorPrincipal)) ? asText(raw.colorPrincipal) : "#8b3d52";
+      const textBlocks = Array.isArray(carta.bloques) ? carta.bloques : [];
+
+      const introScreen = document.getElementById("introScreen");
+      const letterScreen = document.getElementById("letterScreen");
+      const startButton = document.getElementById("startButton");
+      const introHeading = document.getElementById("introTitle");
+      const letterHeading = document.getElementById("letterTitle");
+      const letterCard = document.getElementById("letterCard");
+      const letterBlocks = document.getElementById("letterBlocks");
+      const closingBlock = document.getElementById("closingBlock");
+      const signatureNode = document.getElementById("signature");
+      const siteFooter = document.getElementById("siteFooter");
+      const audio = document.getElementById("backgroundMusic");
+      const musicToggle = document.getElementById("musicToggle");
+      const musicText = document.getElementById("musicText");
+      const ambientHearts = document.getElementById("ambientHearts");
+      const tapHeartLayer = document.getElementById("tapHeartLayer");
+      const confettiLayer = document.getElementById("confettiLayer");
+      const photoDialog = document.getElementById("photoDialog");
+      const lightboxImage = document.getElementById("lightboxImage");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const svgNamespace = "http://www.w3.org/2000/svg";
+      let musicUsable = Boolean(musicPath);
+      let confettiTimer = 0;
+
+      const normalizedColor = color.length === 4 ? color.slice(1).split("").map((part) => part + part).join("") : color.slice(1);
+      const wineRgb = [0, 2, 4].map((index) => parseInt(normalizedColor.slice(index, index + 2), 16)).join(",");
+      document.documentElement.style.setProperty("--wine", color);
+      document.documentElement.style.setProperty("--wine-rgb", wineRgb);
+      document.title = letterTitle + " | Eros Web";
+      introHeading.textContent = introTitle;
+      startButton.textContent = introButton;
+      letterHeading.textContent = letterTitle;
+      letterCard.setAttribute("aria-label", para ? "Carta para " + para : "Carta para vos");
+      signatureNode.textContent = signature;
+      siteFooter.textContent = de ? "Hecho con ♡ por " + de + " · Eros Web" : "Eros Web";
+
+      function createPetals() {
+        const svg = document.createElementNS(svgNamespace, "svg");
+        svg.setAttribute("class", "letter-petals reveal");
+        svg.setAttribute("viewBox", "0 0 60 36");
+        svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("focusable", "false");
+        const heartPath = "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
+        [[2, 9, .62], [21, 1, .72], [40, 9, .62]].forEach(([x, y, scale]) => {
+          const path = document.createElementNS(svgNamespace, "path");
+          path.setAttribute("d", heartPath);
+          path.setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
+          svg.appendChild(path);
+        });
+        return svg;
+      }
+
+      function createPhotoDoodle() {
+        const svg = document.createElementNS(svgNamespace, "svg");
+        svg.setAttribute("class", "photo-heart-doodle");
+        svg.setAttribute("viewBox", "0 0 88 82");
+        svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("focusable", "false");
+        const paths = [
+          ["doodle-heart", "M44 70 C38 65 13 48 9 32 C5 17 17 9 29 12 C36 14 41 19 44 26 C48 17 57 10 68 12 C80 15 84 27 79 38 C74 53 55 66 44 70 Z"],
+          ["doodle-echo", "M43 67 C31 58 15 45 13 32 C11 23 16 17 24 16"],
+          ["doodle-vein", "M22 25 C28 19 35 22 39 29 M51 25 C57 19 64 20 68 26"],
+          ["doodle-spark", "M7 43l-4 1 M11 54l-3 3 M80 47l4 1 M76 58l3 3"]
+        ];
+        paths.forEach(([className, d]) => {
+          const path = document.createElementNS(svgNamespace, "path");
+          path.setAttribute("class", className);
+          path.setAttribute("d", d);
+          svg.appendChild(path);
+        });
+        return svg;
+      }
+
+      let validTextCount = 0;
+      let photoCount = 0;
+      textBlocks.forEach((block) => {
+        if (!block || typeof block !== "object") return;
+        const text = asText(block.texto);
+        if (text) {
+          if (validTextCount > 0) letterBlocks.appendChild(createPetals());
+          const paragraph = document.createElement("p");
+          paragraph.className = "letter-text reveal";
+          paragraph.textContent = text;
+          letterBlocks.appendChild(paragraph);
+          validTextCount += 1;
+          return;
+        }
+
+        const imagePath = safeRelativeFile(block.foto);
+        if (!imagePath || photoCount >= 3) return;
+        const imageIndex = photoCount;
+        const figure = document.createElement("figure");
+        const side = imageIndex % 2 === 0 ? "photo-left" : "photo-right";
+        figure.className = `photo-card reveal photo-${imageIndex + 1} ${side}`;
+        figure.style.setProperty("--tilt", ["-4deg", "3deg", "5deg"][imageIndex]);
+        const image = document.createElement("img");
+        image.src = imagePath;
+        image.alt = asText(block.alt) || (para ? "Foto con " + para : "Foto de un momento especial");
+        image.loading = "lazy";
+        image.decoding = "async";
+        image.addEventListener("error", () => figure.remove(), { once: true });
+        image.addEventListener("click", () => openPhoto(image), { once: false });
+        figure.append(image, createPhotoDoodle());
+        letterBlocks.appendChild(figure);
+        photoCount += 1;
+      });
+      if (photoCount > 0) letterCard.classList.add("has-photos");
+      if (signature) closingBlock.classList.add("has-signature");
+
+      function addReveals() {
+        const items = document.querySelectorAll(".reveal");
+        if (!("IntersectionObserver" in window)) {
+          items.forEach((item) => item.classList.add("is-visible"));
+          return;
+        }
+        const observer = new IntersectionObserver((entries, currentObserver) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              currentObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: .12, rootMargin: "0px 0px -20px 0px" });
+        items.forEach((item) => observer.observe(item));
+      }
+
+      function addAmbientHearts() {
+        const isReduced = reducedMotion.matches;
+        const count = isReduced ? 8 : 100;
+        for (let i = 0; i < count; i += 1) {
+          const heart = document.createElement("span");
+          const duration = isReduced ? 36 + Math.random() * 14 : 9 + Math.random() * 9;
+          const swayRange = isReduced ? 8 : 34;
+          heart.className = "ambient-heart";
+          heart.textContent = i % 2 === 0 ? "♥" : "♡";
+          heart.style.setProperty("--x", `${Math.random() * 100}%`);
+          heart.style.setProperty("--size", `${14 + Math.random() * 24}px`);
+          heart.style.setProperty("--duration", `${duration}s`);
+          heart.style.setProperty("--delay", `${-Math.random() * duration}s`);
+          heart.style.setProperty("--alpha", `${isReduced ? .22 + Math.random() * .18 : .25 + Math.random() * .45}`);
+          heart.style.setProperty("--mid-sway", `${(Math.random() - .5) * swayRange}px`);
+          heart.style.setProperty("--sway", `${(Math.random() - .5) * swayRange}px`);
+          heart.style.setProperty("--turn", `${(Math.random() - .5) * (isReduced ? 24 : 76)}deg`);
+          heart.style.setProperty("--heart-color", i % 3 === 0 ? "#e84372" : "var(--wine)");
+          ambientHearts.appendChild(heart);
+        }
+      }
+
+      function spawnTapHeart(event) {
+        if (reducedMotion.matches) return;
+        const heart = document.createElement("span");
+        heart.className = "tap-heart";
+        heart.textContent = "♡";
+        heart.style.left = `${event.clientX}px`;
+        heart.style.top = `${event.clientY}px`;
+        heart.addEventListener("animationend", () => heart.remove(), { once: true });
+        tapHeartLayer.appendChild(heart);
+      }
+
+      function makeConfetti() {
+        if (reducedMotion.matches) return;
+        confettiLayer.replaceChildren();
+        const spread = 100;
+        for (let i = 0; i < 42; i += 1) {
+          const heart = document.createElement("span");
+          heart.className = "confetti-heart";
+          heart.textContent = i % 4 === 0 ? "♡" : "♥";
+          heart.style.setProperty("--size", `${18 + Math.random() * 25}px`);
+          heart.style.setProperty("--drift", `${(Math.random() - .5) * spread}vw`);
+          heart.style.setProperty("--fall", `${(Math.random() - .5) * spread}vh`);
+          heart.style.setProperty("--turn", `${(Math.random() - .5) * 110}deg`);
+          heart.style.setProperty("--delay", `${Math.random() * .3}s`);
+          heart.addEventListener("animationend", () => heart.remove(), { once: true });
+          confettiLayer.appendChild(heart);
+        }
+        window.clearTimeout(confettiTimer);
+        confettiTimer = window.setTimeout(() => confettiLayer.replaceChildren(), 2600);
+      }
+
+      function updateMusicButton() {
+        const paused = audio.paused;
+        musicText.textContent = paused ? "Activar música" : "Pausar música";
+        musicToggle.setAttribute("aria-label", paused ? "Activar música" : "Pausar música");
+        musicToggle.setAttribute("aria-pressed", String(!paused));
+      }
+
+      function hideMusic() {
+        musicUsable = false;
+        audio.pause();
+        musicToggle.hidden = true;
+      }
+
+      function playMusic() {
+        if (!musicUsable) return;
+        try {
+          const promise = audio.play();
+          if (promise && typeof promise.catch === "function") {
+            promise.catch((error) => {
+              if (error && error.name === "NotAllowedError") {
+                musicToggle.hidden = false;
+                updateMusicButton();
+                return;
+              }
+              hideMusic();
+            });
+          }
+        } catch (error) {
+          hideMusic();
+        }
+      }
+
+      function openPhoto(image) {
+        lightboxImage.src = image.currentSrc || image.src;
+        lightboxImage.alt = image.alt;
+        if (typeof photoDialog.showModal === "function") photoDialog.showModal();
+      }
+
+      function closePhoto() {
+        if (photoDialog.open) photoDialog.close();
+        lightboxImage.removeAttribute("src");
+        lightboxImage.alt = "";
+      }
+
+      function openLetter() {
+        introScreen.hidden = true;
+        letterScreen.hidden = false;
+        letterScreen.classList.add("is-opening");
+        addReveals();
+        addAmbientHearts();
+        if (musicUsable) {
+          musicToggle.hidden = false;
+          audio.src = musicPath;
+          playMusic();
+        }
+        makeConfetti();
+        window.requestAnimationFrame(() => {
+          letterScreen.classList.remove("is-opening");
+          letterScreen.classList.add("is-open");
+          letterHeading.focus({ preventScroll: true });
+          window.scrollTo({ top: 0, behavior: reducedMotion.matches ? "auto" : "smooth" });
+        });
+      }
+
+      startButton.addEventListener("click", openLetter);
+      musicToggle.addEventListener("click", () => {
+        if (!musicUsable) return;
+        if (audio.paused) playMusic();
+        else audio.pause();
+        updateMusicButton();
+      });
+      audio.addEventListener("play", updateMusicButton);
+      audio.addEventListener("pause", updateMusicButton);
+      audio.addEventListener("error", hideMusic);
+      document.getElementById("closePhoto").addEventListener("click", closePhoto);
+      lightboxImage.addEventListener("click", closePhoto);
+      photoDialog.addEventListener("click", (event) => {
+        if (event.target === photoDialog) closePhoto();
+      });
+      photoDialog.addEventListener("close", () => {
+        lightboxImage.removeAttribute("src");
+        lightboxImage.alt = "";
+      });
+      document.getElementById("letterScreen").addEventListener("pointerdown", (event) => {
+        if (event.target.closest("button, a, dialog, .photo-card")) return;
+        spawnTapHeart(event);
+      });
+    })();
+  </script>
+</body>
+</html>
