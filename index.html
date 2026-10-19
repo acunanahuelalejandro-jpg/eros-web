@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffaf6">
+  <title>Eros Web | Páginas web para regalar</title>
+  <meta name="description" content="Elegí un modelo de página web para regalar. Me mandás tus datos y recibís un link y un QR listos para compartir.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:title" content="Eros Web | Páginas web para regalar">
+  <meta property="og:description" content="Elegí un modelo, compartí tus fotos y palabras, y recibí un link y un QR para regalar.">
+  <!-- CAMBIAR POR TU LINK REAL -->
+  <meta property="og:url" content="https://[TU-DOMINIO].com/">
+  <link rel="canonical" href="https://[TU-DOMINIO].com/">
+  <!-- CAMBIAR POR TU IMAGEN PROPIA DE 1200x630 -->
+  <meta property="og:image" content="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&h=630&q=85">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f4b8c1'/%3E%3Cpath d='M32 49S12 37 12 24c0-10 13-14 20-4 7-10 20-6 20 4 0 13-20 25-20 25Z' fill='%23fffaf6'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #fffaf6;
+      --white: #ffffff;
+      --pink: #f4b8c1;
+      --pink-dark: #a9445d;
+      --pink-pale: #fff0f1;
+      --blue: #dcecf5;
+      --blue-dark: #315b70;
+      --ink: #302b31;
+      --muted: #6c6670;
+      --line: #eadfe0;
+      --green: #128c68;
+      --content: 1160px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    button { font: inherit; }
+    :focus-visible { outline: 3px solid #286783; outline-offset: 4px; }
+    .container { width: min(var(--content), calc(100% - 36px)); margin-inline: auto; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { line-height: 1.15; }
+    h1, h2 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; letter-spacing: -.03em; }
+    h1 { max-width: 610px; margin: 12px 0; font-size: clamp(2.3rem, 7vw, 4.5rem); }
+    h2 { margin: 0 0 10px; font-size: clamp(1.9rem, 4vw, 2.7rem); }
+    h3 { margin: 0; font-size: 1.25rem; }
+    .button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 11px 19px; border: 1px solid transparent; border-radius: 999px; font-size: .94rem; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+    .button:hover { transform: translateY(-2px); }
+    .button-primary { color: var(--white); background: var(--pink-dark); box-shadow: 0 8px 22px rgba(169, 68, 93, .2); }
+    .button-primary:hover { background: #8f354d; }
+    .button-light { color: var(--ink); background: var(--white); border-color: var(--line); }
+    .button-light:hover { background: var(--pink-pale); }
+    .button svg { width: 19px; height: 19px; flex: none; }
+
+    /* Header fijo sin menú de enlaces. */
+    .topbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid rgba(234, 223, 224, .85); background: rgba(255, 250, 246, .96); backdrop-filter: blur(14px); }
+    .nav-wrap { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); font-size: 1.2rem; font-weight: 700; letter-spacing: -.04em; text-decoration: none; white-space: nowrap; }
+    .brand-mark { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 12px; background: var(--pink); color: var(--white); }
+    .brand-mark svg { width: 21px; }
+    .header-contact { min-height: 43px; padding: 9px 14px; font-size: .88rem; }
+
+    /* Hero: primero el mensaje y, debajo en celular, el celular de muestra. */
+    .hero { overflow: hidden; padding: 38px 0 46px; background: radial-gradient(ellipse at 24% 0%, #ffe7e8 0, transparent 42%), var(--cream); }
+    .hero-grid { display: grid; gap: 32px; align-items: center; }
+    .hero-copy { min-width: 0; }
+    .hero-copy > p { max-width: 600px; margin: 0 0 20px; color: var(--muted); font-size: clamp(.98rem, 2vw, 1.1rem); }
+    .steps { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.12fr) auto minmax(0, 1.25fr); align-items: center; gap: 5px; max-width: 660px; margin: 22px 0; padding: 13px 12px; border: 1px solid rgba(169, 68, 93, .12); border-radius: 17px; background: rgba(255,255,255,.82); }
+    .step { color: var(--ink); font-size: .78rem; font-weight: 700; line-height: 1.28; text-align: center; }
+    .step-dot { color: var(--pink-dark); font-size: 1rem; }
+    .hero-cta { min-width: 158px; }
+    .phone-stage { position: relative; width: min(86vw, 360px); margin: 6px auto 0; padding: 13px; border: 1px solid rgba(169, 68, 93, .14); border-radius: 32px; background: linear-gradient(145deg, #fff 4%, #f9e2e6 100%); box-shadow: 0 23px 55px rgba(80, 47, 57, .16); transform: rotate(-1deg); }
+    .phone { overflow: hidden; border: 7px solid #302b31; border-radius: 25px; background: var(--cream); }
+    .phone-top { height: 17px; display: flex; justify-content: center; background: #302b31; }
+    .phone-top::after { width: 44px; height: 7px; border-radius: 0 0 8px 8px; background: #171518; content: ''; }
+    .phone-screen { padding-bottom: 16px; text-align: center; }
+    .phone-photo { position: relative; height: 205px; overflow: hidden; }
+    .phone-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .phone-photo::after { position: absolute; inset: 35% 0 0; background: linear-gradient(transparent, rgba(37, 22, 30, .52)); content: ''; }
+    .phone-photo-label { position: absolute; z-index: 1; right: 12px; bottom: 12px; left: 12px; color: var(--white); font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; line-height: 1.1; }
+    .phone-heart { margin: 10px 0 0; color: var(--pink-dark); }
+    .phone-screen p { max-width: 245px; margin: 2px auto 10px; padding-inline: 10px; color: var(--muted); font-size: .78rem; }
+    .music-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 99px; color: var(--blue-dark); background: var(--blue); font-size: .7rem; font-weight: 700; }
+
+    /* Modelos y precios. */
+    .models { padding: 54px 0; background: #fff4f2; }
+    .section-heading { margin: 0 auto 26px; text-align: center; }
+    .section-heading p { margin: 0; color: var(--muted); }
+    .model-grid { display: grid; gap: 16px; }
+    .model-card { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 21px; background: var(--white); box-shadow: 0 9px 28px rgba(80, 47, 57, .07); }
+    .model-image { height: 190px; overflow: hidden; background: var(--pink-pale); }
+    .model-image img { width: 100%; height: 100%; object-fit: cover; }
+    .model-body { display: flex; flex: 1; flex-direction: column; padding: 18px; }
+    .model-body h3 { margin-bottom: 6px; font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; }
+    .model-description { margin: 0 0 10px; color: var(--muted); font-size: .91rem; }
+    .photo-count { margin: 0 0 9px; color: var(--blue-dark); font-size: .84rem; font-weight: 700; }
+    .price-from { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    .duration-prices { margin: 1px 0 15px; color: var(--muted); font-size: .69rem; letter-spacing: -.025em; line-height: 1.45; white-space: nowrap; }
+    .model-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+    .model-actions .button { min-width: 0; min-height: 44px; padding: 9px 10px; font-size: .85rem; }
+    .includes-line { margin: 20px 0 0; color: var(--muted); font-size: .88rem; text-align: center; }
+    .demo-note { margin: 9px 0 0; color: var(--muted); font-size: .76rem; text-align: center; }
+    .model-actions-coming { grid-template-columns: 1fr; }
+    .model-actions .button:disabled { width: 100%; color: var(--muted); background: #f5f1f1; border-color: var(--line); box-shadow: none; opacity: .8; cursor: not-allowed; }
+    .model-actions .button:disabled:hover { transform: none; }
+
+    /* Preguntas frecuentes. */
+    .faq { padding: 54px 0; }
+    .faq-list { display: grid; gap: 9px; max-width: 800px; margin: 0 auto; }
+    .faq-item { border: 1px solid var(--line); border-radius: 15px; background: var(--white); }
+    .faq-item summary { position: relative; padding: 14px 42px 14px 15px; list-style: none; cursor: pointer; font-size: .92rem; font-weight: 700; line-height: 1.35; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { position: absolute; top: 50%; right: 15px; color: var(--pink-dark); content: '+'; font-size: 1.35rem; font-weight: 400; transform: translateY(-50%); }
+    .faq-item[open] summary::after { content: '−'; }
+    .faq-answer { padding: 0 15px 14px; color: var(--muted); font-size: .87rem; line-height: 1.45; }
+    .faq-answer p { margin: 0; }
+
+    /* Cierre y footer. */
+    .final-cta { padding: 43px 0; background: var(--blue); text-align: center; }
+    .final-cta p { margin: 0 auto 17px; color: #4f6370; }
+    .final-cta .button { background: var(--blue-dark); box-shadow: 0 8px 22px rgba(49, 91, 112, .19); }
+    .final-cta .button:hover { background: #24485c; }
+    .footer { padding: 23px 0; color: var(--white); background: #302b31; }
+    .footer-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 22px; }
+    .footer .brand { color: var(--white); }
+    .footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 17px; color: #e6dfe3; font-size: .83rem; }
+    .footer-links a { color: inherit; text-decoration: none; }
+    .footer-links a:hover { color: var(--white); text-decoration: underline; }
+    .copyright { width: 100%; margin: 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.16); color: #c9c1c7; font-size: .76rem; }
+    .floating-whatsapp { position: fixed; z-index: 30; right: 15px; bottom: 15px; display: grid; width: 56px; height: 56px; place-items: center; border-radius: 50%; color: var(--white); background: var(--green); box-shadow: 0 8px 24px rgba(20, 94, 70, .3); text-decoration: none; }
+    .floating-whatsapp svg { width: 28px; height: 28px; }
+
+    /* Ejemplo ilustrativo cuando todavía no hay una demo real. */
+    dialog { width: min(440px, calc(100% - 28px)); padding: 25px; border: 0; border-radius: 22px; color: var(--ink); background: var(--cream); box-shadow: 0 25px 70px rgba(20, 10, 15, .3); }
+    dialog::backdrop { background: rgba(34, 23, 29, .58); backdrop-filter: blur(3px); }
+    .dialog-content { position: relative; }
+    .dialog-close { position: absolute; top: -8px; right: -8px; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: var(--white); font-size: 1.35rem; cursor: pointer; }
+    .dialog-title { padding-right: 30px; }
+    .dialog-copy { color: var(--muted); }
+    .dialog-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+    @media (min-width: 700px) {
+      .container { width: min(var(--content), calc(100% - 56px)); }
+      .nav-wrap { min-height: 74px; }
+      .hero { padding: 62px 0 70px; }
+      .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); gap: 38px; }
+      .phone-stage { width: min(100%, 370px); }
+      .models, .faq { padding: 68px 0; }
+      .model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+      .model-image { height: 175px; }
+      .model-body { padding: 17px; }
+      .duration-prices { font-size: .68rem; }
+      .footer-row { gap: 16px 24px; }
+      .copyright { width: auto; margin-left: auto; padding-top: 0; border: 0; }
+    }
+    @media (min-width: 1024px) {
+      .container { width: min(var(--content), calc(100% - 72px)); }
+      .hero { padding: 78px 0 84px; }
+      .hero-grid { gap: 70px; }
+      .model-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .model-image { height: 205px; }
+      .model-body { padding: 20px; }
+      .duration-prices { font-size: .74rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="inicio">
+    <div class="container nav-wrap">
+      <a class="brand" href="#inicio" aria-label="Eros Web, inicio">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-8-4.8-8-10a4.4 4.4 0 0 1 8-2.6A4.4 4.4 0 0 1 20 10c0 5.2-8 10-8 10Z" fill="currentColor"/></svg></span>
+        <span>Eros Web</span>
+      </a>
+      <a class="button button-primary header-contact whatsapp-link" data-message="¡Hola! Quiero consultar por una página regalo de Eros Web." href="#" target="_blank" rel="noopener noreferrer" aria-label="Escribime por WhatsApp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z"/><path d="M9 9c.7 2 2 3.3 4 4l1.3-1.1 2 1c-.2 1.3-1 2-2.3 2-3.4-.2-6.7-3.5-6.8-6.8 0-1.3.7-2.1 2-2.3l1 2L9 9Z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <h1 id="hero-title">Páginas web para regalar</h1>
+          <p>Elegís un modelo, me mandás tus datos y recibís un link y un QR.</p>
+          <div class="steps" role="list" aria-label="Cómo funciona">
+            <span class="step" role="listitem">1 Elegís un modelo</span><span class="step-dot" aria-hidden="true">·</span>
+            <span class="step" role="listitem">2 Me mandás tus datos</span><span class="step-dot" aria-hidden="true">·</span>
+            <span class="step" role="listitem">3 Recibís tu link y lo regalás</span>
+          </div>
+          <a class="button button-primary hero-cta" href="#modelos">Ver modelos <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="phone-stage" role="group" aria-label="Vista de ejemplo de una página regalo en un celular">
+          <div class="phone">
+            <div class="phone-top" aria-hidden="true"></div>
+            <div class="phone-screen">
+              <div class="phone-photo">
+                <!-- Cambiá esta imagen de ejemplo por una imagen propia. -->
+                <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=700&q=80" alt="Dos personas compartiendo un momento especial al atardecer" fetchpriority="high">
+                <div class="phone-photo-label">Para vos,<br>con todo mi amor</div>
+              </div>
+              <div class="phone-heart" aria-hidden="true">♡</div>
+              <p>“Entre tantos días, mi favorito siempre es el que comparto con vos.”</p>
+              <span class="music-pill"><span aria-hidden="true">♫</span> Nuestra canción</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="models" id="modelos" aria-labelledby="models-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="models-title">Elegí tu modelo</h2>
+          <p>Cada modelo ya está diseñado: vos solo ponés tus fotos, tus palabras y tu música.</p>
+        </div>
+        <div class="model-grid">
+          <article class="model-card">
+            <div class="model-image">
+              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
+              <img src="assets/foto1.jpg" alt="Sofi y Nico abrazados y riéndose en una plaza al atardecer" loading="lazy">
+            </div>
+            <div class="model-body">
+              <h3>Carta para vos</h3>
+              <p class="model-description">Una carta digital con tus palabras y recuerdos.</p>
+              <p class="photo-count">Hasta 3 fotos</p>
+              <!-- CAMBIAR PRECIO -->
+              <p class="price-from">Desde $5.000</p>
+              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $5.000</span> · <!-- CAMBIAR PRECIO --><span>1 semana $8.000</span> · <!-- CAMBIAR PRECIO --><span>1 mes $12.000</span></div>
+              <div class="model-actions">
+                <a class="button button-primary whatsapp-link" data-message="¡Hola! Quiero elegir el modelo Carta para vos. ¿Me pasan el precio y cómo seguimos?" href="#" target="_blank" rel="noopener noreferrer">Elegir</a>
+                <!-- PEGAR ACÁ EL LINK DE LA DEMO -->
+                <a class="button button-light demo-button" href="demos/carta-para-vos/" target="_blank" rel="noopener" data-demo-url="demos/carta-para-vos/" data-title="Carta para vos">Ver demo</a>
+              </div>
+              <p class="demo-note">Imágenes y texto de ejemplo</p>
+            </div>
+          </article>
+
+          <article class="model-card">
+            <div class="model-image">
+              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
+              <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=850&q=80" alt="Pareja caminando junta, para ilustrar una historia compartida" loading="lazy">
+            </div>
+            <div class="model-body">
+              <h3>Nuestra historia</h3>
+              <p class="model-description">Un recorrido por sus momentos favoritos.</p>
+              <p class="photo-count">Hasta 12 fotos</p>
+              <!-- CAMBIAR PRECIO -->
+              <p class="price-from">Desde $7.500</p>
+              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $7.500</span> · <!-- CAMBIAR PRECIO --><span>1 semana $12.000</span> · <!-- CAMBIAR PRECIO --><span>1 mes $18.000</span></div>
+              <div class="model-actions model-actions-coming"><button class="button button-light" type="button" disabled aria-disabled="true">Próximamente</button></div>
+            </div>
+          </article>
+
+          <article class="model-card">
+            <div class="model-image">
+              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
+              <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=850&q=80" alt="Luces cálidas de una celebración para ilustrar una cuenta regresiva" loading="lazy">
+            </div>
+            <div class="model-body">
+              <h3>Cuenta regresiva</h3>
+              <p class="model-description">Una sorpresa para esperar esa fecha especial.</p>
+              <p class="photo-count">Hasta 5 fotos</p>
+              <!-- CAMBIAR PRECIO -->
+              <p class="price-from">Desde $6.000</p>
+              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $6.000</span> · <!-- CAMBIAR PRECIO --><span>1 semana $9.500</span> · <!-- CAMBIAR PRECIO --><span>1 mes $14.000</span></div>
+              <div class="model-actions model-actions-coming"><button class="button button-light" type="button" disabled aria-disabled="true">Próximamente</button></div>
+            </div>
+          </article>
+        </div>
+        <p class="includes-line">Todos incluyen link, QR descargable, música y una ronda de ajustes.</p>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="section-heading"><h2 id="faq-title">Preguntas frecuentes</h2></div>
+        <div class="faq-list">
+          <details class="faq-item"><summary>¿Cuánto tarda?</summary><div class="faq-answer"><p>2 a 3 días desde que me mandás todo y se confirma el pago.</p></div></details>
+          <details class="faq-item"><summary>¿Cuánto tiempo queda online?</summary><div class="faq-answer"><p>Elegís 1 día, 1 semana o 1 mes. Después se da de baja y borro tus fotos y textos.</p></div></details>
+          <details class="faq-item"><summary>¿Cómo se paga?</summary><div class="faq-answer"><p>Por Mercado Pago o transferencia al alias newel.mp.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo pedir cambios?</summary><div class="faq-answer"><p>Sí, una ronda de ajustes de textos, fotos, canción o fecha antes de publicar. Cambiar el diseño del modelo no está incluido.</p></div></details>
+          <details class="faq-item"><summary>¿Se abre en cualquier celular?</summary><div class="faq-answer"><p>Sí, desde el navegador, sin descargar nada. Cualquiera con el link o el QR puede abrirla.</p></div></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta" aria-labelledby="contact-title">
+      <div class="container">
+        <h2 id="contact-title">¿Querés sorprender a alguien?</h2>
+        <p>Elegí un modelo y escribime. Te digo qué necesito.</p>
+        <a class="button button-primary whatsapp-link" data-message="¡Hola! Quiero consultar por una página regalo de Eros Web." href="#" target="_blank" rel="noopener noreferrer">Escribime por WhatsApp</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-row">
+      <a class="brand" href="#inicio" aria-label="Eros Web, volver al inicio">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-8-4.8-8-10a4.4 4.4 0 0 1 8-2.6A4.4 4.4 0 0 1 20 10c0 5.2-8 10-8 10Z" fill="currentColor"/></svg></span>
+        <span>Eros Web</span>
+      </a>
+      <div class="footer-links">
+        <a class="whatsapp-link" data-message="¡Hola! Quiero consultar por una página regalo de Eros Web." href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a href="https://www.instagram.com/eroswwwweb/" target="_blank" rel="noopener noreferrer">Instagram @eroswwwweb</a>
+        <span>Alias: newel.mp</span>
+      </div>
+      <p class="copyright">© <span id="current-year">2026</span> Eros Web</p>
+    </div>
+  </footer>
+
+  <a class="floating-whatsapp whatsapp-link" data-message="¡Hola! Quiero consultar por una página regalo de Eros Web." href="#" target="_blank" rel="noopener noreferrer" aria-label="Escribime por WhatsApp">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z"/><path d="M9 9c.7 2 2 3.3 4 4l1.3-1.1 2 1c-.2 1.3-1 2-2.3 2-3.4-.2-6.7-3.5-6.8-6.8 0-1.3.7-2.1 2-2.3l1 2L9 9Z"/></svg>
+  </a>
+
+  <dialog id="demo-dialog" aria-labelledby="demo-title" aria-describedby="demo-description">
+    <div class="dialog-content">
+      <button class="dialog-close" type="button" aria-label="Cerrar ejemplo">×</button>
+      <h2 id="demo-title" class="dialog-title">Ejemplo de diseño</h2>
+      <p id="demo-description" class="dialog-copy">Esta es una vista ilustrativa del modelo. Pronto habrá un ejemplo real.</p>
+      <div class="dialog-actions">
+        <a id="demo-choose" class="button button-primary whatsapp-link" href="#" target="_blank" rel="noopener noreferrer">Elegir este modelo</a>
+        <button class="button button-light dialog-close-secondary" type="button">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    // WhatsApp en formato internacional sin +, espacios ni guiones.
+    const WHATSAPP_NUMBER = '5491161360254';
+
+    // Todos los enlaces abren WhatsApp con su mensaje prellenado.
+    document.querySelectorAll('.whatsapp-link').forEach((link) => {
+      const message = link.dataset.message || '¡Hola! Quiero consultar por una página regalo de Eros Web.';
+      link.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    });
+
+    // Si hay una demo real, abre el enlace en otra pestaña. Si no, muestra el ejemplo ilustrativo.
+    const demoDialog = document.querySelector('#demo-dialog');
+    const demoTitle = document.querySelector('#demo-title');
+    const demoDescription = document.querySelector('#demo-description');
+    const demoChoose = document.querySelector('#demo-choose');
+    document.querySelectorAll('.demo-button').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const demoUrl = link.dataset.demoUrl.trim();
+        const modelName = link.dataset.title;
+        if (demoUrl) {
+          // El enlace abre la demo de forma nativa en la pestaña nueva indicada en el HTML.
+          link.href = demoUrl;
+          return;
+        }
+
+        event.preventDefault();
+        demoTitle.textContent = 'Ejemplo de diseño';
+        demoDescription.textContent = `Esta es una vista ilustrativa del modelo ${modelName}. Pronto habrá un ejemplo real.`;
+        demoChoose.dataset.message = `¡Hola! Quiero elegir el modelo ${modelName}. ¿Me pasan el precio y cómo seguimos?`;
+        demoChoose.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(demoChoose.dataset.message)}`;
+        demoDialog.showModal();
+      });
+    });
+
+    document.querySelectorAll('.dialog-close, .dialog-close-secondary').forEach((button) => {
+      button.addEventListener('click', () => demoDialog.close());
+    });
+    demoDialog.addEventListener('click', (event) => {
+      if (event.target === demoDialog) demoDialog.close();
+    });
+
+    document.querySelector('#current-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
