@@ -10,11 +10,12 @@
   <meta property="og:locale" content="es_AR">
   <meta property="og:title" content="Eros Web | Páginas web para regalar">
   <meta property="og:description" content="Elegí un modelo, compartí tus fotos y palabras, y recibí un link y un QR para regalar.">
-  <!-- CAMBIAR POR TU LINK REAL -->
-  <meta property="og:url" content="https://[TU-DOMINIO].com/">
-  <link rel="canonical" href="https://[TU-DOMINIO].com/">
-  <!-- CAMBIAR POR TU IMAGEN PROPIA DE 1200x630 -->
-  <meta property="og:image" content="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&h=630&q=85">
+  <meta property="og:url" content="https://acunanahuelalejandro-jpgi.github.io/eros-web/">
+  <link rel="canonical" href="https://acunanahuelalejandro-jpgi.github.io/eros-web/">
+  <meta property="og:image" content="https://acunanahuelalejandro-jpgi.github.io/eros-web/assets/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Eros Web: páginas personalizadas para regalar">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f4b8c1'/%3E%3Cpath d='M32 49S12 37 12 24c0-10 13-14 20-4 7-10 20-6 20 4 0 13-20 25-20 25Z' fill='%23fffaf6'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,9 +106,13 @@
     .model-actions .button { min-width: 0; min-height: 44px; padding: 9px 10px; font-size: .85rem; }
     .includes-line { margin: 20px 0 0; color: var(--muted); font-size: .88rem; text-align: center; }
     .demo-note { margin: 9px 0 0; color: var(--muted); font-size: .76rem; text-align: center; }
-    .model-actions-coming { grid-template-columns: 1fr; }
-    .model-actions .button:disabled { width: 100%; color: var(--muted); background: #f5f1f1; border-color: var(--line); box-shadow: none; opacity: .8; cursor: not-allowed; }
-    .model-actions .button:disabled:hover { transform: none; }
+    .game-mini-grid { display: grid; gap: 10px; margin-top: 17px; }
+    .game-mini-card { padding: 13px; border: 1px solid rgba(169,68,93,.12); border-radius: 16px; background: rgba(255,255,255,.84); }
+    .game-mini-card h4 { margin: 0 0 10px; color: var(--blue-dark); font-family: 'Playfair Display', Georgia, serif; font-size: 1.1rem; }
+    .game-mini-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .game-mini-actions .button { min-width: 0; min-height: 43px; padding: 8px 9px; font-size: .83rem; }
+    .games-more { margin: 15px 0 0; color: var(--muted); font-size: .88rem; text-align: center; }
+    .games-more a { color: var(--pink-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
     /* Preguntas frecuentes. */
     .faq { padding: 54px 0; }
@@ -135,14 +140,162 @@
     .floating-whatsapp { position: fixed; z-index: 30; right: 15px; bottom: 15px; display: grid; width: 56px; height: 56px; place-items: center; border-radius: 50%; color: var(--white); background: var(--green); box-shadow: 0 8px 24px rgba(20, 94, 70, .3); text-decoration: none; }
     .floating-whatsapp svg { width: 28px; height: 28px; }
 
-    /* Ejemplo ilustrativo cuando todavía no hay una demo real. */
-    dialog { width: min(440px, calc(100% - 28px)); padding: 25px; border: 0; border-radius: 22px; color: var(--ink); background: var(--cream); box-shadow: 0 25px 70px rgba(20, 10, 15, .3); }
-    dialog::backdrop { background: rgba(34, 23, 29, .58); backdrop-filter: blur(3px); }
-    .dialog-content { position: relative; }
-    .dialog-close { position: absolute; top: -8px; right: -8px; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: var(--white); font-size: 1.35rem; cursor: pointer; }
-    .dialog-title { padding-right: 30px; }
-    .dialog-copy { color: var(--muted); }
-    .dialog-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+    /* Franja informativa. */
+    .announcement { padding: 7px 14px; color: #493843; background: linear-gradient(90deg, #f8d8df, #e5f1f6); font-size: .78rem; font-weight: 700; letter-spacing: .01em; text-align: center; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .hero-actions .button { min-width: 150px; }
+    .duration-prices { display: flex; flex-wrap: wrap; column-gap: 5px; row-gap: 1px; white-space: normal; }
+    .duration-prices span:not(:last-child)::after { content: "·"; margin-left: 5px; }
+    .model-card { min-width: 0; }
+    .model-image img { object-position: center 42%; }
+    .extras-section { padding: 54px 0; background: linear-gradient(135deg, #f7f0fa 0%, #fff7f1 48%, #eef7fa 100%); }
+    .extras-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 15px; }
+    .extra-card { min-width: 0; padding: 19px; border: 1px solid rgba(169, 68, 93, .14); border-radius: 21px; background: rgba(255,255,255,.87); box-shadow: 0 10px 30px rgba(80,47,57,.07); }
+    .extra-card-games { background: linear-gradient(145deg, #fff, #fff0f3 58%, #eff8fb); }
+    .extra-card-counter { background: linear-gradient(145deg, #fff, #fff2d9); }
+    .extra-card-themes { background: linear-gradient(145deg, #fff, #f3effc); }
+    .extra-card-envelope { background: linear-gradient(145deg, #fff, #eaf5fa); }
+    .extra-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .extra-icon { display: grid; width: 47px; height: 47px; flex: none; place-items: center; border-radius: 15px; color: var(--pink-dark); background: rgba(244,184,193,.3); }
+    .extra-icon svg { width: 29px; height: 29px; }
+    .extra-head h3 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.22rem; }
+    .extra-price { display: block; margin-top: 2px; color: var(--pink-dark); font-size: .83rem; font-weight: 700; }
+    .extra-card > p { margin: 8px 0 14px; color: var(--muted); font-size: .9rem; }
+    .extra-card > .button { width: 100%; }
+    .game-mini-grid { gap: 9px; margin-top: 14px; }
+    .game-mini-card { padding: 12px; background: rgba(255,255,255,.8); }
+    .game-mini-card h4 { min-height: 2.4em; margin-bottom: 8px; font-size: 1rem; }
+    .game-mini-actions { grid-template-columns: 1fr; }
+    .games-more { margin: 12px 0 0; }
+    .theme-swatches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 14px 0; padding: 0; list-style: none; }
+    .theme-swatches li { display: flex; min-width: 0; align-items: center; gap: 6px; color: var(--muted); font-size: .73rem; }
+    .theme-dot { width: 16px; height: 16px; flex: none; border: 1px solid rgba(48,43,49,.16); border-radius: 50%; }
+    .theme-eros { background: #f4b8c1; }.theme-dorado { background: #c29a54; }.theme-cielo { background: #79b6d1; }
+    .theme-rosa { background: #dc829c; }.theme-atardecer { background: #dc916a; }.theme-bosque { background: #638766; }
+    .theme-lavanda { background: #a98fc5; }.theme-medianoche { background: #202a38; }.theme-galaxia { background: #342448; }
+    .how-it-works { padding: 54px 0; background: #fff; }
+    .steps-grid { display: grid; gap: 12px; }
+    .step-card { padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: #fffdfb; }
+    .step-number { display: grid; width: 34px; height: 34px; margin-bottom: 9px; place-items: center; border-radius: 50%; color: var(--white); background: var(--pink-dark); font-weight: 700; }
+    .step-card h3 { margin-bottom: 5px; font-family: 'Playfair Display', Georgia, serif; font-size: 1.16rem; }
+    .step-card p { margin: 0; color: var(--muted); font-size: .88rem; }
+    .needs-card { margin-top: 17px; padding: clamp(17px, 3vw, 25px); border-radius: 20px; background: linear-gradient(135deg, #fff1f2, #eff7fa); }
+    .needs-card h3 { margin-bottom: 12px; font-family: 'Playfair Display', Georgia, serif; }
+    .needs-list { display: grid; grid-template-columns: 1fr; gap: 8px 18px; margin: 0; padding: 0; list-style: none; }
+    .needs-list li { position: relative; padding-left: 25px; color: var(--ink); font-size: .9rem; }
+    .needs-list li::before { position: absolute; left: 0; color: var(--green); content: '✓'; font-weight: 700; }
+    .preview-note { margin: 15px 0 0; color: var(--blue-dark); font-size: .93rem; font-weight: 700; text-align: center; }
+    .footer-links { row-gap: 10px; }
+    .footer-links a { text-underline-offset: 3px; }
+
+
+
+    .order-demo-link { display: inline-block; margin: 7px 0 2px 14px; color: var(--pink-dark); font-size: .81rem; font-weight: 700; text-underline-offset: 3px; }
+    .order-choice-grid > div { min-width: 0; }
+    .order-choice-grid > div > a { display: inline-block; }
+    .order-theme-option .order-choice-card { display: flex; }
+    .order-theme-option .order-choice-card strong { margin: 0; }
+    .order-summary-subtitle { margin: 17px 0 9px; font-size: 1rem; }
+    @media (max-width: 699px) {
+      .order-section .container { padding-bottom: 2px; }
+    }
+
+    /* Armador de pedidos: usa las mismas variables visuales que el resto del sitio. */
+    .order-section { padding: 54px 0 92px; background: linear-gradient(145deg, #fff7f2 0%, #f7f1fa 53%, #edf6f8 100%); scroll-margin-top: 18px; }
+    .order-layout { display: grid; gap: 18px; align-items: start; }
+    .order-builder, .order-sidebar-card { min-width: 0; border: 1px solid rgba(169,68,93,.15); border-radius: 22px; background: rgba(255,255,255,.94); box-shadow: 0 12px 34px rgba(80,47,57,.08); }
+    .order-builder { padding: clamp(17px, 4vw, 30px); }
+    .order-progress-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: var(--muted); font-size: .85rem; font-weight: 700; }
+    .order-progress-track { height: 9px; overflow: hidden; border-radius: 999px; background: #f1e8e9; }
+    .order-progress-fill { width: 14.285%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--pink-dark), #d38a9c); transition: width .25s ease; }
+    .order-step { padding-top: 24px; }
+    .order-step[hidden] { display: none; }
+    .order-step h3 { margin-bottom: 7px; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.3rem, 4vw, 1.65rem); }
+    .order-step-intro { margin: 0 0 17px; color: var(--muted); font-size: .9rem; }
+    .order-choice-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .order-choice-fieldset legend { width: 100%; margin-bottom: 12px; font-weight: 700; }
+    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+    .order-model-grid, .order-choice-grid, .order-theme-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .order-choice-card { position: relative; display: block; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fffdfb; cursor: pointer; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease; }
+    .order-choice-card:hover { border-color: rgba(169,68,93,.45); }
+    .order-radio { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .order-radio:checked + .order-choice-card { border-color: var(--pink-dark); background: #fff5f6; box-shadow: 0 0 0 2px rgba(169,68,93,.12); }
+    .order-radio:focus-visible + .order-choice-card { outline: 3px solid #286783; outline-offset: 3px; }
+    .order-choice-card strong { display: block; color: var(--ink); font-size: .96rem; }
+    .order-choice-card small { display: block; margin-top: 4px; color: var(--muted); font-size: .82rem; line-height: 1.4; }
+    .order-model-option { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 17px; background: #fffdfb; }
+    .order-model-option .order-radio:checked + .order-choice-card { border-color: transparent; border-radius: 0; box-shadow: inset 0 0 0 2px var(--pink-dark); }
+    .order-model-option .order-choice-card { padding: 0; border: 0; border-radius: 0; background: transparent; }
+    .order-model-option .order-choice-card img { width: 100%; height: 130px; object-fit: cover; }
+    .order-model-option .order-choice-card span { display: block; padding: 11px 12px 12px; }
+    .order-model-option > a { display: inline-block; margin: 0 12px 12px; color: var(--pink-dark); font-size: .82rem; font-weight: 700; text-underline-offset: 3px; }
+    .order-duration-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+    .order-duration-price { color: var(--pink-dark) !important; font-weight: 700; }
+    .order-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .order-theme-option { min-width: 0; }
+    .order-theme-option .order-choice-card { display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 10px; }
+    .order-theme-option .order-choice-card strong { font-size: .84rem; }
+    .order-theme-dot { width: 25px; height: 25px; flex: none; border: 1px solid rgba(48,43,49,.18); border-radius: 50%; }
+    .order-theme-option > a { display: inline-block; margin: 5px 0 2px 7px; color: var(--pink-dark); font-size: .74rem; font-weight: 700; text-underline-offset: 3px; }
+    .order-extra-fields { display: grid; gap: 13px; margin-top: 16px; }
+    .order-field { display: grid; gap: 6px; color: var(--ink); font-size: .9rem; font-weight: 700; }
+    .order-field input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #cfc4c7; border-radius: 12px; color: var(--ink); background: #fff; font: inherit; font-weight: 400; }
+    .order-field input:focus-visible { outline: 3px solid #286783; outline-offset: 2px; border-color: #286783; }
+    .order-field small { color: var(--muted); font-size: .78rem; font-weight: 400; }
+    .order-error { min-height: 1.5em; margin: 13px 0 0; color: #8d233d; font-size: .89rem; font-weight: 700; }
+    .order-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 9px; margin-top: 17px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .order-nav .button { min-width: 125px; }
+    .order-nav [hidden] { display: none; }
+    .order-summary-list, .order-breakdown { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .order-summary-list li, .order-breakdown li { padding: 9px 11px; border-radius: 11px; background: #fff5f5; color: var(--ink); font-size: .88rem; overflow-wrap: anywhere; }
+    .order-breakdown li { display: flex; justify-content: space-between; gap: 12px; background: #f5f8fa; }
+    .order-breakdown li span:last-child { flex: none; font-weight: 700; }
+    .order-grand-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 13px; padding: 13px; border-radius: 14px; color: var(--ink); background: #f9e7eb; font-size: 1.05rem; font-weight: 700; }
+    .order-summary-note { margin: 14px 0 0; color: var(--muted); font-size: .85rem; }
+    .order-summary-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .order-summary-actions .button { flex: 1 1 190px; }
+    .order-sidebar-card { position: sticky; top: 18px; padding: 19px; }
+    .order-sidebar-card h3 { margin-bottom: 4px; font-family: 'Playfair Display', Georgia, serif; }
+    .order-sidebar-card p { margin-bottom: 14px; color: var(--muted); font-size: .86rem; }
+    .order-sidebar-total { display: block; color: var(--pink-dark); font-size: 1.65rem; font-weight: 700; }
+    .order-sidebar-detail { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; }
+    .order-mobile-bar { display: none; }
+    .order-mobile-bar strong { display: block; font-size: .75rem; }
+    .order-mobile-bar output { display: block; color: var(--pink-dark); font-size: 1.05rem; font-weight: 700; }
+    .order-mobile-bar .button { min-height: 44px; padding: 8px 13px; white-space: nowrap; }
+    .model-order-link { font: inherit; }
+    body.order-in-view .floating-whatsapp { bottom: 82px; }
+    @media (min-width: 700px) {
+      .order-section { padding: 68px 0; }
+      .order-layout { grid-template-columns: minmax(0, 1fr) 250px; gap: 18px; }
+      .order-model-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .order-model-option .order-choice-card img { height: 115px; }
+      .order-duration-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .order-choice-grid.order-game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .order-theme-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .order-sidebar-card { top: 16px; }
+    }
+    @media (max-width: 699px) {
+      .order-section { padding-bottom: 100px; }
+      .order-mobile-bar { position: fixed; z-index: 35; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px max(14px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: rgba(255,250,246,.97); box-shadow: 0 -7px 24px rgba(48,43,49,.1); }
+      body:not(.order-in-view) .order-mobile-bar { display: none; }
+      body.order-in-view .floating-whatsapp { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); }
+    }
+    @media (max-width: 380px) {
+      .order-builder { padding: 15px; }
+      .order-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .order-mobile-bar { gap: 7px; padding-inline: 10px; }
+      .order-mobile-bar .button { padding-inline: 10px; font-size: .82rem; }
+    }
+
+    @media (max-width: 360px) {
+      .container { width: calc(100% - 28px); }
+      .announcement { font-size: .73rem; }
+      .duration-prices { font-size: .68rem; letter-spacing: -.02em; }
+      .model-body { padding: 15px; }
+      .theme-swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
 
     @media (min-width: 700px) {
       .container { width: min(var(--content), calc(100% - 56px)); }
@@ -152,6 +305,10 @@
       .phone-stage { width: min(100%, 370px); }
       .models, .faq { padding: 68px 0; }
       .model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+      .extras-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
+      .steps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .needs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .game-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .model-image { height: 175px; }
       .model-body { padding: 17px; }
       .duration-prices { font-size: .68rem; }
@@ -163,6 +320,8 @@
       .hero { padding: 78px 0 84px; }
       .hero-grid { gap: 70px; }
       .model-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .extras-section, .how-it-works { padding: 68px 0; }
+      .extra-card { padding: 22px; }
       .model-image { height: 205px; }
       .model-body { padding: 20px; }
       .duration-prices { font-size: .74rem; }
@@ -174,6 +333,7 @@
   </style>
 </head>
 <body>
+  <div class="announcement">Tu sorpresa en un link y un QR · Lista en 2 a 3 días</div>
   <header class="topbar" id="inicio">
     <div class="container nav-wrap">
       <a class="brand" href="#inicio" aria-label="Eros Web, inicio">
@@ -198,20 +358,22 @@
             <span class="step" role="listitem">2 Me mandás tus datos</span><span class="step-dot" aria-hidden="true">·</span>
             <span class="step" role="listitem">3 Recibís tu link y lo regalás</span>
           </div>
-          <a class="button button-primary hero-cta" href="#modelos">Ver modelos <span aria-hidden="true">↓</span></a>
+          <div class="hero-actions">
+            <a class="button button-primary hero-cta" href="#modelos">Ver modelos <span aria-hidden="true">↓</span></a>
+            <a class="button button-light" href="demos/carta-para-vos/" target="_blank" rel="noopener">Ver demo</a>
+          </div>
         </div>
         <div class="phone-stage" role="group" aria-label="Vista de ejemplo de una página regalo en un celular">
           <div class="phone">
             <div class="phone-top" aria-hidden="true"></div>
             <div class="phone-screen">
               <div class="phone-photo">
-                <!-- Cambiá esta imagen de ejemplo por una imagen propia. -->
-                <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=700&q=80" alt="Dos personas compartiendo un momento especial al atardecer" fetchpriority="high">
+                <img src="assets/foto1.jpg" alt="Pareja caminando junta al atardecer, ejemplo de Carta para vos" fetchpriority="high">
                 <div class="phone-photo-label">Para vos,<br>con todo mi amor</div>
               </div>
               <div class="phone-heart" aria-hidden="true">♡</div>
               <p>“Entre tantos días, mi favorito siempre es el que comparto con vos.”</p>
-              <span class="music-pill"><span aria-hidden="true">♫</span> Nuestra canción</span>
+              <span class="music-pill"><span aria-hidden="true">♫</span> Música a elegir de nuestra selección</span>
             </div>
           </div>
         </div>
@@ -222,25 +384,23 @@
       <div class="container">
         <div class="section-heading">
           <h2 id="models-title">Elegí tu modelo</h2>
-          <p>Cada modelo ya está diseñado: vos solo ponés tus fotos, tus palabras y tu música.</p>
+          <p>Cada modelo ya está diseñado: vos elegís tus fotos, tus palabras y música a elegir de nuestra selección.</p>
         </div>
         <div class="model-grid">
           <article class="model-card">
             <div class="model-image">
-              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
-              <img src="assets/foto1.jpg" alt="Sofi y Nico abrazados y riéndose en una plaza al atardecer" loading="lazy">
+              <img src="assets/foto1.jpg" alt="Pareja caminando junta al atardecer, ejemplo de Carta para vos" loading="lazy">
             </div>
             <div class="model-body">
               <h3>Carta para vos</h3>
               <p class="model-description">Una carta digital con tus palabras y recuerdos.</p>
               <p class="photo-count">Hasta 3 fotos</p>
-              <!-- CAMBIAR PRECIO -->
-              <p class="price-from">Desde $5.000</p>
-              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $5.000</span> · <!-- CAMBIAR PRECIO --><span>1 semana $8.000</span> · <!-- CAMBIAR PRECIO --><span>1 mes $12.000</span></div>
+              <!-- Los precios se completan desde PRICE_TABLE en el JavaScript. -->
+              <p class="price-from" data-model-start="carta"></p>
+              <div class="duration-prices" data-model-prices="carta"></div>
               <div class="model-actions">
-                <a class="button button-primary whatsapp-link" data-message="¡Hola! Quiero elegir el modelo Carta para vos. ¿Me pasan el precio y cómo seguimos?" href="#" target="_blank" rel="noopener noreferrer">Elegir</a>
-                <!-- PEGAR ACÁ EL LINK DE LA DEMO -->
-                <a class="button button-light demo-button" href="demos/carta-para-vos/" target="_blank" rel="noopener" data-demo-url="demos/carta-para-vos/" data-title="Carta para vos">Ver demo</a>
+                <button class="button button-primary model-order-link" type="button" data-order-model="carta">Elegir</button>
+                <a class="button button-light" href="demos/carta-para-vos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
               </div>
               <p class="demo-note">Imágenes y texto de ejemplo</p>
             </div>
@@ -248,37 +408,280 @@
 
           <article class="model-card">
             <div class="model-image">
-              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
-              <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=850&q=80" alt="Pareja caminando junta, para ilustrar una historia compartida" loading="lazy">
+              <img src="assets/modelo-historia.jpg" alt="Pareja toma un café y comparte una charla, ejemplo de Nuestra historia" loading="lazy">
             </div>
             <div class="model-body">
               <h3>Nuestra historia</h3>
               <p class="model-description">Un recorrido por sus momentos favoritos.</p>
-              <p class="photo-count">Hasta 12 fotos</p>
-              <!-- CAMBIAR PRECIO -->
-              <p class="price-from">Desde $7.500</p>
-              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $7.500</span> · <!-- CAMBIAR PRECIO --><span>1 semana $12.000</span> · <!-- CAMBIAR PRECIO --><span>1 mes $18.000</span></div>
-              <div class="model-actions model-actions-coming"><button class="button button-light" type="button" disabled aria-disabled="true">Próximamente</button></div>
+              <p class="photo-count">Hasta 8 fotos</p>
+              <!-- Los precios se completan desde PRICE_TABLE en el JavaScript. -->
+              <p class="price-from" data-model-start="historia"></p>
+              <div class="duration-prices" data-model-prices="historia"></div>
+              <div class="model-actions">
+                <button class="button button-primary model-order-link" type="button" data-order-model="historia">Elegir</button>
+                <a class="button button-light" href="demos/nuestra-historia/" target="_blank" rel="noopener noreferrer">Ver demo</a>
+              </div>
             </div>
           </article>
 
           <article class="model-card">
-            <div class="model-image">
-              <!-- Imagen de ejemplo: reemplazala por una imagen propia o con licencia. -->
-              <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=850&q=80" alt="Luces cálidas de una celebración para ilustrar una cuenta regresiva" loading="lazy">
-            </div>
+            <div class="model-image"><img src="assets/modelo-album.jpg" alt="Pareja comparte un paseo por la costanera, ejemplo del Álbum de recuerdos" loading="lazy"></div>
             <div class="model-body">
-              <h3>Cuenta regresiva</h3>
-              <p class="model-description">Una sorpresa para esperar esa fecha especial.</p>
-              <p class="photo-count">Hasta 5 fotos</p>
-              <!-- CAMBIAR PRECIO -->
-              <p class="price-from">Desde $6.000</p>
-              <div class="duration-prices"><!-- CAMBIAR PRECIO --><span>1 día $6.000</span> · <!-- CAMBIAR PRECIO --><span>1 semana $9.500</span> · <!-- CAMBIAR PRECIO --><span>1 mes $14.000</span></div>
-              <div class="model-actions model-actions-coming"><button class="button button-light" type="button" disabled aria-disabled="true">Próximamente</button></div>
+              <h3>Álbum de recuerdos</h3>
+              <p class="model-description">Un álbum interactivo para revivir sus momentos, foto a foto.</p>
+              <p class="photo-count">Hasta 12 fotos</p>
+              <!-- Los precios se completan desde PRICE_TABLE en el JavaScript. -->
+              <p class="price-from" data-model-start="album"></p>
+              <div class="duration-prices" data-model-prices="album"></div>
+              <div class="model-actions">
+                <button class="button button-primary model-order-link" type="button" data-order-model="album">Elegir</button>
+                <a class="button button-light" href="demos/album-recuerdos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
+              </div>
+              <p class="demo-note">Imágenes y texto de ejemplo</p>
             </div>
           </article>
         </div>
-        <p class="includes-line">Todos incluyen link, QR descargable, música y una ronda de ajustes.</p>
+        <p class="includes-line">Todos incluyen link, QR descargable, sobre animado, música a elegir de nuestra selección y una ronda de ajustes.</p>
+      </div>
+    </section>
+
+    <section class="extras-section" aria-labelledby="extras-title">
+      <div class="container">
+        <div class="section-heading"><h2 id="extras-title">Sumá extras</h2><p>Personalizá la sorpresa con opciones que acompañan el modelo.</p></div>
+        <div class="extras-grid">
+          <article class="extra-card extra-card-games">
+            <div class="extra-head">
+              <span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 27S4.5 20.6 4.5 12.6a6 6 0 0 1 11.5-2.3 6 6 0 0 1 11.5 2.3C27.5 20.6 16 27 16 27Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 16h5m-2.5-2.5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+              <div><h3>Juego interactivo</h3><span class="extra-price" data-extra-price="game"></span></div>
+            </div>
+            <p>La sorpresa se desbloquea jugando. Elegí uno de estos juegos:</p>
+            <div class="game-mini-grid">
+              <article class="game-mini-card"><h4>Pintar el corazón</h4><div class="game-mini-actions"><a class="button button-light" href="demos/juego-pintar-corazon/" target="_blank" rel="noopener noreferrer">Ver demo</a></div></article>
+              <article class="game-mini-card"><h4>Me ama / no me ama</h4><div class="game-mini-actions"><a class="button button-light" href="demos/juego-margarita/" target="_blank" rel="noopener noreferrer">Ver demo</a></div></article>
+              <article class="game-mini-card"><h4>Llegá a mí</h4><div class="game-mini-actions"><a class="button button-light" href="demos/juego-laberinto/" target="_blank" rel="noopener noreferrer">Ver demo</a></div></article>
+            </div>
+            <p class="games-more">Tenemos más juegos, consultanos.</p>
+            <button class="button button-primary" type="button" data-order-game>Sumar a mi pedido</button>
+          </article>
+
+          <article class="extra-card extra-card-counter">
+            <div class="extra-head">
+              <span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="17" r="11" stroke="currentColor" stroke-width="2.2"/><path d="M16 10v7l5 3M12 3h8M16 3v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><h3>Contador de tiempo juntos</h3><span class="extra-price" data-extra-price="counter"></span></div>
+            </div>
+            <p>Años, meses, días, horas y segundos en tiempo real.</p>
+            <button class="button button-primary" type="button" data-order-counter>Sumar a mi pedido</button>
+          </article>
+
+          <article class="extra-card extra-card-themes">
+            <div class="extra-head">
+              <span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 4a12 12 0 1 0 0 24h1.2a3.5 3.5 0 0 0 2.4-6.1 2 2 0 0 1 1.4-3.4h1A6 6 0 0 0 28 12.6C28 7.9 22.6 4 16 4Z" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/><circle cx="22" cy="12" r="1.5" fill="currentColor"/></svg></span>
+              <div><h3>Temas de color</h3><span class="extra-price">Incluidos</span></div>
+            </div>
+            <p>Elegí la paleta que mejor acompañe tu regalo.</p>
+            <ul class="theme-swatches" aria-label="Muestras de los temas disponibles">
+              <li><span class="theme-dot theme-eros" aria-hidden="true"></span>Eros</li><li><span class="theme-dot theme-dorado" aria-hidden="true"></span>Dorado</li><li><span class="theme-dot theme-cielo" aria-hidden="true"></span>Azul cielo</li>
+              <li><span class="theme-dot theme-rosa" aria-hidden="true"></span>Rosa</li><li><span class="theme-dot theme-atardecer" aria-hidden="true"></span>Atardecer</li><li><span class="theme-dot theme-bosque" aria-hidden="true"></span>Bosque</li>
+              <li><span class="theme-dot theme-lavanda" aria-hidden="true"></span>Lavanda</li><li><span class="theme-dot theme-medianoche" aria-hidden="true"></span>Medianoche</li><li><span class="theme-dot theme-galaxia" aria-hidden="true"></span>Galaxia</li>
+            </ul>
+            <div class="model-actions"><a class="button button-light" href="demos/temas/" target="_blank" rel="noopener noreferrer">Ver temas</a><button class="button button-primary" type="button" data-order-theme>Elegir tema</button></div>
+          </article>
+
+          <article class="extra-card extra-card-envelope">
+            <div class="extra-head">
+              <span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="17" rx="3" stroke="currentColor" stroke-width="2.1"/><path d="m5 10 11 8 11-8" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 15s-3.3-1.9-3.3-4.1a2 2 0 0 1 3.3-1.5 2 2 0 0 1 3.3 1.5C19.3 13.1 16 15 16 15Z" fill="currentColor"/></svg></span>
+              <div><h3>Sobre animado</h3><span class="extra-price">Incluido</span></div>
+            </div>
+            <p>Un sobre con sello de corazón abre la sorpresa con un toque.</p>
+           </article>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="order-section" id="pedido" aria-labelledby="order-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="order-title">Armá tu pedido</h2>
+          <p>Elegí las opciones y revisá el total antes de escribirme.</p>
+        </div>
+        <div class="order-layout">
+          <div class="order-builder">
+            <div class="order-progress-head">
+              <span id="order-step-label">Paso 1 de 7</span>
+              <span id="order-progress-percent">14%</span>
+            </div>
+            <div class="order-progress-track" id="order-progress" role="progressbar" aria-label="Progreso del pedido" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
+              <div class="order-progress-fill" id="order-progress-fill"></div>
+            </div>
+            <p class="sr-only" id="order-live" role="status" aria-live="polite"></p>
+
+            <section class="order-step" data-order-step="1" aria-labelledby="order-step-1-title">
+              <h3 id="order-step-1-title" tabindex="-1">1. Elegí un modelo</h3>
+              <p class="order-step-intro">Cada modelo ya está diseñado. Elegí el que mejor va con tu regalo.</p>
+              <fieldset class="order-choice-fieldset">
+                <legend class="sr-only">Modelo de página</legend>
+                <div class="order-model-grid">
+                  <div class="order-model-option">
+                    <input class="order-radio" type="radio" name="order-model" id="order-model-carta" value="carta">
+                    <label class="order-choice-card" for="order-model-carta"><img src="assets/foto1.jpg" alt="" loading="lazy"><span><strong>Carta para vos</strong><small>Hasta 3 fotos</small></span></label>
+                    <a href="demos/carta-para-vos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
+                  </div>
+                  <div class="order-model-option">
+                    <input class="order-radio" type="radio" name="order-model" id="order-model-historia" value="historia">
+                    <label class="order-choice-card" for="order-model-historia"><img src="assets/modelo-historia.jpg" alt="" loading="lazy"><span><strong>Nuestra historia</strong><small>Hasta 8 fotos</small></span></label>
+                    <a href="demos/nuestra-historia/" target="_blank" rel="noopener noreferrer">Ver demo</a>
+                  </div>
+                  <div class="order-model-option">
+                    <input class="order-radio" type="radio" name="order-model" id="order-model-album" value="album">
+                    <label class="order-choice-card" for="order-model-album"><img src="assets/modelo-album.jpg" alt="" loading="lazy"><span><strong>Álbum de recuerdos</strong><small>Hasta 12 fotos</small></span></label>
+                    <a href="demos/album-recuerdos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
+                  </div>
+                </div>
+              </fieldset>
+            </section>
+
+            <section class="order-step" data-order-step="2" aria-labelledby="order-step-2-title" hidden>
+              <h3 id="order-step-2-title" tabindex="-1">2. Elegí cuánto tiempo queda online</h3>
+              <p class="order-step-intro" id="duration-instruction">Primero elegí un modelo para ver sus precios.</p>
+              <fieldset class="order-choice-fieldset">
+                <legend class="sr-only">Duración de la página</legend>
+                <div class="order-duration-grid">
+                  <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-day" value="day"><label class="order-choice-card" for="order-duration-day"><strong>1 día</strong><small class="order-duration-price" data-duration-price="day"></small></label></div>
+                  <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-week" value="week"><label class="order-choice-card" for="order-duration-week"><strong>1 semana</strong><small class="order-duration-price" data-duration-price="week"></small></label></div>
+                  <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-month" value="month"><label class="order-choice-card" for="order-duration-month"><strong>1 mes</strong><small class="order-duration-price" data-duration-price="month"></small></label></div>
+                </div>
+              </fieldset>
+            </section>
+
+            <section class="order-step" data-order-step="3" aria-labelledby="order-step-3-title" hidden>
+              <h3 id="order-step-3-title" tabindex="-1">3. ¿Querés sumar un juego?</h3>
+              <p class="order-step-intro">Es opcional y suma <span data-extra-inline="game"></span> al total.</p>
+              <fieldset class="order-choice-fieldset">
+                <legend class="sr-only">Elegí un juego interactivo</legend>
+                <div class="order-choice-grid order-game-grid">
+                  <div><input class="order-radio" type="radio" name="order-game" id="order-game-none" value=""><label class="order-choice-card" for="order-game-none"><strong>No quiero juego</strong><small>Sin costo extra</small></label></div>
+                  <div><input class="order-radio" type="radio" name="order-game" id="order-game-pintar" value="pintar"><label class="order-choice-card" for="order-game-pintar"><strong>Pintar el corazón</strong><small>La sorpresa se desbloquea pintándolo</small></label><a class="order-demo-link" href="demos/juego-pintar-corazon/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
+                  <div><input class="order-radio" type="radio" name="order-game" id="order-game-margarita" value="margarita"><label class="order-choice-card" for="order-game-margarita"><strong>Me ama / no me ama</strong><small>Un juego breve para llegar a la sorpresa</small></label><a class="order-demo-link" href="demos/juego-margarita/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
+                  <div><input class="order-radio" type="radio" name="order-game" id="order-game-laberinto" value="laberinto"><label class="order-choice-card" for="order-game-laberinto"><strong>Llegá a mí</strong><small>Un recorrido hasta el mensaje final</small></label><a class="order-demo-link" href="demos/juego-laberinto/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
+                </div>
+              </fieldset>
+            </section>
+
+            <section class="order-step" data-order-step="4" aria-labelledby="order-step-4-title" hidden>
+              <h3 id="order-step-4-title" tabindex="-1">4. Elegí un tema de color</h3>
+              <p class="order-step-intro">Todos los temas están incluidos. Podés abrir una vista de cada uno.</p>
+              <fieldset class="order-choice-fieldset">
+                <legend class="sr-only">Tema de color</legend>
+                <div class="order-theme-grid">
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-eros" value="eros"><label class="order-choice-card" for="theme-eros"><span class="order-theme-dot theme-eros" aria-hidden="true"></span><strong>Eros</strong></label><a href="demos/carta-para-vos/?tema=eros" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-dorado" value="dorado"><label class="order-choice-card" for="theme-dorado"><span class="order-theme-dot theme-dorado" aria-hidden="true"></span><strong>Dorado</strong></label><a href="demos/carta-para-vos/?tema=dorado" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-azul-cielo" value="azul-cielo"><label class="order-choice-card" for="theme-azul-cielo"><span class="order-theme-dot theme-cielo" aria-hidden="true"></span><strong>Azul cielo</strong></label><a href="demos/carta-para-vos/?tema=azul-cielo" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-rosa" value="rosa"><label class="order-choice-card" for="theme-rosa"><span class="order-theme-dot theme-rosa" aria-hidden="true"></span><strong>Rosa</strong></label><a href="demos/carta-para-vos/?tema=rosa" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-atardecer" value="atardecer"><label class="order-choice-card" for="theme-atardecer"><span class="order-theme-dot theme-atardecer" aria-hidden="true"></span><strong>Atardecer</strong></label><a href="demos/carta-para-vos/?tema=atardecer" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-bosque" value="bosque"><label class="order-choice-card" for="theme-bosque"><span class="order-theme-dot theme-bosque" aria-hidden="true"></span><strong>Bosque</strong></label><a href="demos/carta-para-vos/?tema=bosque" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-lavanda" value="lavanda"><label class="order-choice-card" for="theme-lavanda"><span class="order-theme-dot theme-lavanda" aria-hidden="true"></span><strong>Lavanda</strong></label><a href="demos/carta-para-vos/?tema=lavanda" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-medianoche" value="medianoche"><label class="order-choice-card" for="theme-medianoche"><span class="order-theme-dot theme-medianoche" aria-hidden="true"></span><strong>Medianoche</strong></label><a href="demos/carta-para-vos/?tema=medianoche" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                  <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-galaxia" value="galaxia"><label class="order-choice-card" for="theme-galaxia"><span class="order-theme-dot theme-galaxia" aria-hidden="true"></span><strong>Galaxia</strong></label><a href="demos/carta-para-vos/?tema=galaxia" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
+                </div>
+              </fieldset>
+            </section>
+
+            <section class="order-step" data-order-step="5" aria-labelledby="order-step-5-title" hidden>
+              <h3 id="order-step-5-title" tabindex="-1">5. ¿Querés el contador de tiempo juntos?</h3>
+              <p class="order-step-intro">Es opcional y suma <span data-extra-inline="counter"></span> al total.</p>
+              <fieldset class="order-choice-fieldset">
+                <legend class="sr-only">Contador de tiempo juntos</legend>
+                <div class="order-choice-grid">
+                  <div><input class="order-radio" type="radio" name="order-counter" id="counter-no" value="no"><label class="order-choice-card" for="counter-no"><strong>No, gracias</strong><small>Sin costo extra</small></label></div>
+                  <div><input class="order-radio" type="radio" name="order-counter" id="counter-yes" value="yes"><label class="order-choice-card" for="counter-yes"><strong>Sí, quiero sumarlo</strong><small>Indicá desde qué fecha cuentan</small></label></div>
+                </div>
+              </fieldset>
+              <div class="order-extra-fields" id="counter-date-wrap" hidden>
+                <label class="order-field" for="counter-date">Fecha de inicio
+                  <input id="counter-date" type="date" max="2099-12-31" autocomplete="off">
+                </label>
+              </div>
+            </section>
+
+            <section class="order-step" data-order-step="6" aria-labelledby="order-step-6-title" hidden>
+              <h3 id="order-step-6-title" tabindex="-1">6. Unos datos para personalizarlo</h3>
+              <p class="order-step-intro">Después te pido el texto y las fotos por WhatsApp.</p>
+              <div class="order-extra-fields">
+                <label class="order-field" for="recipient-name">Nombre de quien recibe <span aria-hidden="true">*</span>
+                  <input id="recipient-name" type="text" maxlength="60" autocomplete="off" placeholder="Por ejemplo, Sofi" required>
+                </label>
+                <label class="order-field" for="sender-name">Tu nombre para la firma <span>(opcional)</span>
+                  <input id="sender-name" type="text" maxlength="60" autocomplete="off" placeholder="Cómo querés firmar">
+                </label>
+                <fieldset class="order-choice-fieldset">
+                  <legend>¿Qué música preferís?</legend>
+                  <div class="order-choice-grid">
+                    <div><input class="order-radio" type="radio" name="order-music" id="music-selection" value="selection"><label class="order-choice-card" for="music-selection"><strong>De la selección de Eros Web</strong></label></div>
+                    <div><input class="order-radio" type="radio" name="order-music" id="music-link" value="link"><label class="order-choice-card" for="music-link"><strong>Tengo un link de Spotify o YouTube</strong><small>Podés pegarlo ahora o mandarlo después por WhatsApp</small></label></div>
+                    <div><input class="order-radio" type="radio" name="order-music" id="music-help" value="help"><label class="order-choice-card" for="music-help"><strong>Que me ayuden a elegir</strong></label></div>
+                  </div>
+                </fieldset>
+                <label class="order-field" id="music-link-wrap" for="music-link-input" hidden>Link de Spotify o YouTube <span>(opcional)</span>
+                  <input id="music-link-input" type="text" maxlength="300" inputmode="url" autocomplete="url" placeholder="https://">
+                  <small>Si preferís, también podés mandarlo después por el chat.</small>
+                </label>
+              </div>
+            </section>
+
+            <section class="order-step" data-order-step="7" aria-labelledby="order-step-7-title" hidden>
+              <h3 id="order-step-7-title" tabindex="-1">7. Revisá tu pedido</h3>
+              <p class="order-step-intro">Así queda el pedido y el total estimado.</p>
+              <ul class="order-summary-list" id="order-summary-list"></ul>
+              <h4 class="order-summary-subtitle">Desglose</h4>
+              <ul class="order-breakdown" id="order-breakdown"></ul>
+              <div class="order-grand-total"><span>Total</span><output id="order-final-total" aria-live="polite">—</output></div>
+              <p class="order-summary-note">Después te pido el texto y las fotos por el chat. Te mando una vista previa en video antes de que pagues.</p>
+              <div class="order-summary-actions">
+                <a class="button button-primary" id="send-order" href="#" target="_blank" rel="noopener noreferrer">Enviar mi pedido por WhatsApp</a>
+                <button class="button button-light" id="order-reset" type="button">Empezar de nuevo</button>
+              </div>
+            </section>
+
+            <p class="order-error" id="order-error" role="alert" aria-live="assertive"></p>
+            <div class="order-nav" aria-label="Navegación del armador">
+              <button class="button button-light" id="order-back" type="button" hidden>Atrás</button>
+              <button class="button button-primary" id="order-next" type="button">Siguiente</button>
+            </div>
+          </div>
+
+          <aside class="order-sidebar-card" aria-label="Resumen del total">
+            <h3>Tu total</h3>
+            <p>El monto se actualiza según las opciones que elegís.</p>
+            <output class="order-sidebar-total" id="order-sidebar-total" aria-live="polite">—</output>
+            <span class="order-sidebar-detail" id="order-sidebar-detail">Elegí un modelo y una duración</span>
+          </aside>
+        </div>
+      </div>
+      <div class="order-mobile-bar" id="order-mobile-bar">
+        <div><strong>Total estimado</strong><output id="order-mobile-total" aria-live="polite">—</output></div>
+        <button class="button button-primary" type="button" id="order-mobile-summary">Ver mi pedido</button>
+      </div>
+    </section>
+
+    <section class="how-it-works" aria-labelledby="how-title">
+      <div class="container">
+        <div class="section-heading"><h2 id="how-title">Cómo funciona</h2><p>Vos elegís un modelo y yo me encargo de prepararlo.</p></div>
+        <div class="steps-grid">
+          <article class="step-card"><span class="step-number" aria-hidden="true">1</span><h3>Elegís el modelo</h3><p>Mirás las opciones y me escribís por WhatsApp.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">2</span><h3>Me mandás tus datos</h3><p>Te digo qué necesito para completar ese modelo.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">3</span><h3>Recibís tu página</h3><p>Te paso el link y un QR descargable para regalar.</p></article>
+        </div>
+        <div class="needs-card">
+          <h3>Qué necesito que me mandes</h3>
+          <ul class="needs-list">
+            <li>Nombre de la persona que recibe el regalo</li><li>Texto de la carta o los mensajes</li>
+            <li>Las fotos que quieras incluir</li><li>Fecha de inicio, si querés el contador</li>
+            <li>El tema de color</li><li>El juego, si querés sumar uno</li>
+            <li>Música a elegir de nuestra selección</li>
+          </ul>
+          <p class="preview-note">Te mando una vista previa en video antes de que pagues.</p>
+        </div>
       </div>
     </section>
 
@@ -289,8 +692,12 @@
           <details class="faq-item"><summary>¿Cuánto tarda?</summary><div class="faq-answer"><p>2 a 3 días desde que me mandás todo y se confirma el pago.</p></div></details>
           <details class="faq-item"><summary>¿Cuánto tiempo queda online?</summary><div class="faq-answer"><p>Elegís 1 día, 1 semana o 1 mes. Después se da de baja y borro tus fotos y textos.</p></div></details>
           <details class="faq-item"><summary>¿Cómo se paga?</summary><div class="faq-answer"><p>Por Mercado Pago o transferencia al alias newel.mp.</p></div></details>
-          <details class="faq-item"><summary>¿Puedo pedir cambios?</summary><div class="faq-answer"><p>Sí, una ronda de ajustes de textos, fotos, canción o fecha antes de publicar. Cambiar el diseño del modelo no está incluido.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo pedir cambios?</summary><div class="faq-answer"><p>Sí, incluye una ronda de ajustes de textos, fotos, fecha o música de la selección antes de publicar. Cambiar el diseño del modelo no está incluido.</p></div></details>
           <details class="faq-item"><summary>¿Se abre en cualquier celular?</summary><div class="faq-answer"><p>Sí, desde el navegador, sin descargar nada. Cualquiera con el link o el QR puede abrirla.</p></div></details>
+          <details class="faq-item"><summary>¿Qué necesito mandarte?</summary><div class="faq-answer"><p>El nombre de quien recibe, los textos y fotos, y si querés, la fecha para el contador, el tema, un juego y música de nuestra selección.</p></div></details>
+          <details class="faq-item"><summary>¿Mis fotos son privadas?</summary><div class="faq-answer"><p>La página no aparece en buscadores; cualquiera con el link o QR puede abrirla. Al vencer, borro las fotos y los textos.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo elegir la música?</summary><div class="faq-answer"><p>Sí, música a elegir de nuestra selección con licencia. Si querés sumar un link de Spotify o YouTube, lo consultamos antes para confirmar si se puede.</p></div></details>
+          <details class="faq-item"><summary>¿Cómo funciona el juego interactivo?</summary><div class="faq-answer"><p>La persona resuelve un juego corto desde el celular y después se desbloquea la sorpresa. Es un extra opcional de <span data-extra-inline="game"></span>.</p></div></details>
         </div>
       </div>
     </section>
@@ -313,6 +720,8 @@
       <div class="footer-links">
         <a class="whatsapp-link" data-message="¡Hola! Quiero consultar por una página regalo de Eros Web." href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         <a href="https://www.instagram.com/eroswwwweb/" target="_blank" rel="noopener noreferrer">Instagram @eroswwwweb</a>
+        <a href="terminos.html">Términos del servicio</a>
+        <a href="privacidad.html">Privacidad</a>
         <span>Alias: newel.mp</span>
       </div>
       <p class="copyright">© <span id="current-year">2026</span> Eros Web</p>
@@ -323,60 +732,445 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z"/><path d="M9 9c.7 2 2 3.3 4 4l1.3-1.1 2 1c-.2 1.3-1 2-2.3 2-3.4-.2-6.7-3.5-6.8-6.8 0-1.3.7-2.1 2-2.3l1 2L9 9Z"/></svg>
   </a>
 
-  <dialog id="demo-dialog" aria-labelledby="demo-title" aria-describedby="demo-description">
-    <div class="dialog-content">
-      <button class="dialog-close" type="button" aria-label="Cerrar ejemplo">×</button>
-      <h2 id="demo-title" class="dialog-title">Ejemplo de diseño</h2>
-      <p id="demo-description" class="dialog-copy">Esta es una vista ilustrativa del modelo. Pronto habrá un ejemplo real.</p>
-      <div class="dialog-actions">
-        <a id="demo-choose" class="button button-primary whatsapp-link" href="#" target="_blank" rel="noopener noreferrer">Elegir este modelo</a>
-        <button class="button button-light dialog-close-secondary" type="button">Cerrar</button>
-      </div>
-    </div>
-  </dialog>
-
   <script>
-    // WhatsApp en formato internacional sin +, espacios ni guiones.
+    // Número internacional de WhatsApp, sin signo +, espacios ni guiones.
     const WHATSAPP_NUMBER = '5491161360254';
 
-    // Todos los enlaces abren WhatsApp con su mensaje prellenado.
-    document.querySelectorAll('.whatsapp-link').forEach((link) => {
-      const message = link.dataset.message || '¡Hola! Quiero consultar por una página regalo de Eros Web.';
-      link.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    // ÚNICA FUENTE DE PRECIOS: se usa en tarjetas, total y mensaje de WhatsApp.
+    const PRICE_TABLE = {
+      models: {
+        carta: { name: 'Carta para vos', prices: { day: 5000, week: 8000, month: 12000 } },
+        historia: { name: 'Nuestra historia', prices: { day: 7500, week: 12000, month: 18000 } },
+        album: { name: 'Álbum de recuerdos', prices: { day: 10000, week: 16000, month: 24000 } }
+      },
+      durations: { day: '1 día', week: '1 semana', month: '1 mes' },
+      extras: { game: 3000, counter: 2000 }
+    };
+    const GAMES = {
+      pintar: 'Pintar el corazón',
+      margarita: 'Me ama / no me ama',
+      laberinto: 'Llegá a mí'
+    };
+    const THEMES = {
+      eros: 'Eros', dorado: 'Dorado', 'azul-cielo': 'Azul cielo', rosa: 'Rosa',
+      atardecer: 'Atardecer', bosque: 'Bosque', lavanda: 'Lavanda',
+      medianoche: 'Medianoche', galaxia: 'Galaxia'
+    };
+    const STORAGE_KEY = 'erosweb-order-v1';
+    const freshOrder = () => ({
+      model: '', duration: '', game: '', theme: 'eros', counter: false,
+      date: '', recipient: '', sender: '', music: 'selection', musicLink: '', step: 1
+    });
+    let order = freshOrder();
+    let currentStep = 1;
+
+    const formatARS = (amount) => '$' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(amount);
+    const clampText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : '';
+    const isValidDate = (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const [year, month, day] = value.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+    };
+    const safeStorage = {
+      read() {
+        try {
+          const raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== 'object') return null;
+          const clean = freshOrder();
+          clean.model = Object.prototype.hasOwnProperty.call(PRICE_TABLE.models, saved.model) ? saved.model : '';
+          clean.duration = Object.prototype.hasOwnProperty.call(PRICE_TABLE.durations, saved.duration) ? saved.duration : '';
+          clean.game = Object.hasOwn(GAMES, saved.game) ? saved.game : '';
+          clean.theme = Object.hasOwn(THEMES, saved.theme) ? saved.theme : 'eros';
+          clean.counter = saved.counter === true;
+          clean.date = isValidDate(saved.date) ? saved.date : '';
+          clean.recipient = clampText(saved.recipient, 60);
+          clean.sender = clampText(saved.sender, 60);
+          clean.music = ['selection', 'link', 'help'].includes(saved.music) ? saved.music : 'selection';
+          clean.musicLink = clampText(saved.musicLink, 300);
+          clean.step = Number.isInteger(saved.step) && saved.step >= 1 && saved.step <= 7 ? saved.step : 1;
+          return clean;
+        } catch (_) {
+          return null;
+        }
+      },
+      write(value) {
+        try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch (_) { /* La página sigue funcionando sin almacenamiento. */ }
+      },
+      clear() {
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) { /* La página sigue funcionando sin almacenamiento. */ }
+      }
+    };
+
+    document.querySelectorAll('[data-extra-price]').forEach((element) => {
+      const key = element.dataset.extraPrice;
+      if (PRICE_TABLE.extras[key]) element.textContent = '+' + formatARS(PRICE_TABLE.extras[key]);
+    });
+    document.querySelectorAll('[data-extra-inline]').forEach((element) => {
+      const key = element.dataset.extraInline;
+      if (PRICE_TABLE.extras[key]) element.textContent = formatARS(PRICE_TABLE.extras[key]);
     });
 
-    // Si hay una demo real, abre el enlace en otra pestaña. Si no, muestra el ejemplo ilustrativo.
-    const demoDialog = document.querySelector('#demo-dialog');
-    const demoTitle = document.querySelector('#demo-title');
-    const demoDescription = document.querySelector('#demo-description');
-    const demoChoose = document.querySelector('#demo-choose');
-    document.querySelectorAll('.demo-button').forEach((link) => {
-      link.addEventListener('click', (event) => {
-        const demoUrl = link.dataset.demoUrl.trim();
-        const modelName = link.dataset.title;
-        if (demoUrl) {
-          // El enlace abre la demo de forma nativa en la pestaña nueva indicada en el HTML.
-          link.href = demoUrl;
-          return;
-        }
-
-        event.preventDefault();
-        demoTitle.textContent = 'Ejemplo de diseño';
-        demoDescription.textContent = `Esta es una vista ilustrativa del modelo ${modelName}. Pronto habrá un ejemplo real.`;
-        demoChoose.dataset.message = `¡Hola! Quiero elegir el modelo ${modelName}. ¿Me pasan el precio y cómo seguimos?`;
-        demoChoose.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(demoChoose.dataset.message)}`;
-        demoDialog.showModal();
+    const modelPriceEls = document.querySelectorAll('[data-model-start]');
+    modelPriceEls.forEach((element) => {
+      const model = PRICE_TABLE.models[element.dataset.modelStart];
+      if (model) element.textContent = 'Desde ' + formatARS(Math.min(...Object.values(model.prices)));
+    });
+    document.querySelectorAll('[data-model-prices]').forEach((element) => {
+      const model = PRICE_TABLE.models[element.dataset.modelPrices];
+      if (!model) return;
+      const parts = Object.keys(PRICE_TABLE.durations).map((key) => PRICE_TABLE.durations[key] + ' ' + formatARS(model.prices[key]));
+      parts.forEach((text, index) => {
+        const span = document.createElement('span');
+        span.textContent = text;
+        element.append(span);
       });
     });
 
-    document.querySelectorAll('.dialog-close, .dialog-close-secondary').forEach((button) => {
-      button.addEventListener('click', () => demoDialog.close());
+    const panels = Array.from(document.querySelectorAll('[data-order-step]'));
+    const progress = document.querySelector('#order-progress');
+    const progressFill = document.querySelector('#order-progress-fill');
+    const stepLabel = document.querySelector('#order-step-label');
+    const progressPercent = document.querySelector('#order-progress-percent');
+    const live = document.querySelector('#order-live');
+    const error = document.querySelector('#order-error');
+    const nextButton = document.querySelector('#order-next');
+    const backButton = document.querySelector('#order-back');
+    const dateWrap = document.querySelector('#counter-date-wrap');
+    const musicLinkWrap = document.querySelector('#music-link-wrap');
+    const moneyOutputs = [
+      document.querySelector('#order-sidebar-total'),
+      document.querySelector('#order-mobile-total'),
+      document.querySelector('#order-final-total')
+    ];
+
+    function totalAmount() {
+      const base = order.model && order.duration ? PRICE_TABLE.models[order.model].prices[order.duration] : 0;
+      return base + (order.game ? PRICE_TABLE.extras.game : 0) + (order.counter ? PRICE_TABLE.extras.counter : 0);
+    }
+    function selectedRadio(name) {
+      return document.querySelector('input[name="' + name + '"]:checked');
+    }
+    function storeAndRender(announce) {
+      safeStorage.write(order);
+      renderOrder(announce);
+    }
+    function setRadio(name, value) {
+      const radio = Array.from(document.querySelectorAll('input[name="' + name + '"]')).find((item) => item.value === value);
+      if (radio) radio.checked = true;
+    }
+    function hydrateInputs() {
+      setRadio('order-model', order.model);
+      setRadio('order-duration', order.duration);
+      setRadio('order-game', order.game);
+      setRadio('order-theme', order.theme);
+      setRadio('order-counter', order.counter ? 'yes' : 'no');
+      setRadio('order-music', order.music);
+      document.querySelector('#counter-date').value = order.date;
+      document.querySelector('#recipient-name').value = order.recipient;
+      document.querySelector('#sender-name').value = order.sender;
+      document.querySelector('#music-link-input').value = order.musicLink;
+      currentStep = order.step;
+    }
+    function addListItem(list, label, value) {
+      const li = document.createElement('li');
+      li.textContent = label + ': ' + value;
+      list.append(li);
+    }
+    function addBreakdownItem(list, label, amount) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      const price = document.createElement('span');
+      name.textContent = label;
+      price.textContent = formatARS(amount);
+      li.append(name, price);
+      list.append(li);
+    }
+    function formattedDate(value) {
+      if (!isValidDate(value)) return '';
+      const parts = value.split('-');
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    function musicDescription() {
+      if (order.music === 'link') {
+        return order.musicLink ? 'link: ' + order.musicLink : 'link de Spotify o YouTube (lo mando por WhatsApp)';
+      }
+      if (order.music === 'help') return 'que me ayuden a elegir';
+      return 'selección de Eros Web';
+    }
+    function makeOrderMessage() {
+      const model = PRICE_TABLE.models[order.model];
+      const game = order.game ? GAMES[order.game] + ' (+' + formatARS(PRICE_TABLE.extras.game) + ')' : 'No';
+      const counter = order.counter
+        ? 'Sí, desde ' + formattedDate(order.date) + ' (+' + formatARS(PRICE_TABLE.extras.counter) + ')'
+        : 'No';
+      const lines = [
+        '¡Hola! Quiero armar un pedido en Eros Web:',
+        '- Modelo: ' + model.name,
+        '- Duración: ' + PRICE_TABLE.durations[order.duration],
+        '- Juego interactivo: ' + game,
+        '- Contador de tiempo juntos: ' + counter,
+        '- Tema: ' + THEMES[order.theme],
+        '- Para: ' + order.recipient
+      ];
+      if (order.sender) lines.push('- De parte de: ' + order.sender);
+      lines.push('- Música: ' + musicDescription());
+      lines.push('- Total: ' + formatARS(totalAmount()));
+      lines.push('Te mando el texto y las fotos por acá.');
+      return lines.join('\n');
+    }
+    function renderSummary() {
+      const summary = document.querySelector('#order-summary-list');
+      const breakdown = document.querySelector('#order-breakdown');
+      summary.replaceChildren();
+      breakdown.replaceChildren();
+      if (order.model) addListItem(summary, 'Modelo', PRICE_TABLE.models[order.model].name);
+      if (order.duration) addListItem(summary, 'Duración', PRICE_TABLE.durations[order.duration]);
+      addListItem(summary, 'Juego interactivo', order.game ? GAMES[order.game] : 'No');
+      addListItem(summary, 'Contador de tiempo juntos', order.counter ? 'Sí, desde ' + formattedDate(order.date) : 'No');
+      addListItem(summary, 'Tema', THEMES[order.theme] || THEMES.eros);
+      if (order.recipient) addListItem(summary, 'Para', order.recipient);
+      if (order.sender) addListItem(summary, 'De parte de', order.sender);
+      addListItem(summary, 'Música', musicDescription());
+
+      if (order.model && order.duration) {
+        addBreakdownItem(breakdown, PRICE_TABLE.models[order.model].name + ' · ' + PRICE_TABLE.durations[order.duration], PRICE_TABLE.models[order.model].prices[order.duration]);
+      } else {
+        addBreakdownItem(breakdown, 'Modelo y duración', 0);
+      }
+      if (order.game) addBreakdownItem(breakdown, 'Juego interactivo', PRICE_TABLE.extras.game);
+      if (order.counter) addBreakdownItem(breakdown, 'Contador de tiempo juntos', PRICE_TABLE.extras.counter);
+      addBreakdownItem(breakdown, 'Sobre animado y tema', 0);
+      document.querySelector('#order-final-total').textContent = formatARS(totalAmount());
+
+      const sendOrder = document.querySelector('#send-order');
+      if (firstIncompleteStep() === 0 && currentStep === 7) {
+        sendOrder.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(makeOrderMessage());
+        sendOrder.removeAttribute('aria-disabled');
+      } else {
+        sendOrder.removeAttribute('href');
+        sendOrder.setAttribute('aria-disabled', 'true');
+      }
+    }
+    function renderOrder(announce) {
+      panels.forEach((panel) => { panel.hidden = Number(panel.dataset.orderStep) !== currentStep; });
+      stepLabel.textContent = 'Paso ' + currentStep + ' de 7';
+      const percent = Math.round((currentStep / 7) * 100);
+      progressPercent.textContent = percent + '%';
+      progress.setAttribute('aria-valuenow', String(currentStep));
+      progressFill.style.width = percent + '%';
+      backButton.hidden = currentStep === 1;
+      nextButton.hidden = currentStep === 7;
+      dateWrap.hidden = !order.counter;
+      musicLinkWrap.hidden = order.music !== 'link';
+
+      document.querySelectorAll('[data-duration-price]').forEach((element) => {
+        const duration = element.dataset.durationPrice;
+        element.textContent = order.model
+          ? formatARS(PRICE_TABLE.models[order.model].prices[duration])
+          : 'Elegí un modelo primero';
+      });
+      const sidebarDetail = document.querySelector('#order-sidebar-detail');
+      sidebarDetail.textContent = order.model && order.duration
+        ? PRICE_TABLE.models[order.model].name + ' · ' + PRICE_TABLE.durations[order.duration]
+        : 'Elegí un modelo y una duración';
+      const amount = formatARS(totalAmount());
+      moneyOutputs.forEach((output) => { output.textContent = amount; });
+      renderSummary();
+      if (announce) live.textContent = 'Total actualizado: ' + amount + '. ' + stepLabel.textContent + '.';
+      safeStorage.write(order);
+    }
+    function scrollToOrder(focusHeading) {
+      document.querySelector('#pedido').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      if (focusHeading) {
+        window.setTimeout(() => {
+          const heading = document.querySelector('[data-order-step="' + currentStep + '"] h3');
+          if (heading) heading.focus({ preventScroll: true });
+        }, 100);
+      }
+    }
+    function goToStep(step, focusHeading) {
+      currentStep = Math.max(1, Math.min(7, step));
+      order.step = currentStep;
+      error.textContent = '';
+      renderOrder(true);
+      if (focusHeading) scrollToOrder(true);
+      else scrollToOrder(false);
+    }
+    function firstIncompleteStep() {
+      if (!order.model) return 1;
+      if (!order.duration) return 2;
+      if (order.counter && !order.date) return 5;
+      if (!order.recipient) return 6;
+      return 0;
+    }
+    function validateCurrentStep() {
+      if (currentStep === 1 && !order.model) {
+        error.textContent = 'Elegí un modelo para seguir.';
+        const target = document.querySelector('input[name="order-model"]');
+        if (target) target.focus();
+        return false;
+      }
+      if (currentStep === 2 && !order.duration) {
+        error.textContent = 'Elegí cuánto tiempo querés que quede online.';
+        const target = document.querySelector('input[name="order-duration"]');
+        if (target) target.focus();
+        return false;
+      }
+      if (currentStep === 5 && order.counter && !isValidDate(order.date)) {
+        error.textContent = 'Elegí una fecha de inicio válida para el contador.';
+        document.querySelector('#counter-date').focus();
+        return false;
+      }
+      if (currentStep === 6 && !order.recipient) {
+        error.textContent = 'Escribí el nombre de la persona que recibe el regalo.';
+        document.querySelector('#recipient-name').focus();
+        return false;
+      }
+      error.textContent = '';
+      return true;
+    }
+    function jumpToSummary() {
+      const incomplete = firstIncompleteStep();
+      if (incomplete) {
+        currentStep = incomplete;
+        order.step = currentStep;
+        renderOrder(true);
+        error.textContent = incomplete === 1 ? 'Elegí un modelo para continuar.' :
+          incomplete === 2 ? 'Elegí una duración para continuar.' :
+          incomplete === 5 ? 'Indicá la fecha de inicio del contador.' :
+          'Completá el nombre de quien recibe el regalo.';
+        scrollToOrder(true);
+        return;
+      }
+      goToStep(7, true);
+    }
+
+    const restored = safeStorage.read();
+    if (restored) order = restored;
+    hydrateInputs();
+    renderOrder(false);
+
+    document.querySelectorAll('input[name="order-model"]').forEach((input) => input.addEventListener('change', () => {
+      order.model = input.value;
+      storeAndRender(true);
+    }));
+    document.querySelectorAll('input[name="order-duration"]').forEach((input) => input.addEventListener('change', () => {
+      order.duration = input.value;
+      storeAndRender(true);
+    }));
+    document.querySelectorAll('input[name="order-game"]').forEach((input) => input.addEventListener('change', () => {
+      order.game = input.value;
+      storeAndRender(true);
+    }));
+    document.querySelectorAll('input[name="order-theme"]').forEach((input) => input.addEventListener('change', () => {
+      order.theme = input.value;
+      storeAndRender(true);
+    }));
+    document.querySelectorAll('input[name="order-counter"]').forEach((input) => input.addEventListener('change', () => {
+      order.counter = input.value === 'yes';
+      if (!order.counter) order.date = '';
+      storeAndRender(true);
+    }));
+    document.querySelectorAll('input[name="order-music"]').forEach((input) => input.addEventListener('change', () => {
+      order.music = input.value;
+      storeAndRender(true);
+    }));
+    document.querySelector('#counter-date').addEventListener('change', (event) => {
+      order.date = event.target.value;
+      storeAndRender(true);
     });
-    demoDialog.addEventListener('click', (event) => {
-      if (event.target === demoDialog) demoDialog.close();
+    document.querySelector('#recipient-name').addEventListener('input', (event) => {
+      order.recipient = clampText(event.target.value, 60);
+      storeAndRender(false);
+    });
+    document.querySelector('#sender-name').addEventListener('input', (event) => {
+      order.sender = clampText(event.target.value, 60);
+      storeAndRender(false);
+    });
+    document.querySelector('#music-link-input').addEventListener('input', (event) => {
+      order.musicLink = clampText(event.target.value, 300);
+      storeAndRender(false);
+    });
+    document.querySelector('#order-next').addEventListener('click', () => {
+      if (!validateCurrentStep()) return;
+      goToStep(currentStep + 1, true);
+    });
+    document.querySelector('#order-back').addEventListener('click', () => goToStep(currentStep - 1, true));
+    document.querySelector('#order-mobile-summary').addEventListener('click', jumpToSummary);
+    document.querySelector('#send-order').addEventListener('click', (event) => {
+      const incomplete = firstIncompleteStep();
+      if (incomplete) {
+        event.preventDefault();
+        currentStep = incomplete;
+        order.step = currentStep;
+        renderOrder(false);
+        error.textContent = incomplete === 1 ? 'Elegí un modelo para continuar.' :
+          incomplete === 2 ? 'Elegí una duración para continuar.' :
+          incomplete === 5 ? 'Indicá la fecha de inicio del contador.' :
+          'Completá el nombre de quien recibe el regalo.';
+        scrollToOrder(true);
+      }
+    });
+    document.querySelector('#order-reset').addEventListener('click', () => {
+      safeStorage.clear();
+      order = freshOrder();
+      currentStep = 1;
+      document.querySelectorAll('#pedido input[type="radio"]').forEach((radio) => { radio.checked = false; });
+      hydrateInputs();
+      document.querySelector('#recipient-name').value = '';
+      document.querySelector('#sender-name').value = '';
+      document.querySelector('#counter-date').value = '';
+      document.querySelector('#music-link-input').value = '';
+      error.textContent = '';
+      renderOrder(true);
+      scrollToOrder(true);
+    });
+
+    document.querySelectorAll('[data-order-model]').forEach((button) => button.addEventListener('click', () => {
+      order.model = button.dataset.orderModel;
+      setRadio('order-model', order.model);
+      currentStep = 2;
+      order.step = currentStep;
+      storeAndRender(true);
+      scrollToOrder(true);
+    }));
+    document.querySelector('[data-order-game]').addEventListener('click', () => {
+      if (!order.game) order.game = 'pintar';
+      setRadio('order-game', order.game);
+      currentStep = 3;
+      order.step = currentStep;
+      storeAndRender(true);
+      scrollToOrder(true);
+    });
+    document.querySelector('[data-order-counter]').addEventListener('click', () => {
+      order.counter = true;
+      setRadio('order-counter', 'yes');
+      currentStep = 5;
+      order.step = currentStep;
+      storeAndRender(true);
+      scrollToOrder(true);
+    });
+    document.querySelector('[data-order-theme]').addEventListener('click', () => {
+      currentStep = 4;
+      order.step = currentStep;
+      storeAndRender(false);
+      scrollToOrder(true);
+    });
+
+    const mobileOrderObserver = new IntersectionObserver((entries) => {
+      document.body.classList.toggle('order-in-view', entries[0].isIntersecting);
+    }, { threshold: 0.05 });
+    mobileOrderObserver.observe(document.querySelector('#pedido'));
+
+    // Los enlaces de consulta general siguen abriendo WhatsApp directamente.
+    document.querySelectorAll('.whatsapp-link').forEach((link) => {
+      const message = link.dataset.message || '¡Hola! Quiero consultar por una página regalo de Eros Web.';
+      link.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(message);
     });
 
     document.querySelector('#current-year').textContent = new Date().getFullYear();
-  </script>
-</body>
+  </script></body>
 </html>
