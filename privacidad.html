@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffaf6">
+  <title>Privacidad | Eros Web</title>
+  <meta name="description" content="Cómo usa y elimina Eros Web los textos y fotos que compartís para preparar tu página regalo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --cream:#fffaf6; --pink:#f4b8c1; --wine:#a9445d; --ink:#302b31; --muted:#6c6670; --line:#eadfe0; }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:radial-gradient(ellipse at 18% 0%,#ffe7e8 0,transparent 36%),var(--cream); font:16px/1.65 'DM Sans',sans-serif; }
+    a { color:inherit; } :focus-visible { outline:3px solid #286783; outline-offset:4px; }
+    .top { padding:16px 0; border-bottom:1px solid var(--line); background:rgba(255,250,246,.9); }
+    .wrap { width:min(840px,calc(100% - 36px)); margin:auto; } .brand { display:flex; align-items:center; gap:9px; font-weight:700; text-decoration:none; }
+    .mark { display:grid; width:35px; height:35px; place-items:center; border-radius:12px; color:white; background:var(--pink); }
+    main { padding:46px 0 56px; } h1,h2 { font-family:'Playfair Display',Georgia,serif; line-height:1.2; } h1 { margin:0 0 9px; font-size:clamp(2rem,6vw,3.2rem); }
+    .updated { margin:0 0 28px; color:var(--muted); font-size:.88rem; } .paper { padding:clamp(20px,5vw,38px); border:1px solid var(--line); border-radius:24px; background:rgba(255,255,255,.9); box-shadow:0 18px 50px rgba(75,48,57,.09); }
+    h2 { margin:25px 0 8px; font-size:1.35rem; } h2:first-child { margin-top:0; } p { margin:0 0 13px; } .back { display:inline-flex; margin-top:22px; padding:12px 18px; border-radius:99px; color:white; background:var(--wine); font-weight:700; text-decoration:none; }
+    footer { padding:18px 0; color:#e6dfe3; background:#302b31; font-size:.84rem; } footer p { margin:0; }
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><a class="brand" href="index.html" aria-label="Eros Web, volver al inicio"><span class="mark" aria-hidden="true">♡</span><span>Eros Web</span></a></div></header>
+  <main class="wrap">
+    <h1>Privacidad</h1>
+    <p class="updated">Usamos los datos que compartís para preparar tu regalo digital.</p>
+    <article class="paper">
+      <h2>Qué datos usamos</h2>
+      <p>Podés enviarme nombres, textos, fotos, fechas, preferencias de color y música para armar la página que elegiste.</p>
+      <h2>Para qué se usan</h2>
+      <p>Uso esa información solo para preparar y ajustar tu página, y para coordinar el pedido por WhatsApp. No la uso para otros fines.</p>
+      <h2>Quién puede abrir la página</h2>
+      <p>La página no aparece en un listado público y se configura para no indexarse en buscadores. Cualquier persona que reciba el link o el QR puede abrirla, así que compartilos solo con quien quieras.</p>
+      <h2>Cuándo se borran los datos</h2>
+      <p>Cuando vence el período contratado, la página se da de baja y borro las fotos y los textos que me mandaste.</p>
+      <h2>Consultas</h2>
+      <p>Si querés consultar sobre tus datos o pedir que la página se retire antes, escribime por <a href="https://wa.me/5491161360254" target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>
+    </article>
+    <a class="back" href="index.html">Volver a Eros Web</a>
+  </main>
+  <footer><div class="wrap"><p>© <span id="year">2026</span> Eros Web</p></div></footer>
+  <script>document.querySelector('#year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

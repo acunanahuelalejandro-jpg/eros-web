@@ -1,19 +1,26 @@
 /*
-  Este es el único archivo que tenés que editar para cada pedido.
-  Conservá las comas y las comillas. Si no usás música, dejá musica: "".
-  Las fotos van en imagenes/ y las rutas se escriben sin una barra al principio.
+  Demo ficticia de Sofi y Nico. Para armar otro pedido, copiá la plantilla y editá sus datos.js.
+  Los textos, el nombre del tema, la fecha y el archivo de música se pueden reemplazar.
 */
 window.DATOS = {
-  para: "Sofi", // Cambiá por el nombre de la persona que recibe el regalo.
-  de: "Nico", // Cambiá por el nombre de quien hace el regalo.
-
-  inicio: {
-    titulo: "Tengo algo para vos, Sofi", // Título de la pantalla inicial.
-    boton: "Tocá para empezar" // Podés cambiar el texto del botón.
+  version: 2,
+  para: "Sofi",
+  de: "Nico",
+  tema: "eros",
+  extras: {
+    juego: "",
+    sobre: true,
+    contador: {
+      desde: "2021-03-12",
+      etiqueta: "Juntos desde hace"
+    }
   },
-
+  inicio: {
+    titulo: "Tengo algo para vos, Sofi",
+    boton: "Tocá para empezar"
+  },
   carta: {
-    titulo: "Para vos, Sofi", // Título grande de la carta.
+    titulo: "Para vos, Sofi",
     bloques: [
       { texto: "Sofi, después de tantos años todavía me pasa que quiero contarte cualquier pavada apenas me ocurre. Me gusta que con vos hasta un día común termina teniendo algo para recordar." },
       { texto: "Como esa tarde en la plaza, cuando nos quedamos hablando hasta que bajó el sol y terminamos riéndonos de mi gran sentido de la orientación. La verdad, si el plan incluye estar con vos, ya salió bastante bien." },
@@ -25,8 +32,7 @@ window.DATOS = {
       { texto: "Gracias por compartir conmigo tus días, tus ocurrencias y hasta mis chistes malos, que ya conocés demasiado bien. Me hace feliz seguir sumando recuerdos con vos, de los importantes y de los más simples." }
     ]
   },
-
-  firma: "Con todo mi cariño, Nico", // Firma que aparece debajo del corazón.
-  musica: "musica.mp3", // Escribí "musica.mp3" si vas a subir una canción; si no, dejalo vacío.
-  colorPrincipal: "#8b3d52" // Color de botones, corazones y detalles (hexadecimal).
+  firma: "Con todo mi cariño, Nico",
+  musica: "musica.mp3",
+  colorPrincipal: ""
 };

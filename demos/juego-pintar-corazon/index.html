@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f5">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f4b8c1'/%3E%3Cpath d='M32 49S12 37 12 24c0-10 13-14 20-4 7-10 20-6 20 4 0 13-20 25-20 25Z' fill='%23fffaf6'/%3E%3C/svg%3E">
+  <title>Un juego para vos | Eros Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --cream: #fff8f5; --paper: #fffdfb; --pink: #f4b8c1; --pink-pale: #ffe9eb;
+      --blue: #dcecf5; --blue-deep: #315b70; --wine: #8b3d52; --wine-rgb: 139,61,82;
+      --ink: #302b31; --muted: #665f67; --line: #eadfe0; --shadow: 0 18px 50px rgba(75,48,57,.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { min-width: 320px; scroll-behavior: smooth; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--ink); background: var(--cream); font-family: "DM Sans", sans-serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    body.playing { height: 100svh; overflow: hidden; overscroll-behavior: none; }
+    button, audio { font: inherit; }
+    button { color: inherit; }
+    img, svg, canvas { display: block; max-width: 100%; }
+    :focus-visible { outline: 3px solid #215f7b; outline-offset: 4px; }
+    .screen { min-height: 100svh; }
+    .button { display: inline-flex; min-width: 190px; min-height: 58px; align-items: center; justify-content: center; gap: 9px; padding: 14px 23px; border: 0; border-radius: 999px; color: #fff; background: var(--wine); box-shadow: 0 9px 22px rgba(75,48,57,.16); font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: transform .2s ease, filter .2s ease, box-shadow .2s ease; }
+    .button:hover { transform: translateY(-2px); filter: brightness(.92); box-shadow: 0 12px 25px rgba(75,48,57,.2); }
+    .button:active { transform: translateY(0); }
+    .intro-screen { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: max(28px,env(safe-area-inset-top)) 18px max(32px,env(safe-area-inset-bottom)); text-align: center; background: radial-gradient(ellipse at 18% 12%,#ffe7e8 0,transparent 36%),radial-gradient(ellipse at 90% 86%,#e3f1f7 0,transparent 34%),var(--cream); }
+    .intro-content { width: min(100%,560px); margin: auto; }
+    .intro-heart { display: grid; width: 78px; height: 78px; place-items: center; margin: 0 auto 19px; border: 1px solid rgba(var(--wine-rgb),.13); border-radius: 28px; color: var(--wine); background: rgba(255,255,255,.74); box-shadow: var(--shadow); font-size: 2.45rem; }
+    .intro-title { margin: 0 0 27px; font-family: "Playfair Display",Georgia,serif; font-size: clamp(1.9rem,7vw,2.7rem); font-weight: 600; letter-spacing: -.035em; line-height: 1.15; }
+    .intro-screen .button { width: min(100%,290px); }
+    .game-screen { position: relative; z-index: 1; display: grid; min-height: 100svh; align-items: center; padding: max(18px,env(safe-area-inset-top)) 15px max(18px,env(safe-area-inset-bottom)); background: radial-gradient(ellipse at 8% 10%,#ffe9eb 0,transparent 30%),radial-gradient(ellipse at 95% 47%,#e5f0f6 0,transparent 28%),var(--cream); }
+    .game-layout { position: relative; z-index: 2; width: min(100%,690px); margin: auto; padding: clamp(20px,5vw,40px); border: 1px solid rgba(var(--wine-rgb),.1); border-radius: 28px; background: rgba(255,253,251,.94); box-shadow: var(--shadow); text-align: center; }
+    .game-recipient { margin: 0 0 5px; color: var(--blue-deep); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .game-prompt:focus { outline: none; }
+    .game-prompt { margin: 0 auto 14px; color: var(--wine); font-family: "Playfair Display",Georgia,serif; font-size: clamp(1.45rem,5.6vw,2.15rem); line-height: 1.2; }
+    .game-stage { width: min(100%,560px); margin: 0 auto; touch-action: none; }
+    .game-status { min-height: 28px; margin: 10px 0 0; color: var(--muted); font-size: .92rem; }
+    .rescue-link { min-height: 44px; margin: 12px auto 0; padding: 8px 14px; border: 1px solid rgba(var(--wine-rgb),.2); border-radius: 999px; color: var(--wine); background: rgba(255,255,255,.8); font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .rescue-link:hover { background: var(--pink-pale); }
+
+    .ambient-hearts { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
+    .ambient-heart { position: absolute; top: -42px; left: var(--x); color: var(--heart-color); font-size: var(--size); line-height: 1; opacity: 0; animation: heart-rain var(--duration) linear var(--delay) infinite; will-change: transform; }
+    .tap-heart-layer { position: fixed; z-index: 12; inset: 0; overflow: hidden; pointer-events: none; }
+    .tap-heart { position: fixed; color: var(--wine); font-size: 28px; line-height: 1; text-shadow: 0 2px 9px rgba(var(--wine-rgb),.2); animation: tap-pop .95s ease-out both; }
+    .music-toggle { position: fixed; z-index: 30; top: max(14px,env(safe-area-inset-top)); right: 14px; display: inline-flex; min-width: 48px; min-height: 48px; align-items: center; justify-content: center; gap: 7px; padding: 8px 13px; border: 1px solid rgba(var(--wine-rgb),.18); border-radius: 999px; color: var(--wine); background: rgba(255,253,251,.94); box-shadow: 0 7px 20px rgba(75,48,57,.12); font-size: .88rem; font-weight: 700; cursor: pointer; }
+    .music-toggle:hover { background: #fff; }
+    .letter-screen { position: relative; z-index: 1; min-height: 100svh; overflow: clip; opacity: 0; background: radial-gradient(ellipse at 8% 10%,#ffe9eb 0,transparent 30%),radial-gradient(ellipse at 95% 47%,#e5f0f6 0,transparent 28%),var(--cream); transition: opacity .7s ease; }
+    .letter-screen.is-opening { transition: none; }
+    .letter-screen.is-open { opacity: 1; }
+    .letter-content { position: relative; z-index: 2; width: min(720px,calc(100% - 32px)); margin: 0 auto; padding: 64px 0 30px; }
+    .letter-scene { position: relative; }
+    .letter-card { position: relative; z-index: 3; overflow: visible; width: min(100%,575px); margin: 0 auto; padding: clamp(23px,6vw,52px); border: 1px solid rgba(var(--wine-rgb),.1); border-radius: 28px; background: rgba(255,253,251,.94); box-shadow: var(--shadow); }
+    .letter-heading { margin: 0 0 24px; color: var(--wine); font-family: "Playfair Display",Georgia,serif; font-size: clamp(2.35rem,9vw,4.4rem); font-weight: 600; letter-spacing: -.04em; line-height: 1.08; text-align: center; }
+    .letter-text { margin: 0 0 20px; font-size: clamp(1rem,2.2vw,1.08rem); }
+    .letter-text:last-child { margin-bottom: 0; }
+    .letter-petals { display: block; width: 54px; height: 31px; margin: -5px auto 15px; overflow: visible; color: var(--wine); pointer-events: none; }
+    .letter-petals path { fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity .65s ease,transform .65s ease; }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+    .photo-card { position: relative; z-index: 2; display: block; width: 55%; max-width: 260px; margin: 17px 0; padding: 7px 7px 12px; overflow: visible; border: 1px solid rgba(var(--wine-rgb),.1); border-radius: 7px; background: linear-gradient(145deg,#ffdce3,#dcecf5 55%,#f5dce1); box-shadow: 0 12px 26px rgba(75,48,57,.2); }
+    .photo-card.reveal { transform: rotate(var(--tilt)) translateY(12px); transition: opacity .7s ease,transform .7s ease; }
+    .photo-card.reveal.is-visible { transform: rotate(var(--tilt)) translateY(0); }
+    .photo-card img { position: relative; z-index: 1; width: 100%; aspect-ratio: 4/4.8; border-radius: 3px; background: linear-gradient(145deg,#ffdce3,#dcecf5); object-fit: cover; cursor: zoom-in; animation: photo-drift 7s ease-in-out infinite alternate; }
+    .photo-left { --tilt: -4deg; margin-right: auto; margin-left: 0; }
+    .photo-right { --tilt: 3deg; margin-right: 0; margin-left: auto; }
+    .photo-heart-doodle { position: absolute; z-index: 3; top: 50%; display: block; width: 34%; max-width: 70px; height: auto; overflow: visible; pointer-events: none; opacity: .92; transform: translateY(-50%) rotate(7deg); }
+    .photo-heart-doodle path { fill: none; stroke: var(--wine); stroke-linecap: round; stroke-linejoin: round; }
+    .photo-heart-doodle .doodle-heart { stroke-width: 2.15; }
+    .photo-heart-doodle .doodle-echo { stroke-width: 1.2; opacity: .52; }
+    .photo-heart-doodle .doodle-vein { stroke-width: 1.45; opacity: .7; }
+    .photo-heart-doodle .doodle-spark { stroke-width: 1.5; opacity: .58; }
+    .photo-left .photo-heart-doodle { left: calc(100% + 4px); }
+    .photo-right .photo-heart-doodle { right: calc(100% + 4px); transform: translateY(-50%) rotate(-7deg); }
+    .closing { padding: 38px 0 18px; text-align: center; }
+    .closing-heart { display: inline-block; color: var(--wine); font-size: 4.2rem; line-height: 1.1; animation: heartbeat 1.7s ease-in-out infinite; }
+    .signature { margin: 8px 0 0; color: var(--wine); font-family: "Playfair Display",Georgia,serif; font-size: 1.7rem; }
+    .site-footer { position: relative; z-index: 1; padding: 14px 0 max(20px,env(safe-area-inset-bottom)); color: var(--muted); font-size: .88rem; text-align: center; }
+    .photo-dialog { width: min(94vw,1000px); max-width: none; max-height: 92svh; padding: 10px; overflow: visible; border: 1px solid rgba(255,255,255,.45); border-radius: 20px; background: var(--paper); box-shadow: 0 24px 90px rgba(20,14,17,.38); }
+    .photo-dialog::backdrop { background: rgba(35,26,31,.82); backdrop-filter: blur(4px); }
+    .photo-dialog img { width: 100%; max-height: calc(92svh - 20px); border-radius: 13px; object-fit: contain; cursor: zoom-out; }
+    .dialog-close { position: absolute; top: -13px; right: -8px; display: grid; width: 46px; height: 46px; place-items: center; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--wine); font-size: 1.7rem; line-height: 1; cursor: pointer; }
+    .effects-canvas { position: fixed; z-index: 50; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+    /* Juego: pintar el corazón. */
+    .paint-canvas { width: min(100%,520px); height: auto; margin: auto; aspect-ratio: 1/1; border-radius: 20px; background: linear-gradient(145deg,rgba(255,233,235,.48),rgba(220,236,245,.48)); touch-action: none; }
+    .paint-progress { width: min(100%,360px); margin: 10px auto 0; text-align: left; }
+    .paint-progress-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .paint-progress-track { height: 11px; overflow: hidden; border-radius: 999px; background: #f1e5e7; }
+    .paint-progress-fill { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--pink),var(--wine)); transform: scaleX(0); transform-origin: left center; transition: transform .18s ease; }
+    /* Juego: margarita. */
+    .flower-verdict { margin: 0 0 3px; color: var(--wine); font-family: "Playfair Display",Georgia,serif; font-size: clamp(1.8rem,8vw,2.6rem); font-weight: 600; }
+    .flower-stage { position: relative; width: min(82vw,410px); margin: 0 auto; aspect-ratio: 1/1; touch-action: manipulation; }
+    .flower-petal { position: absolute; display: grid; width: clamp(31px,10vw,50px); height: clamp(52px,17vw,76px); place-items: center; padding: 0; border: 1px solid rgba(139,61,82,.22); border-radius: 50% 50% 44% 44%; background: linear-gradient(135deg,#fff,#ffe7a5); box-shadow: 0 4px 12px rgba(75,48,57,.1); cursor: pointer; transform: translate(-50%,-50%) rotate(var(--angle)); transform-origin: center; }
+    .flower-petal:hover { filter: brightness(1.03); }
+    .flower-petal.is-picked { pointer-events: none; animation: petal-fall .72s ease-in forwards; }
+    .flower-center { position: absolute; z-index: 2; top: 50%; left: 50%; display: grid; width: clamp(72px,22vw,100px); aspect-ratio: 1; place-items: center; border: 2px solid rgba(139,61,82,.16); border-radius: 50%; color: #fffdf2; background: radial-gradient(circle at 35% 30%,#ffe9a8,#eaa642 72%); box-shadow: 0 5px 14px rgba(75,48,57,.12); font-size: 2rem; transform: translate(-50%,-50%); }
+    .flower-progress { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+    /* Juego: laberinto. */
+    .maze-canvas { width: min(100%,520px); height: auto; margin: auto; aspect-ratio: 1/1; border-radius: 20px; background: linear-gradient(145deg,rgba(255,233,235,.38),rgba(220,236,245,.55)); touch-action: none; }
+    .maze-help { margin: 6px 0 0; color: var(--muted); font-size: .82rem; }
+
+    @keyframes heart-rain { 0% { opacity: 0; transform: translate3d(0,-6vh,0) rotate(-8deg); } 8% { opacity: var(--alpha); transform: translate3d(0,0,0) rotate(-4deg); } 50% { opacity: var(--alpha); transform: translate3d(var(--mid-sway),52vh,0) rotate(var(--turn)); } 92% { opacity: var(--alpha); } 100% { opacity: 0; transform: translate3d(var(--sway),110vh,0) rotate(var(--turn)); } }
+    @keyframes tap-pop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.3); } 22% { opacity: 1; transform: translate(-50%,-65%) scale(1.12); } 100% { opacity: 0; transform: translate(-50%,-130%) scale(.8); } }
+    @keyframes photo-drift { from { translate: 0 0; } to { translate: 0 -8px; } }
+    @keyframes heartbeat { 0%,100% { transform: scale(1); } 12% { transform: scale(1.12); } 24% { transform: scale(1); } 36% { transform: scale(1.08); } 52% { transform: scale(1); } }
+    @keyframes petal-fall { 0% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--angle)); } 100% { opacity: 0; transform: translate(calc(-50% + var(--fall-x)),calc(-50% + 120px)) rotate(calc(var(--angle) + 130deg)); } }
+    @media (min-width: 700px) { .letter-content { padding-top: 76px; } .game-screen { padding-inline: 24px; } }
+    @media (max-width: 380px) { .intro-screen { padding-right: 13px; padding-left: 13px; } .button { min-height: 54px; } .letter-content { width: calc(100% - 24px); padding-top: 78px; } .letter-card { padding: 22px; } .photo-card { width: 55%; } .photo-card img { aspect-ratio: 4/4.5; } .photo-heart-doodle { width: 32%; } .game-layout { padding: 18px 14px; } .game-screen { padding-inline: 10px; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .button, .letter-screen, .reveal, .paint-progress-fill { transition-duration: .01ms !important; }
+      .tap-heart, .closing-heart, .photo-card img, .flower-petal.is-picked { animation: none !important; }
+      .flower-petal.is-picked { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="screen intro-screen" id="introScreen" aria-labelledby="introTitle">
+      <div class="intro-content">
+        <div class="intro-heart" aria-hidden="true">♡</div>
+        <h1 class="intro-title" id="introTitle">Un regalo para vos</h1>
+        <button class="button" id="startButton" type="button">Tocá para jugar</button>
+      </div>
+    </section>
+
+    <section class="game-screen" id="gameScreen" aria-labelledby="gamePrompt" hidden>
+      <div class="game-layout">
+        <p class="game-recipient" id="gameRecipient" hidden></p>
+        <h1 class="game-prompt" id="gamePrompt" tabindex="-1"></h1>
+        <div class="game-stage" id="gameStage" aria-label="Juego interactivo"></div>
+        <p class="game-status" id="gameStatus" role="status" aria-live="polite"></p>
+        <button class="rescue-link" id="rescueButton" type="button" hidden>Ya quiero ver mi sorpresa</button>
+      </div>
+    </section>
+
+    <section class="letter-screen" id="letterScreen" aria-labelledby="letterTitle" hidden>
+      <div class="letter-content">
+        <div class="letter-scene">
+          <article class="letter-card" id="letterCard" aria-labelledby="letterTitle">
+            <h1 class="letter-heading" id="letterTitle" tabindex="-1">Una carta para vos</h1>
+            <div id="letterBlocks"></div>
+          </article>
+        </div>
+        <div class="closing reveal" id="closingBlock" hidden>
+          <span class="closing-heart" aria-hidden="true">♥</span>
+          <p class="signature" id="signature"></p>
+        </div>
+        <footer class="site-footer" id="siteFooter">Eros Web</footer>
+      </div>
+    </section>
+  </main>
+
+  <div class="ambient-hearts" id="ambientHearts" aria-hidden="true" hidden></div>
+  <div class="tap-heart-layer" id="tapHeartLayer" aria-hidden="true"></div>
+  <button class="music-toggle" id="musicToggle" type="button" aria-pressed="false" aria-label="Pausar música" hidden>
+    <span aria-hidden="true">♫</span><span id="musicText">Pausar música</span>
+  </button>
+  <audio id="backgroundMusic" preload="none" loop></audio>
+  <dialog class="photo-dialog" id="photoDialog" aria-label="Foto ampliada">
+    <button class="dialog-close" id="closePhoto" type="button" aria-label="Cerrar foto">×</button>
+    <img id="lightboxImage" alt="">
+  </dialog>
+  <canvas class="effects-canvas" id="effectsCanvas" aria-hidden="true" hidden></canvas>
+
+  <script src="datos.js"></script>
+  <script src="nucleo/efectos.js"></script>
+  <script src="nucleo/musica.js"></script>
+  <script src="nucleo/carta.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const datos = window.DATOS && typeof window.DATOS === "object" ? window.DATOS : {};
+      const text = (value) => typeof value === "string" ? value.trim() : "";
+      const safeFile = (value) => {
+        const path = text(value).replace(/\\/g, "/");
+        if (!path || path.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.split("/").includes("..")) return "";
+        return path;
+      };
+      const juego = /^[a-z0-9-]+$/.test(text(datos.juego)) ? text(datos.juego) : "pintar-corazon";
+      const configs = datos.config && typeof datos.config === "object" ? datos.config : {};
+      const config = configs[juego] && typeof configs[juego] === "object" ? configs[juego] : configs;
+      const para = text(datos.para);
+      const inicio = datos.inicio && typeof datos.inicio === "object" ? datos.inicio : {};
+      const inicioTitulo = text(inicio.titulo) || (para ? "Un regalo para " + para : "Un regalo para vos");
+      const botonInicio = text(inicio.boton) || "Tocá para jugar";
+      const colorRaw = text(datos.colorPrincipal);
+      const color = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(colorRaw) ? colorRaw : "#8b3d52";
+      const colorFull = color.length === 4 ? color.slice(1).split("").map((c) => c + c).join("") : color.slice(1);
+      const rgb = [0, 2, 4].map((n) => parseInt(colorFull.slice(n, n + 2), 16)).join(",");
+      const intro = document.getElementById("introScreen");
+      const start = document.getElementById("startButton");
+      const gameScreen = document.getElementById("gameScreen");
+      const gamePrompt = document.getElementById("gamePrompt");
+      const gameRecipient = document.getElementById("gameRecipient");
+      const gameStage = document.getElementById("gameStage");
+      const gameStatus = document.getElementById("gameStatus");
+      const rescue = document.getElementById("rescueButton");
+      const letterScreen = document.getElementById("letterScreen");
+      const ambient = document.getElementById("ambientHearts");
+      const tapLayer = document.getElementById("tapHeartLayer");
+      const effectsCanvas = document.getElementById("effectsCanvas");
+      const musicToggle = document.getElementById("musicToggle");
+      const music = document.getElementById("backgroundMusic");
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let game = null;
+      let rescueTimer = 0;
+      let finished = false;
+      let started = false;
+
+      document.documentElement.style.setProperty("--wine", color);
+      document.documentElement.style.setProperty("--wine-rgb", rgb);
+      document.title = (text(datos.carta && datos.carta.titulo) || "Una carta para vos") + " | Eros Web";
+      document.getElementById("introTitle").textContent = inicioTitulo;
+      start.textContent = botonInicio;
+      if (para) { gameRecipient.textContent = "Un juego para " + para; gameRecipient.hidden = false; }
+      gamePrompt.textContent = text(config.consigna) || "Jugá para abrir tu sorpresa";
+
+      function abrirCarta() {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(rescueTimer);
+        rescue.hidden = true;
+        if (game && typeof game.destruir === "function") game.destruir();
+        gameStage.replaceChildren();
+        window.NucleoEfectos.explotar(effectsCanvas, color, () => {
+          document.body.classList.remove("playing");
+          gameScreen.hidden = true;
+          letterScreen.hidden = false;
+          window.NucleoCarta.mostrar(datos);
+          letterScreen.classList.add("is-opening");
+          window.requestAnimationFrame(() => {
+            letterScreen.classList.remove("is-opening");
+            letterScreen.classList.add("is-open");
+            document.getElementById("letterTitle").focus({ preventScroll: true });
+            window.scrollTo({ top: 0, behavior: reduced.matches ? "auto" : "smooth" });
+          });
+        });
+      }
+
+      function cargarJuego() {
+        const script = document.createElement("script");
+        script.src = "juegos/" + juego + ".js";
+        script.onload = () => {
+          const registro = window.JUEGOS && window.JUEGOS[juego];
+          if (!registro || typeof registro.iniciar !== "function") {
+            gameStatus.textContent = "Este juego no está disponible. Podés abrir tu sorpresa cuando quieras.";
+            rescue.hidden = false;
+            return;
+          }
+          try {
+            const instancia = registro.iniciar(gameStage, config, abrirCarta, { color, para, de: text(datos.de) });
+            game = {
+              destruir() {
+                if (instancia && typeof instancia.destruir === "function") instancia.destruir();
+                if (typeof registro.destruir === "function") registro.destruir();
+              }
+            };
+          } catch (_) {
+            gameStatus.textContent = "Hubo un problema al abrir el juego. Podés pasar a tu sorpresa.";
+            rescue.hidden = false;
+          }
+        };
+        script.onerror = () => {
+          gameStatus.textContent = "No se pudo cargar este juego. Podés pasar a tu sorpresa.";
+          rescue.hidden = false;
+        };
+        document.body.appendChild(script);
+      }
+
+      start.addEventListener("click", () => {
+        if (started) return;
+        started = true;
+        intro.hidden = true;
+        gameScreen.hidden = false;
+        document.body.classList.add("playing");
+        ambient.hidden = false;
+        window.NucleoEfectos.iniciarLluvia(ambient, reduced.matches);
+        window.NucleoMusica.conectar(safeFile(datos.musica), music, musicToggle);
+        window.NucleoMusica.iniciar();
+        rescueTimer = window.setTimeout(() => { rescue.hidden = false; }, 60000);
+        cargarJuego();
+        gamePrompt.focus({ preventScroll: true });
+      });
+      rescue.addEventListener("click", abrirCarta);
+      letterScreen.addEventListener("pointerdown", (event) => {
+        if (event.target.closest("button,a,dialog,.photo-card")) return;
+        window.NucleoEfectos.corazonAlTocar(tapLayer, event, reduced.matches);
+      });
+    })();
+  </script>
+</body>
+</html>
