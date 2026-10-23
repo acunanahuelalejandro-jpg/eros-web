@@ -76,6 +76,8 @@ limit 5;
 
 Un `200` significa que ntfy recibió el aviso; para confirmar la entrega al celular hay que verlo en la app. pg_net envía después del COMMIT: ejecutá la consulta de diagnóstico aparte, unos segundos después del pedido. No hace falta dar acceso a esta tabla al público.
 
+Si `timed_out` aparece en `true` y el error dice `Timeout of 5000 ms reached`, volvé a ejecutar el archivo privado local `supabase/aviso-pedido.sql` actualizado. El límite de envío ahora es de 30 segundos; esto da más margen a la conexión, sin demorar el guardado del pedido. No reenvía los avisos fallidos: después hay que crear otro pedido ficticio y esperar hasta 35 segundos antes de consultar el resultado. Si vuelve a agotarse el tiempo, compartí el nuevo error para revisar la conexión; ampliar el límite no garantiza la entrega.
+
 El trigger nunca impide que se guarde un pedido si falla ntfy. Eso también significa que una caída del servicio puede dejar un aviso sin entregar; la lista de pedidos del panel sigue siendo el registro principal. No se reenvía nada al cambiar el estado ni al volver a ejecutar el SQL.
 
 ## Límites de la alternativa gratuita
