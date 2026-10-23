@@ -1,0 +1,76 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    # Lunes y jueves a las 09:17 de Argentina (12:17 UTC).
+    - cron: '17 12 * * 1,4'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  consultar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Consultar la función pública que devuelve 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.request
+
+          url = os.environ.get('SUPABASE_URL', '').strip().rstrip('/')
+          key = os.environ.get('SUPABASE_ANON_KEY', '').strip()
+          if not re.fullmatch(r'https://[a-z0-9-]+\.supabase\.co', url):
+              raise SystemExit('Falta SUPABASE_URL o su formato no es válido.')
+
+          headers = {'apikey': key, 'Accept': 'application/json'}
+          if key.startswith('sb_publishable_'):
+              # Una publishable no es un JWT: solo se envía como apikey.
+              pass
+          elif key.startswith('eyJ'):
+              try:
+                  payload = key.split('.')[1]
+                  role = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4))).get('role')
+              except (ValueError, IndexError, UnicodeError):
+                  raise SystemExit('La clave anon no tiene formato JWT válido.')
+              if role != 'anon':
+                  raise SystemExit('Solo se admite una clave pública anon o publishable.')
+              headers['Authorization'] = 'Bearer ' + key
+          else:
+              raise SystemExit('Falta SUPABASE_ANON_KEY o no es una clave pública.')
+
+          endpoint = url + '/rest/v1/rpc/eros_keepalive'
+          for attempt in range(3):
+              try:
+                  request = urllib.request.Request(endpoint, headers=headers, method='GET')
+                  with urllib.request.urlopen(request, timeout=25) as response:
+                      result = json.loads(response.read(128))
+                  if type(result) is not int or result != 1:
+                      raise ValueError('Respuesta inesperada')
+                  print('OK: eros_keepalive devolvió 1. No se consultaron pedidos ni fotos.')
+                  break
+              except urllib.error.HTTPError as error:
+                  detail = 'HTTP ' + str(error.code)
+              except (OSError, ValueError):
+                  detail = 'error de conexión o respuesta inesperada'
+              # Nunca se imprimen claves, cabeceras ni cuerpos de errores.
+              if attempt == 2:
+                  raise SystemExit('Falló Supabase keepalive: ' + detail + '. Revisá SQL, Secrets y estado del proyecto.')
+              print('Intento sin éxito; se vuelve a consultar en 3 segundos.')
+              time.sleep(3)
+          PY
