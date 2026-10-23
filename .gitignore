@@ -1,0 +1,9 @@
+# Material local ajeno a la landing y a la demo pública.
+/dia-de-la-madre/
+/musica sin sopyright/
+/.agents/
+/.aws/
+/.codex/
+
+# Contiene el tópico privado de ntfy. No subirlo tampoco mediante carga manual.
+/supabase/aviso-pedido.sql
