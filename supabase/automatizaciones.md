@@ -55,7 +55,7 @@ Si sale rojo, revisá los Secrets, que hayas ejecutado `keepalive.sql` y que el 
 
 ### Avisos de errores por email
 
-En GitHub, tocá **tu foto → Settings → Notifications**. En **System → Actions**, activá **Email** y **Only notify for failed workflows**. Usá un email verificado. Hacé al menos una ejecución manual desde tu cuenta. La recepción de emails depende de esta configuración de GitHub y no del YAML.
+En tu repositorio, comprobá que **Watch** no esté en **Ignore**; para recibir estas actualizaciones elegí **All Activity**. Después, en GitHub, tocá **tu foto → Settings → Notifications**. En **System → Actions**, abrí el desplegable, activá **Email** y **Only notify for failed workflows**, y tocá **Save**. Usá un email verificado. Hacé al menos una ejecución manual desde tu cuenta. La recepción de emails depende de esta configuración de GitHub y no del YAML.
 
 ## 5. Probar un pedido y su aviso
 
@@ -92,5 +92,5 @@ ntfy.sh sin cuenta tiene límites y no garantiza la entrega. No hay cargos confi
 - [pg_net y su envío asíncrono](https://supabase.com/docs/guides/database/extensions/pg_net).
 - [Publicar JSON en ntfy](https://docs.ntfy.sh/publish/#publish-as-json).
 - [Crear Secrets del repositorio](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets).
-- [Notificaciones de GitHub Actions](https://docs.github.com/en/actions/how-tos/monitor-workflows/notifications).
+- [Notificaciones de GitHub Actions](https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications).
 - [Desactivación de workflows por inactividad](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/disabling-and-enabling-a-workflow).
