@@ -1,0 +1,29 @@
+/* Escena de los juegos usados en la vista previa; la carta normal conserva su estilo. */
+.eros-preview-game { min-height:100svh; width:min(100%,560px); margin:auto; padding:28px 18px; text-align:center; }
+.eros-preview-game h1 { color:var(--wine); font-family:"Playfair Display",Georgia,serif; font-size:2rem; line-height:1.2; }
+.eros-preview-game > .button { margin-top:22px; }
+    /* Juego: pintar el corazón. */
+    .paint-canvas { width: min(100%,520px); height: auto; margin: auto; aspect-ratio: 1/1; border-radius: 20px; background: linear-gradient(145deg,rgba(255,233,235,.48),rgba(220,236,245,.48)); touch-action: none; }
+    .paint-progress { width: min(100%,360px); margin: 10px auto 0; text-align: left; }
+    .paint-progress-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .paint-progress-track { height: 11px; overflow: hidden; border-radius: 999px; background: #f1e5e7; }
+    .paint-progress-fill { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--pink),var(--wine)); transform: scaleX(0); transform-origin: left center; transition: transform .18s ease; }
+    /* Juego: margarita. */
+    .flower-verdict { margin: 0 0 3px; color: var(--wine); font-family: "Playfair Display",Georgia,serif; font-size: clamp(1.8rem,8vw,2.6rem); font-weight: 600; }
+    .flower-stage { position: relative; width: min(82vw,410px); margin: 0 auto; aspect-ratio: 1/1; touch-action: manipulation; }
+    .flower-petal { position: absolute; display: grid; width: clamp(31px,10vw,50px); height: clamp(52px,17vw,76px); place-items: center; padding: 0; border: 1px solid rgba(139,61,82,.22); border-radius: 50% 50% 44% 44%; background: linear-gradient(135deg,#fff,#ffe7a5); box-shadow: 0 4px 12px rgba(75,48,57,.1); cursor: pointer; transform: translate(-50%,-50%) rotate(var(--angle)); transform-origin: center; }
+    .flower-petal:hover { filter: brightness(1.03); }
+    .flower-petal.is-picked { pointer-events: none; animation: petal-fall .72s ease-in forwards; }
+    .flower-center { position: absolute; z-index: 2; top: 50%; left: 50%; display: grid; width: clamp(72px,22vw,100px); aspect-ratio: 1; place-items: center; border: 2px solid rgba(139,61,82,.16); border-radius: 50%; color: #fffdf2; background: radial-gradient(circle at 35% 30%,#ffe9a8,#eaa642 72%); box-shadow: 0 5px 14px rgba(75,48,57,.12); font-size: 2rem; transform: translate(-50%,-50%); }
+    .flower-progress { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+    /* Juego: laberinto. */
+    .maze-canvas { width: min(100%,520px); height: auto; margin: auto; aspect-ratio: 1/1; border-radius: 20px; background: linear-gradient(145deg,rgba(255,233,235,.38),rgba(220,236,245,.55)); touch-action: none; }
+    .maze-help { margin: 6px 0 0; color: var(--muted); font-size: .82rem; }
+
+    @keyframes petal-fall { 0% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--angle)); } 100% { opacity: 0; transform: translate(calc(-50% + var(--fall-x)),calc(-50% + 120px)) rotate(calc(var(--angle) + 130deg)); } }
+
+@media(prefers-reduced-motion:reduce){.flower-petal.is-picked{animation:none;opacity:0}}
+
+/* En vivo los cambios se ven inmediatamente, sin reiniciar el fundido al escribir. */
+.eros-preview-mode .reveal { opacity:1; transform:none; transition:none; }
+.eros-preview-mode .photo-card.reveal { transform:rotate(var(--tilt)); }

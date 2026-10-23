@@ -1,34 +1,78 @@
 /* Contador calendario reutilizable. La fecha se interpreta en hora argentina (-03:00). */
 (() => {
   "use strict";
-  const style = document.createElement("style");
-  style.id = "eros-counter-styles";
-  style.textContent = "\n.together-counter{max-width:510px;margin:-9px auto 27px;text-align:center}\n.counter-label{margin:0 0 10px;color:var(--muted);font-size:.92rem;font-weight:600}\n.counter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}\n.counter-unit{min-width:0;padding:10px 4px 8px;border:1px solid var(--line);border-radius:15px;background:var(--paper);box-shadow:0 5px 15px rgba(35,30,35,.055)}\n.counter-value{display:block;color:var(--wine);font-size:clamp(1.15rem,5vw,1.65rem);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}\n.counter-name{display:block;margin-top:4px;color:var(--muted);font-size:clamp(.66rem,2.8vw,.76rem);line-height:1.2}\n";
-  document.head.appendChild(style);
 
-  function text(value) { return typeof value === "string" ? value.trim() : ""; }
-  function diasEnMes(year, month) { return new Date(Date.UTC(year, month + 1, 0)).getUTCDate(); }
-  function sumarMeses(date, amount) {
-    const index = date.getUTCFullYear() * 12 + date.getUTCMonth() + amount;
+  const OFFSET_ARGENTINA_MS = 3 * 60 * 60 * 1000;
+  const text = (value) => typeof value === "string" ? value.trim() : "";
+
+  function dateAt(year, month, day) {
+    const date = new Date(0);
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCFullYear(year, month, day);
+    return date;
+  }
+
+  function daysInMonth(year, month) {
+    return dateAt(year, month + 1, 0).getUTCDate();
+  }
+
+  function addMonthsClamped(date, amount) {
+    const index = date.year * 12 + date.month + amount;
     const year = Math.floor(index / 12);
     const month = ((index % 12) + 12) % 12;
-    const day = Math.min(date.getUTCDate(), diasEnMes(year, month));
-    return new Date(Date.UTC(year, month, day, date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()));
+    return {
+      year,
+      month,
+      day: Math.min(date.day, daysInMonth(year, month))
+    };
   }
-  function crearUnidad(grid, id, label) {
-    const unit = document.createElement("div");
-    unit.className = "counter-unit";
-    const value = document.createElement("span");
-    value.className = "counter-value";
-    value.id = id;
-    value.textContent = "0";
+
+  function calendarDifference(start, today) {
+    let years = today.year - start.year;
+    let anchor = addMonthsClamped(start, years * 12);
+    if (compareDates(anchor, today) > 0) years -= 1;
+
+    anchor = addMonthsClamped(start, years * 12);
+    let months = (today.year - anchor.year) * 12 + today.month - anchor.month;
+    let monthAnchor = addMonthsClamped(anchor, months);
+    if (compareDates(monthAnchor, today) > 0) months -= 1;
+
+    monthAnchor = addMonthsClamped(anchor, months);
+    const elapsedDays = Math.floor((dateAt(today.year, today.month, today.day) - dateAt(monthAnchor.year, monthAnchor.month, monthAnchor.day)) / 86400000);
+    return { years, months, days: elapsedDays };
+  }
+
+  function compareDates(left, right) {
+    return left.year - right.year || left.month - right.month || left.day - right.day;
+  }
+
+  function getArgentinaDate() {
+    const date = new Date(Date.now() - OFFSET_ARGENTINA_MS);
+    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() };
+  }
+
+  function makeUnit(row, value, unit) {
+    const group = document.createElement("span");
+    group.className = "counter-unit";
+    group.setAttribute("aria-label", value + " " + unit);
+    const number = document.createElement("span");
+    number.className = "counter-value";
+    number.textContent = String(value);
     const name = document.createElement("span");
     name.className = "counter-name";
-    name.textContent = label;
-    unit.append(value, name);
-    grid.appendChild(unit);
-    return value;
+    name.textContent = unit;
+    group.append(number, name);
+    row.appendChild(group);
   }
+
+  function makeHeart(className, glyph) {
+    const heart = document.createElement("span");
+    heart.className = className;
+    heart.setAttribute("aria-hidden", "true");
+    heart.textContent = glyph;
+    return heart;
+  }
+
   function montar(root, settings) {
     if (!root) return null;
     const config = settings && typeof settings === "object" ? settings : {};
@@ -36,64 +80,60 @@
     root.replaceChildren();
     root.hidden = true;
     if (!match) return null;
+
     const year = Number(match[1]);
     const month = Number(match[2]) - 1;
     const day = Number(match[3]);
-    const start = new Date(Date.UTC(year, month, day));
-    if (start.getUTCFullYear() !== year || start.getUTCMonth() !== month || start.getUTCDate() !== day) return null;
+    const parsed = dateAt(year, month, day);
+    if (year < 1 || parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month || parsed.getUTCDate() !== day) return null;
+    const start = { year, month, day };
 
     const label = document.createElement("p");
     label.className = "counter-label";
-    label.textContent = text(config.etiqueta) || "Juntos desde hace";
-    const grid = document.createElement("div");
-    grid.className = "counter-grid";
-    grid.setAttribute("aria-live", "off");
-    const fields = [
-      crearUnidad(grid, "counterYears", "años"),
-      crearUnidad(grid, "counterMonths", "meses"),
-      crearUnidad(grid, "counterDays", "días"),
-      crearUnidad(grid, "counterHours", "horas"),
-      crearUnidad(grid, "counterMinutes", "minutos"),
-      crearUnidad(grid, "counterSeconds", "segundos")
-    ];
+    label.textContent = text(config.etiqueta).slice(0, 80) || "Juntos desde hace";
+    const row = document.createElement("div");
+    row.className = "counter-row";
+    root.setAttribute("role", "group");
     root.setAttribute("aria-label", "Tiempo juntos");
-    root.append(label, grid);
+    root.append(
+      makeHeart("counter-decoration", "♡"),
+      makeHeart("counter-decoration", "♡"),
+      makeHeart("counter-decoration", "♥"),
+      label,
+      row
+    );
 
+    let stopped = false;
     function update() {
-      const now = new Date(Date.now() - 3 * 60 * 60 * 1000);
-      if (now < start) {
+      if (stopped) return false;
+      const today = getArgentinaDate();
+      if (compareDates(today, start) < 0) {
         root.hidden = true;
         return false;
       }
-      let years = now.getUTCFullYear() - start.getUTCFullYear();
-      let cursor = sumarMeses(start, years * 12);
-      if (cursor > now) { years -= 1; cursor = sumarMeses(start, years * 12); }
-      let months = (now.getUTCFullYear() - cursor.getUTCFullYear()) * 12 + now.getUTCMonth() - cursor.getUTCMonth();
-      let next = sumarMeses(cursor, months);
-      if (next > now) { months -= 1; next = sumarMeses(cursor, months); }
-      while (sumarMeses(cursor, months + 1) <= now) {
-        months += 1;
-        next = sumarMeses(cursor, months);
-      }
-      cursor = next;
-      let remaining = now.getTime() - cursor.getTime();
-      const dayMs = 86400000;
-      const hourMs = 3600000;
-      const minuteMs = 60000;
-      const days = Math.floor(remaining / dayMs); remaining -= days * dayMs;
-      const hours = Math.floor(remaining / hourMs); remaining -= hours * hourMs;
-      const minutes = Math.floor(remaining / minuteMs); remaining -= minutes * minuteMs;
-      const seconds = Math.floor(remaining / 1000);
-      [years, months, days, hours, minutes, seconds].forEach((value, index) => {
-        fields[index].textContent = String(value);
+
+      const elapsed = calendarDifference(start, today);
+      row.replaceChildren();
+      const units = [];
+      if (elapsed.years > 0) units.push([elapsed.years, elapsed.years === 1 ? "año" : "años"]);
+      if (elapsed.months > 0) units.push([elapsed.months, elapsed.months === 1 ? "mes" : "meses"]);
+      units.push([elapsed.days, elapsed.days === 1 ? "día" : "días"]);
+      units.forEach(([value, unit], index) => {
+        if (index) row.appendChild(makeHeart("counter-separator", "♥"));
+        makeUnit(row, value, unit);
       });
       root.hidden = false;
       return true;
     }
 
-    if (!update()) return null;
-    const timer = window.setInterval(update, 1000);
-    return { detener() { window.clearInterval(timer); } };
+    update();
+    const timer = window.setInterval(update, 60000);
+    return {
+      detener() {
+        stopped = true;
+        window.clearInterval(timer);
+      }
+    };
   }
 
   window.ErosContador = Object.freeze({ montar });

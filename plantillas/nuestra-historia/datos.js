@@ -13,7 +13,7 @@ window.DATOS = {
   tema: "eros", // eros | dorado | azul-cielo | rosa | atardecer | bosque | lavanda | medianoche | galaxia
   extras: {
     juego: "", // Opcional: "" | "pintar-corazon" | "margarita" | "laberinto"
-    sobre: true, // true muestra el sobre; false lo salta.
+    sobre: true, // Sin juego se usa el sobre. Si elegís juego, reemplaza al sobre aunque este valor sea true.
     contador: {
       desde: "", // AAAA-MM-DD. Por ejemplo: "2021-03-12". Vacío = ocultar el contador.
       etiqueta: "Juntos desde hace" // Texto que aparece arriba del contador.

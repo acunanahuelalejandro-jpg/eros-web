@@ -5,5 +5,20 @@
 /.aws/
 /.codex/
 
+# Variables locales y secretos. La excepción permite mantener ejemplos sin credenciales.
+.env
+.env.*
+!.env.example
+**/*secret*
+**/*credentials*
+**/*token*
+*.pem
+*.key
+*.p12
+*.zip
+**/*.zip
+.npmrc
+.pypirc
+
 # Contiene el tópico privado de ntfy. No subirlo tampoco mediante carga manual.
 /supabase/aviso-pedido.sql

@@ -4,6 +4,9 @@
   window.JUEGOS = window.JUEGOS || {};
   const safeFile = (value) => {
     const path = typeof value === "string" ? value.trim().replace(/\\/g, "/") : "";
+    if (parent !== window && new URLSearchParams(location.search).get('preview') === '1' && path.startsWith('blob:')) {
+      try { if (new URL(path).origin === location.origin) return path; } catch (_) {}
+    }
     return !path || path.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.split("/").includes("..") ? "" : path;
   };
   const dirs = [[-1,0,0,2],[0,1,1,3],[1,0,2,0],[0,-1,3,1]];
@@ -45,6 +48,7 @@
   window.JUEGOS.laberinto = {
     iniciar(contenedor, config, alGanar, opciones) {
       const cfg = config && typeof config === "object" ? config : {};
+      const demo = cfg.demo === true || opciones?.demo === true;
       const size = cfg.dificultad === "media" ? 11 : 7;
       const generated = crearLaberinto(size, cfg.semilla);
       const { grid, solution } = generated;
@@ -73,6 +77,7 @@
       let dpr = 1, width = 0, board = 0, cell = 0, pad = 0;
       let player = [0,0];
       let dragging = false, previous = null, won = false, destroyed = false, observer = null;
+      let demoTimer = 0, finishTimer = 0;
 
       function positionOf(r,c) { return { x:pad + c * cell + cell / 2, y:pad + r * cell + cell / 2 }; }
       function avatar(image, point, label, fallback) {
@@ -143,7 +148,7 @@
           player=next; draw();
           if (player[0]===size-1&&player[1]===size-1) {
             won=true; help.textContent="¡Llegaste! Tu sorpresa ya está lista.";
-            window.setTimeout(() => { if (!destroyed) alGanar(); }, 280);
+            finishTimer=window.setTimeout(() => { finishTimer=0; if (!destroyed) alGanar(); }, 280);
           }
         }
       }
@@ -177,7 +182,19 @@
       if ("ResizeObserver" in window) { observer=new ResizeObserver(resize); observer.observe(canvas); }
       else window.addEventListener("resize",resize);
       resize();
-      return { destruir() { destroyed=true; if(observer) observer.disconnect(); else window.removeEventListener("resize",resize); } };
+      if (demo && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && solution.length > 1) {
+        let next = 1;
+        // El recorrido objetivo dura ~4,7 s; la pausa de llegada agrega 280 ms.
+        const interval = Math.max(35, Math.round(4700 / (solution.length - 1)));
+        const followPath = () => {
+          demoTimer = 0;
+          if (destroyed || next >= solution.length) return;
+          moveTo(solution[next++]);
+          if (!won) demoTimer = window.setTimeout(followPath, interval);
+        };
+        demoTimer = window.setTimeout(followPath, 240);
+      }
+      return { destruir() { destroyed=true; window.clearTimeout(demoTimer); window.clearTimeout(finishTimer); if(observer) observer.disconnect(); else window.removeEventListener("resize",resize); } };
     },
     destruir() {}
   };

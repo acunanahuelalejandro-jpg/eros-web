@@ -5,6 +5,7 @@
   window.JUEGOS["pintar-corazon"] = {
     iniciar(contenedor, config, alGanar, opciones) {
       const cfg = config && typeof config === "object" ? config : {};
+      const demo = cfg.demo === true || opciones?.demo === true;
       const colores = Array.isArray(cfg.coloresPincel) ? cfg.coloresPincel.filter((c) => /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(String(c))) : [];
       const colorPrincipal = opciones && opciones.color || "#8b3d52";
       const pincel = colores.length ? colores : [colorPrincipal, "#e84372"];
@@ -54,6 +55,8 @@
       let raf = 0;
       let observer = null;
       let brushColor = pincel[0];
+      let demoTimeout = 0;
+      let finishTimer = 0;
 
       function makePath(w, h) {
         const p = new Path2D();
@@ -157,7 +160,7 @@
         finishStart = performance.now();
         raf = window.requestAnimationFrame(() => {
           draw();
-          window.setTimeout(() => { if (!destroyed) alGanar(); }, 650);
+          finishTimer = window.setTimeout(() => { finishTimer = 0; if (!destroyed) alGanar(); }, 650);
         });
       }
       function resize() {
@@ -172,6 +175,43 @@
         path = makePath(width, height);
         createCells();
         draw();
+      }
+      function startDemo() {
+        if (!demo || window.matchMedia("(prefers-reduced-motion: reduce)").matches || destroyed) return;
+        const byRow = new Map();
+        cells.forEach((cell) => {
+          const row = Math.round(cell.y / cell.step);
+          if (!byRow.has(row)) byRow.set(row, []);
+          byRow.get(row).push(cell);
+        });
+        const rows = Array.from(byRow.values()).sort((a, b) => a[0].y - b[0].y);
+        if (!rows.length) return;
+        // Cada fila se pinta dentro de una ventana total cercana a 4,4 s;
+        // el cierre del juego agrega 650 ms y deja margen para el confeti final.
+        const interval = Math.max(55, Math.round(4400 / rows.length));
+        let index = 0;
+        const paintNext = () => {
+          demoTimeout = 0;
+          if (destroyed) return;
+          if (index >= rows.length) {
+            cells.forEach((cell) => visited.add(cell.id));
+            refreshProgress();
+            finishPainting();
+            return;
+          }
+          const row = rows[index++].sort((a, b) => a.x - b.x);
+          if (row.length) {
+            const start = { x:row[0].x, y:row[0].y };
+            const end = { x:row[row.length - 1].x, y:row[row.length - 1].y };
+            const color = pincel[(index - 1) % pincel.length];
+            strokes.push({ color, points:[start, end] });
+            markSegment(start, end, false);
+            refreshProgress();
+            draw();
+          }
+          demoTimeout = window.setTimeout(paintNext, interval);
+        };
+        paintNext();
       }
       function point(event) {
         const rect = canvas.getBoundingClientRect();
@@ -206,7 +246,8 @@
       if ("ResizeObserver" in window) { observer = new ResizeObserver(resize); observer.observe(canvas); }
       else window.addEventListener("resize", resize);
       resize();
-      return { destruir() { destroyed = true; if (observer) observer.disconnect(); else window.removeEventListener("resize", resize); window.cancelAnimationFrame(raf); } };
+      startDemo();
+      return { destruir() { destroyed = true; if (observer) observer.disconnect(); else window.removeEventListener("resize", resize); window.clearTimeout(demoTimeout); window.clearTimeout(finishTimer); window.cancelAnimationFrame(raf); } };
     },
     destruir() {}
   };

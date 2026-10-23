@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Prueba de conexión · Eros Web</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --fondo: #fbf7f1;
+      --tarjeta: #fffdf9;
+      --texto: #362c31;
+      --suave: #72666d;
+      --rosa: #e84372;
+      --bordo: #8b3d52;
+      --borde: #ecdce0;
+      --sombra: 0 18px 45px rgba(69, 39, 52, .10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 28px 16px;
+      display: grid;
+      place-items: center;
+      color: var(--texto);
+      background: radial-gradient(ellipse at 12% 12%, #f9e6ed 0, transparent 36%),
+                  radial-gradient(ellipse at 90% 80%, #e7f1f7 0, transparent 38%),
+                  var(--fondo);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      width: min(100%, 680px);
+      padding: clamp(22px, 5vw, 42px);
+      border: 1px solid rgba(236, 220, 224, .85);
+      border-radius: 24px;
+      background: var(--tarjeta);
+      box-shadow: var(--sombra);
+    }
+    .marca { margin: 0 0 8px; color: var(--bordo); font-weight: 750; letter-spacing: .04em; }
+    h1 { margin: 0 0 12px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1.12; }
+    .intro { margin: 0 0 24px; color: var(--suave); }
+    .diagnostico {
+      margin: 0 0 22px;
+      padding: 16px;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      background: #fff9fb;
+    }
+    .diagnostico h2 { margin: 0 0 10px; }
+    .diagnostico dl { display: grid; gap: 8px; margin: 0; }
+    .diagnostico dl div { display: grid; gap: 2px; }
+    .diagnostico dt { font-size: .85rem; color: var(--suave); }
+    .diagnostico dd { margin: 0; overflow-wrap: anywhere; font-weight: 650; }
+    .aviso {
+      margin: 22px 0;
+      padding: 14px 16px;
+      border-left: 4px solid #9ebcd0;
+      border-radius: 10px;
+      background: #eef5f8;
+      color: #334955;
+      font-size: .95rem;
+    }
+    .acciones { display: grid; gap: 14px; }
+    section.prueba { padding: 18px; border: 1px solid var(--borde); border-radius: 16px; background: #fff; }
+    h2 { margin: 0 0 7px; font-size: 1.05rem; }
+    section p { margin: 0 0 14px; color: var(--suave); font-size: .94rem; }
+    button {
+      min-height: 48px;
+      width: 100%;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--bordo);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .16s ease, background-color .16s ease;
+    }
+    button:hover:not(:disabled) { background: #713146; transform: translateY(-1px); }
+    button:disabled { cursor: wait; opacity: .65; }
+    .secundario { background: #e9f1f5; color: #304754; }
+    .secundario:hover:not(:disabled) { background: #d8e8ef; }
+    button:focus-visible { outline: 3px solid #2d718e; outline-offset: 3px; }
+    .resultado {
+      min-height: 52px;
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f8f4f5;
+      color: var(--texto);
+      overflow-wrap: anywhere;
+      font-size: .93rem;
+    }
+    .pie { margin: 22px 0 0; color: var(--suave); font-size: .88rem; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="diagnostico" aria-labelledby="titulo-diagnostico">
+      <h2 id="titulo-diagnostico">Diagnóstico de configuración</h2>
+      <dl>
+        <div><dt>config.js</dt><dd id="diagnostico-carga" role="status" aria-live="polite">Revisando…</dd></div>
+        <div><dt>Ruta intentada</dt><dd id="diagnostico-ruta">Revisando…</dd></div>
+        <div><dt>Formato de la URL</dt><dd id="diagnostico-url">Revisando…</dd></div>
+        <div><dt>Tipo de clave</dt><dd id="diagnostico-clave">Revisando…</dd></div>
+      </dl>
+    </section>
+
+    <p class="marca">Eros Web · configuración técnica</p>
+    <h1>Probemos la conexión</h1>
+    <p class="intro">Esta página revisa que el navegador pueda guardar un pedido de prueba y que los visitantes sin sesión no puedan leer pedidos ni fotos.</p>
+
+    <div class="aviso">
+      Primero completá <strong>armador/config.js</strong> con la URL de tu proyecto y la clave pública. Cada envío de prueba deja un pedido y una imagen PNG muy pequeña en Supabase: desde esta página no se pueden borrar, porque el navegador no debe tener permiso para borrar.
+    </div>
+
+    <div class="acciones">
+      <section class="prueba" aria-labelledby="titulo-envio">
+        <h2 id="titulo-envio">1. Envío de prueba</h2>
+        <p>Inserta un pedido ficticio y sube una imagen PNG dibujada en un canvas. No usa fotos tuyas.</p>
+        <button id="probar-envio" type="button">Probar envío de pedido de prueba</button>
+        <p id="resultado-envio" class="resultado" role="status" aria-live="polite">Todavía no se hizo la prueba.</p>
+      </section>
+
+      <section class="prueba" aria-labelledby="titulo-lectura">
+        <h2 id="titulo-lectura">2. Lectura sin sesión</h2>
+        <p>Primero hacé el envío de prueba en esta misma pestaña. Storage puede responder “Object not found” tanto si el archivo no existe como si RLS impide verlo.</p>
+        <button id="probar-lectura" class="secundario" type="button">Probar lectura sin sesión</button>
+        <p id="resultado-lectura" class="resultado" role="status" aria-live="polite">Todavía no se hizo la prueba.</p>
+      </section>
+    </div>
+
+    <p class="pie">Si una prueba falla por URL, clave o configuración, corregí esos datos y volvé a intentarlo. Esta página no inicia sesión de administrador.</p>
+  </main>
+
+  <!-- Config local del proyecto. Solo debe contener la URL y la clave pública. -->
+  <script id="eros-config-script" src="../armador/config.js" onload="this.dataset.loaded='true'" onerror="this.dataset.loaded='false'"></script>
+  <!-- Versión estable fijada; v2.117.3 fue publicada el 7 de octubre de 2026. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+  <script>
+    (() => {
+      const botonEnvio = document.getElementById('probar-envio');
+      const botonLectura = document.getElementById('probar-lectura');
+      const salidaEnvio = document.getElementById('resultado-envio');
+      const salidaLectura = document.getElementById('resultado-lectura');
+      const STORAGE_KEY = 'erosweb-archivo-prueba';
+      const VIGENCIA_PRUEBA_MS = 30 * 60 * 1000;
+      const scriptConfig = document.getElementById('eros-config-script');
+
+      function diagnosticarConfiguracion() {
+        const config = window.EROS_CONFIG;
+        const salidaCarga = document.getElementById('diagnostico-carga');
+        const salidaRuta = document.getElementById('diagnostico-ruta');
+        const salidaUrl = document.getElementById('diagnostico-url');
+        const salidaClave = document.getElementById('diagnostico-clave');
+        const rutaRelativa = scriptConfig.getAttribute('src');
+
+        salidaRuta.textContent = `${rutaRelativa} → ${new URL(rutaRelativa, document.baseURI).href}`;
+        if (scriptConfig.dataset.loaded === 'true' && config && typeof config === 'object') {
+          salidaCarga.textContent = '✅ Cargado; window.EROS_CONFIG está disponible.';
+        } else if (scriptConfig.dataset.loaded === 'true') {
+          salidaCarga.textContent = '⚠️ El archivo cargó, pero no se encontró window.EROS_CONFIG.';
+        } else if (scriptConfig.dataset.loaded === 'false') {
+          salidaCarga.textContent = '❌ No se pudo cargar el archivo en esa ruta.';
+        } else {
+          salidaCarga.textContent = config ? '✅ window.EROS_CONFIG está disponible.' : '❌ No se encontró window.EROS_CONFIG.';
+        }
+
+        const url = String(config && config.supabaseUrl || '').trim();
+        const urlValida = /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url);
+        salidaUrl.textContent = urlValida ? `✅ Formato válido: ${url}` : '❌ Debe tener el formato https://algo.supabase.co.';
+
+        const clave = String(config && config.supabaseKey || '').trim();
+        const prefijoVisible = clave ? `${clave.slice(0, 12)}…` : 'no disponible';
+        if (/^sb_publishable_/i.test(clave)) {
+          salidaClave.textContent = `✅ Publishable detectada (${prefijoVisible}; se muestran solo 12 caracteres).`;
+        } else if (/^eyJ/.test(clave)) {
+          salidaClave.textContent = `✅ Clave anon antigua detectada (${prefijoVisible}; se muestran solo 12 caracteres).`;
+        } else if (clave) {
+          salidaClave.textContent = `❌ Prefijo no reconocido (${prefijoVisible}; se muestran solo 12 caracteres).`;
+        } else {
+          salidaClave.textContent = '❌ Falta la clave pública.';
+        }
+      }
+
+      function establecerTexto(elemento, texto) {
+        elemento.textContent = texto;
+      }
+
+      function pareceClavePrivada(clave) {
+        if (/^sb_secret_/i.test(clave)) return true;
+        const partes = clave.split('.');
+        if (partes.length !== 3) return false;
+        try {
+          const carga = JSON.parse(window.atob(partes[1].replace(/-/g, '+').replace(/_/g, '/')));
+          return carga && carga.role === 'service_role';
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function crearClienteAnonimo() {
+        const config = window.EROS_CONFIG;
+        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+          throw new Error('No cargó la librería de Supabase. Revisá tu conexión a internet.');
+        }
+        if (!config || !config.supabaseUrl || !config.supabaseKey ||
+            config.supabaseUrl.includes('PEGAR_ACA') || config.supabaseKey.includes('PEGAR_ACA')) {
+          throw new Error('Completá primero la URL y la clave pública en armador/config.js.');
+        }
+        if (!/^https:\/\//i.test(config.supabaseUrl)) {
+          throw new Error('La URL del proyecto debe empezar con https://.');
+        }
+        if (pareceClavePrivada(config.supabaseKey)) {
+          throw new Error('La clave parece ser secreta/service_role. Borrala de config.js y reemplazala por la clave pública anon o publishable.');
+        }
+
+        // supabase-js 2.117.3 admite sb_publishable_ directamente en createClient,
+        // igual que admite la antigua clave anon. Si un proyecto muy antiguo no la
+        // acepta, se puede usar su clave anon pública; nunca uses service_role/secret.
+        // persistSession:false impide reutilizar una sesión previa del navegador.
+        return window.supabase.createClient(config.supabaseUrl, config.supabaseKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          }
+        });
+      }
+
+      function crearUuid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return window.crypto.randomUUID();
+        }
+        const bytes = new Uint8Array(16);
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+          window.crypto.getRandomValues(bytes);
+        } else {
+          for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+        }
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+      }
+
+      function crearCodigo() {
+        const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const valores = new Uint8Array(6);
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+          window.crypto.getRandomValues(valores);
+        } else {
+          for (let i = 0; i < valores.length; i++) valores[i] = Math.floor(Math.random() * 256);
+        }
+        return Array.from(valores, valor => caracteres[valor % caracteres.length]).join('');
+      }
+
+      function crearImagenDePrueba() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 240;
+        canvas.height = 150;
+        const contexto = canvas.getContext('2d');
+        if (!contexto) throw new Error('Este navegador no pudo crear el canvas de prueba.');
+        contexto.fillStyle = '#fff4ed';
+        contexto.fillRect(0, 0, canvas.width, canvas.height);
+        contexto.fillStyle = '#f4d9e2';
+        contexto.beginPath();
+        contexto.arc(45, 43, 31, 0, Math.PI * 2);
+        contexto.fill();
+        contexto.fillStyle = '#e84372';
+        contexto.font = 'bold 20px system-ui, sans-serif';
+        contexto.fillText('Eros Web', 24, 91);
+        contexto.fillStyle = '#66525b';
+        contexto.font = '13px system-ui, sans-serif';
+        contexto.fillText('Imagen de prueba', 24, 116);
+
+        return new Promise((resolve, reject) => {
+          canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('No se pudo convertir el canvas a PNG.'));
+          }, 'image/png');
+        });
+      }
+
+      function guardarRutaPrueba(ruta) {
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ruta, subidaEn: Date.now() }));
+        } catch (_) { /* La prueba sigue sin almacenamiento local. */ }
+      }
+
+      function leerRutaPrueba() {
+        try {
+          const valor = sessionStorage.getItem(STORAGE_KEY);
+          if (!valor) return { ruta: '', reciente: false };
+          try {
+            const registro = JSON.parse(valor);
+            const subidaEn = Number(registro.subidaEn);
+            return {
+              ruta: typeof registro.ruta === 'string' ? registro.ruta : '',
+              reciente: Number.isFinite(subidaEn) && Date.now() - subidaEn <= VIGENCIA_PRUEBA_MS
+            };
+          } catch (_) {
+            // Un valor antiguo solo contiene la ruta y no demuestra que se subió recién.
+            return { ruta: valor, reciente: false };
+          }
+        } catch (_) { return { ruta: '', reciente: false }; }
+      }
+
+      function esDenegacion(error) {
+        const mensaje = String(error && error.message || '').toLowerCase();
+        const codigo = String(error && error.code || '');
+        const estado = Number(error && (error.status || error.statusCode));
+        return estado === 401 || estado === 403 || codigo === '42501' ||
+          /row-level security|permission denied|insufficient privilege|unauthorized|not authorized|new row violates|jwt expired/.test(mensaje);
+      }
+
+      function esObjetoNoEncontrado(error) {
+        const mensaje = String(error && error.message || '').toLowerCase();
+        const codigo = String(error && error.code || '').toLowerCase();
+        const estado = Number(error && (error.status || error.statusCode));
+        return /object not found|no such key|resource not found/.test(mensaje) ||
+          /nosuchkey|object_not_found|not_found/.test(codigo) ||
+          (estado === 404 && /not found|no such key/.test(mensaje));
+      }
+
+      function describirError(error) {
+        return String(error && error.message || 'Error desconocido');
+      }
+
+      async function probarEnvio() {
+        botonEnvio.disabled = true;
+        establecerTexto(salidaEnvio, 'Enviando el pedido ficticio y la imagen…');
+        try {
+          const cliente = crearClienteAnonimo();
+          const id = crearUuid();
+          const pedido = {
+            id,
+            codigo: crearCodigo(),
+            modelo: 'carta-para-vos',
+            duracion: '1-dia',
+            extras: { prueba: true },
+            tema: 'eros',
+            para_quien: 'Prueba técnica',
+            de_parte: 'Eros Web',
+            musica: '',
+            datos: { tipo: 'prueba-conexion' },
+            total: 5000,
+            fotos_cantidad: 1
+          };
+
+          const { error: errorPedido } = await cliente.from('pedidos').insert(pedido);
+          if (errorPedido) throw new Error(`No se pudo guardar el pedido: ${describirError(errorPedido)}`);
+
+          const imagen = await crearImagenDePrueba();
+          const ruta = `${id}/prueba-${Date.now()}.png`;
+          const { error: errorFoto } = await cliente.storage.from('fotos').upload(ruta, imagen, {
+            contentType: 'image/png',
+            upsert: false
+          });
+          if (errorFoto) throw new Error(`El pedido se guardó, pero la imagen no: ${describirError(errorFoto)}`);
+
+          guardarRutaPrueba(ruta);
+          establecerTexto(salidaEnvio, `✅ Envío correcto. Pedido de prueba: ${id}. La imagen pequeña quedó en el bucket privado.`);
+        } catch (error) {
+          establecerTexto(salidaEnvio, `❌ ${describirError(error)}`);
+        } finally {
+          botonEnvio.disabled = false;
+        }
+      }
+
+      async function revisarResultadoLectura(tabla, almacenamiento, nombre) {
+        if (tabla.estado === 'alerta' || almacenamiento.estado === 'alerta' || nombre.estado === 'alerta') {
+          establecerTexto(salidaLectura, '❌ ¡Alerta! Se pudo leer sin sesión. No uses el armador hasta corregir las políticas RLS.');
+          return;
+        }
+        if (tabla.estado === 'seguro' && almacenamiento.estado === 'seguro' && nombre.estado === 'seguro') {
+          establecerTexto(salidaLectura, '✅ Seguro: sin sesión no se pudieron leer pedidos, listar el bucket ni descargar la imagen de prueba.');
+          return;
+        }
+        if (tabla.estado === 'seguro' && almacenamiento.estado === 'seguro' && nombre.estado === 'sin_archivo') {
+          establecerTexto(salidaLectura, '✅ Seguro: la tabla y el listado del bucket no devolvieron contenido. Para probar también la descarga directa, primero enviá el pedido de prueba en esta pestaña y volvé a intentarlo.');
+          return;
+        }
+        if (tabla.estado === 'seguro' && almacenamiento.estado === 'seguro' && nombre.estado === 'prueba_vieja') {
+          establecerTexto(salidaLectura, '✅ Seguro para pedidos y listado del bucket. Para confirmar también la descarga directa, volvé a ejecutar el envío de prueba y luego esta lectura en la misma pestaña.');
+          return;
+        }
+        establecerTexto(salidaLectura, `⚠️ No se pudo confirmar la seguridad. Revisá la configuración. ${tabla.detalle} ${almacenamiento.detalle} ${nombre.detalle}`);
+      }
+
+      async function probarLectura() {
+        botonLectura.disabled = true;
+        establecerTexto(salidaLectura, 'Comprobando lectura anónima…');
+        try {
+          const cliente = crearClienteAnonimo();
+          const [respuestaTabla, respuestaListado] = await Promise.all([
+            cliente.from('pedidos').select('id').limit(1),
+            cliente.storage.from('fotos').list('', { limit: 5 })
+          ]);
+
+          const tabla = { estado: 'inconcluso', detalle: '' };
+          if (respuestaTabla.error && esDenegacion(respuestaTabla.error)) {
+            tabla.estado = 'seguro';
+            tabla.detalle = 'La tabla rechazó la lectura.';
+          } else if (!respuestaTabla.error && Array.isArray(respuestaTabla.data)) {
+            tabla.estado = respuestaTabla.data.length === 0 ? 'seguro' : 'alerta';
+            tabla.detalle = respuestaTabla.data.length === 0 ? 'La consulta no devolvió filas.' : 'La tabla devolvió filas.';
+          } else {
+            tabla.detalle = `Tabla: ${describirError(respuestaTabla.error)}.`;
+          }
+
+          const almacenamiento = { estado: 'inconcluso', detalle: '' };
+          if (respuestaListado.error && esDenegacion(respuestaListado.error)) {
+            almacenamiento.estado = 'seguro';
+            almacenamiento.detalle = 'El listado del bucket fue denegado.';
+          } else if (!respuestaListado.error && Array.isArray(respuestaListado.data)) {
+            almacenamiento.estado = respuestaListado.data.length === 0 ? 'seguro' : 'alerta';
+            almacenamiento.detalle = respuestaListado.data.length === 0 ? 'El bucket no mostró archivos ni carpetas.' : 'El bucket mostró archivos o carpetas.';
+          } else {
+            almacenamiento.detalle = `Bucket: ${describirError(respuestaListado.error)}.`;
+          }
+
+          const prueba = leerRutaPrueba();
+          const nombre = {
+            estado: prueba.ruta ? (prueba.reciente ? 'inconcluso' : 'prueba_vieja') : 'sin_archivo',
+            detalle: ''
+          };
+          if (prueba.ruta && prueba.reciente) {
+            const { data, error } = await cliente.storage.from('fotos').download(prueba.ruta);
+            if (error && esDenegacion(error)) {
+              nombre.estado = 'seguro';
+              nombre.detalle = 'La descarga directa de la imagen fue denegada.';
+            } else if (error && esObjetoNoEncontrado(error)) {
+              nombre.estado = 'seguro';
+              nombre.detalle = 'La ruta se subió correctamente hace menos de 30 minutos y la descarga no entregó el objeto. Supabase usa “Object not found” cuando no existe o no se tiene permiso para verlo.';
+            } else if (!error && data instanceof Blob) {
+              nombre.estado = 'alerta';
+              nombre.detalle = 'Se descargó la imagen sin sesión.';
+            } else {
+              nombre.detalle = `Descarga: ${describirError(error)}.`;
+            }
+          }
+
+          await revisarResultadoLectura(tabla, almacenamiento, nombre);
+        } catch (error) {
+          establecerTexto(salidaLectura, `⚠️ No se pudo completar la comprobación: ${describirError(error)}`);
+        } finally {
+          botonLectura.disabled = false;
+        }
+      }
+
+      diagnosticarConfiguracion();
+      botonEnvio.addEventListener('click', probarEnvio);
+      botonLectura.addEventListener('click', probarLectura);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+/* Estilo compacto del contador compartido por los modelos. */
+.together-counter {
+  position: relative;
+  width: fit-content;
+  max-width: min(340px, 100%);
+  margin: 20px auto 26px;
+  padding: 12px 17px 13px;
+  overflow: visible;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 8px 22px rgba(var(--wine-rgb), .09);
+  text-align: center;
+}
+
+.counter-label {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.counter-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 1.5vw, 8px);
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: clamp(.64rem, 3.3vw, .9rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.counter-unit {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.counter-value { color: var(--wine); }
+.counter-name { color: var(--ink); }
+
+.counter-separator {
+  flex: 0 0 auto;
+  color: var(--heart-color, var(--wine));
+  font-size: .78em;
+  opacity: .72;
+}
+
+.counter-decoration {
+  position: absolute;
+  z-index: 0;
+  color: var(--heart-color, var(--wine));
+  font-size: 13px;
+  line-height: 1;
+  opacity: .24;
+  pointer-events: none;
+  animation: counter-heartbeat 3.6s ease-in-out infinite;
+}
+
+.counter-decoration:nth-of-type(1) { top: -7px; left: 19%; }
+.counter-decoration:nth-of-type(2) { top: 20%; right: -6px; animation-delay: 1.2s; }
+.counter-decoration:nth-of-type(3) { bottom: -6px; left: 72%; font-size: 11px; animation-delay: 2.1s; }
+
+@keyframes counter-heartbeat {
+  0%, 100% { opacity: .19; transform: scale(.94); }
+  50% { opacity: .38; transform: scale(1.08); }
+}
+
+@media (max-width: 360px) {
+  .together-counter { padding-right: 12px; padding-left: 12px; }
+  .counter-row { gap: 4px; font-size: clamp(.61rem, 3.15vw, .72rem); }
+  .counter-unit { gap: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .counter-decoration { animation: none; }
+}

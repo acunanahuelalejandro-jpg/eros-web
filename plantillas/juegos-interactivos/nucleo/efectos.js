@@ -38,15 +38,29 @@
     ctx.fill();
   }
 
-  function explotar(canvas, colorPrincipal, alTerminar) {
+  function explotar(canvas, colorPrincipal, alTerminar, opciones = {}) {
     const ctx = canvas && canvas.getContext ? canvas.getContext("2d") : null;
-    if (!ctx) {
-      window.setTimeout(alTerminar, reducedMotion.matches ? 3000 : 2400);
-      return;
-    }
+    let frame = 0, fallbackTimer = 0, destroyed = false;
     const reducida = reducedMotion.matches;
+    const solicitada = Number(opciones?.duracion);
+    const duracion = reducida ? 3000 : (Number.isFinite(solicitada) ? Math.max(900, Math.min(3000, solicitada)) : 2450);
+    // La vista previa puede reemplazar el contenido durante una explosión.
+    const instance = {
+      destruir() {
+        destroyed = true;
+        window.cancelAnimationFrame(frame);
+        window.clearTimeout(fallbackTimer);
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (canvas) canvas.hidden = true;
+      }
+    };
+    if (!ctx) {
+      fallbackTimer = window.setTimeout(() => {
+        if (!destroyed && typeof alTerminar === "function") alTerminar();
+      }, duracion);
+      return instance;
+    }
     const cantidad = reducida ? 28 : 110;
-    const duracion = reducida ? 3000 : 2450;
     const palette = [colorPrincipal || "#8b3d52", "#e84372", "#f4b8c1", "#b75a71"];
     const corazones = [];
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -75,6 +89,7 @@
     let anterior = performance.now();
     const inicio = anterior;
     function cuadro(ahora) {
+      if (destroyed) return;
       const dt = Math.min((ahora - anterior) / 1000, .04);
       anterior = ahora;
       const progreso = Math.min((ahora - inicio) / duracion, 1);
@@ -92,14 +107,15 @@
         dibujarCorazon(ctx, p.size);
         ctx.restore();
       });
-      if (progreso < 1) window.requestAnimationFrame(cuadro);
+      if (progreso < 1) frame = window.requestAnimationFrame(cuadro);
       else {
         ctx.clearRect(0, 0, w, h);
         canvas.hidden = true;
         if (typeof alTerminar === "function") alTerminar();
       }
     }
-    window.requestAnimationFrame(cuadro);
+    frame = window.requestAnimationFrame(cuadro);
+    return instance;
   }
 
   function corazonAlTocar(layer, event, reducida) {

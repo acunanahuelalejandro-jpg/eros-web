@@ -13,7 +13,7 @@
     return element;
   }
 
-  function montar(root, alAbrir) {
+  function montar(root, alAbrir, opciones = {}) {
     if (!root) return null;
     root.replaceChildren();
     root.setAttribute("aria-label", "Un sobre para vos");
@@ -32,20 +32,37 @@
     content.append(button, nodo("p", "envelope-caption", "Tocá para abrir"));
     root.appendChild(content);
     let opened = false;
+    let timer = 0;
+    let demoTimer = 0;
     button.addEventListener("click", () => {
       if (opened) return;
       opened = true;
       button.setAttribute("aria-expanded", "true");
       button.classList.add("is-opening");
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.setTimeout(() => {
+      timer = window.setTimeout(() => {
         if (typeof alAbrir === "function") alAbrir();
       }, reduced ? 180 : 900);
     });
     return {
-      mostrar() { root.hidden = false; button.focus({ preventScroll: true }); },
-      ocultar() { root.hidden = true; },
-      enfocar() { button.focus({ preventScroll: true }); }
+      mostrar() {
+        root.hidden = false;
+        button.focus({ preventScroll: true });
+        if (opciones.demo === true && !opened) {
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          demoTimer = window.setTimeout(() => { demoTimer = 0; if (!opened) button.click(); }, reduced ? 0 : 650);
+        }
+      },
+      ocultar() {
+        // Ocultar el sobre también cancela una apertura automática o pendiente.
+        window.clearTimeout(timer);
+        window.clearTimeout(demoTimer);
+        timer = 0;
+        demoTimer = 0;
+        root.hidden = true;
+      },
+      enfocar() { button.focus({ preventScroll: true }); },
+      destruir() { window.clearTimeout(timer); window.clearTimeout(demoTimer); root.replaceChildren(); root.hidden = true; }
     };
   }
 

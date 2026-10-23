@@ -10,8 +10,8 @@ window.DATOS = {
 
   tema: "eros", // eros | dorado | azul-cielo | rosa | atardecer | bosque | lavanda | medianoche | galaxia
   extras: {
-    juego: "", // "" | "pintar-corazon" | "margarita" | "laberinto". Queda reservado para el armador.
-    sobre: true, // true muestra el sobre animado; false abre la carta directamente.
+    juego: "", // "" | "pintar-corazon" | "margarita" | "laberinto". Si elegís un juego, reemplaza al sobre.
+    sobre: true, // El armador guarda false si hay juego; sin juego siempre se abre con el sobre.
     contador: {
       desde: "", // Formato AAAA-MM-DD. Ejemplo: "2021-03-12". Vacío = no mostrar contador.
       etiqueta: "Juntos desde hace" // Texto que aparece arriba del contador.
