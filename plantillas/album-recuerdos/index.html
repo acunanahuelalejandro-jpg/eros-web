@@ -118,6 +118,11 @@
     @media(min-width:1000px){.content-screen{padding-top:50px}.album-card{width:min(100%,820px)}.album-stage-wrap{margin-top:28px}.album-stage{width:min(100%,470px);height:min(560px,66svh)}}
     @media(max-width:400px){.content-screen{padding:76px 9px 18px}.album-card{padding:20px 14px;border-radius:23px}.album-stage{height:min(118vw,58svh);min-height:270px}.polaroid{padding:8px 8px 31px}.polaroid::after,.photo-placeholder{inset:8px 8px 31px}.album-controls{right:8px}.music-toggle,.auto-toggle{min-height:42px;padding:7px 10px;font-size:.8rem}.album-nav{gap:7px}.nav-button,.gallery-button{min-height:47px;padding:9px 12px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button,.content-screen,.reveal,.polaroid,.album-closing,.paint-progress-fill{transition-duration:.01ms!important}.ambient-heart{animation-duration:60s!important;opacity:.18}.galaxy-stars{animation:none!important;opacity:.25}.closing-heart{animation:none}.stack-card.is-leaving{transition-duration:.01ms!important}}
+    .eros-preview-mode .preview-example{color:var(--muted);font-style:italic}
+    .eros-preview-mode .photo-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1.5px dashed rgba(var(--wine-rgb),.5);color:var(--muted);background:linear-gradient(145deg,var(--pink-pale),var(--blue));font-style:italic}
+    .empty-photo-icon{color:var(--heart-color);font-size:2rem;font-style:normal;line-height:1}
+    .gallery-thumb .gallery-placeholder{box-sizing:border-box;display:grid;width:100%;aspect-ratio:1/1.08;place-items:center;padding:4px;border:1px dashed rgba(var(--wine-rgb),.45);border-radius:3px;color:var(--muted);background:linear-gradient(145deg,var(--pink-pale),var(--blue));font-size:.72rem;font-style:italic}
+    .gallery-thumb .gallery-placeholder[hidden]{display:none}
   </style>
   <link rel="stylesheet" href="../../compartido/contador.css">
 </head>

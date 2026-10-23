@@ -177,3 +177,185 @@
   .order-builder { padding:15px; }
   .order-duration-grid .order-choice-card strong { font-size:.86rem; }
 }
+
+/* En celular la vista previa queda arriba y el paso actual se desplaza por separado. */
+@media(max-width:1023px) {
+  #pedido .order-layout {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:minmax(280px,48dvh) minmax(230px,1fr);
+    height:max(510px,calc(100dvh - 142px));
+    min-height:510px;
+    overflow:visible;
+    align-items:stretch;
+    gap:9px;
+  }
+  #pedido .order-preview-column {
+    order:-1;
+    position:relative!important;
+    top:auto;
+    z-index:auto;
+    width:100%;
+    height:100%!important;
+    min-height:280px!important;
+    align-self:start;
+    background:linear-gradient(145deg,#fff8f5,#edf4f8);
+  }
+  #pedido { min-height:100dvh; }
+  body.order-in-view #pedido .order-layout {
+    position:fixed;
+    top:72px;
+    right:16px;
+    bottom:calc(70px + env(safe-area-inset-bottom));
+    left:16px;
+    z-index:25;
+    width:auto;
+    max-width:1400px;
+    height:auto;
+    min-height:0;
+    margin:0 auto;
+  }
+  body.order-in-view #pedido .order-layout { grid-template-rows:minmax(280px,48dvh) minmax(0,1fr); }
+  body:not(.order-in-view) .order-mobile-bar { display:none!important; }
+  #pedido .order-preview-dialog:not([open]) {
+    display:block!important;
+    position:static!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+  #pedido .order-preview-dialog[open] {
+    display:flex!important;
+    position:fixed!important;
+    inset:0!important;
+    z-index:1000!important;
+    flex-direction:column;
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:var(--cream,#fff8f5)!important;
+  }
+  #pedido #preview-desktop-host { width:100%; height:100%; min-height:0; }
+  #pedido .order-preview-dialog[open] #preview-desktop-host { flex:1; height:auto; }
+  #pedido .order-preview-panel {
+    position:relative;
+    display:flex!important;
+    width:100%;
+    height:100%!important;
+    min-height:0;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:0;
+    padding:7px 8px 5px!important;
+    overflow:hidden;
+    border-radius:20px!important;
+  }
+  #pedido .preview-phone {
+    flex:none;
+    margin:0 auto 5px!important;
+    border-width:4px!important;
+    border-radius:21px!important;
+  }
+  #pedido .preview-retry {
+    position:absolute;
+    z-index:4;
+    top:58%;
+    left:50%;
+    min-height:42px;
+    padding:8px 18px;
+    transform:translate(-50%,-50%);
+  }
+  #pedido .preview-controls {
+    display:grid;
+    width:min(100%,520px);
+    max-width:none;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px;
+    margin:0 auto;
+  }
+  #pedido .preview-controls .small-action {
+    min-height:36px;
+    padding:5px 4px;
+    font-size:.7rem;
+    line-height:1.15;
+  }
+  #pedido .preview-controls [data-preview-action="manual"] { grid-column:auto!important; }
+  #pedido .preview-caption, #pedido .preview-music { display:none!important; }
+  #pedido .preview-dialog-header { display:none!important; }
+  #pedido .order-preview-dialog[open] .preview-dialog-header {
+    display:flex!important;
+    flex:none;
+    min-height:58px;
+  }
+  #pedido #preview-open { display:none!important; }
+  #pedido .preview-enlarge {
+    position:absolute;
+    z-index:5;
+    top:7px;
+    right:8px;
+    min-height:40px;
+    padding:5px 10px;
+    border-color:rgba(139,61,82,.3);
+    background:rgba(255,253,251,.94);
+    box-shadow:0 3px 12px rgba(48,43,49,.16);
+    font-size:.76rem;
+  }
+  #pedido .order-builder {
+    order:1;
+    display:flex;
+    width:100%;
+    max-width:none;
+    height:100%;
+    min-height:0;
+    max-height:none;
+    flex-direction:column;
+    margin:0 auto;
+    padding-bottom:14px;
+    overflow:hidden;
+  }
+  #pedido .order-progress-head, #pedido #order-progress, #pedido .order-error, #pedido .order-nav { flex:none; }
+  #pedido .order-step-viewport {
+    flex:1 1 auto;
+    min-height:0!important;
+    max-height:none;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  #pedido .order-nav { margin-top:10px; padding-top:10px; }
+  #pedido .order-mobile-bar { z-index:35; }
+  body.order-in-view .floating-whatsapp { display:none!important; }
+  /* Al abrir el teclado, reservá menos alto para el teléfono y dejá visible el campo activo. */
+  body.preview-keyboard-open #pedido .order-layout { grid-template-rows:minmax(160px,30dvh) minmax(0,1fr)!important; }
+  body.preview-keyboard-open #pedido .order-preview-column { min-height:160px!important; }
+  body.preview-keyboard-open #pedido .preview-controls,
+  body.preview-keyboard-open #pedido .preview-caption { display:none!important; }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  #pedido .preview-phone { scroll-behavior:auto; }
+}
+
+@media(min-width:1024px) {
+  #pedido .preview-enlarge { display:none!important; }
+  #pedido .preview-retry {
+    position:absolute;
+    z-index:4;
+    top:50%;
+    left:50%;
+    min-height:44px;
+    padding:8px 18px;
+    transform:translate(-50%,-50%);
+  }
+}

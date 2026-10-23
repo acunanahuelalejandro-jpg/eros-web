@@ -1,7 +1,8 @@
 /* Álbum original con ciclo de vida para la vista previa administrativa. */
 (() => {
   'use strict';
-  const preview = new URLSearchParams(location.search).get('preview') === '1' && parent !== window;
+  const preview = new URLSearchParams(location.search).get('preview') === '1';
+  if (preview) document.documentElement.classList.add('eros-preview-mode');
   const original = [...document.body.children].filter(n => n.tagName !== 'SCRIPT').map(n => n.cloneNode(true));
   let current = null, last = null;
   function mount(data, scroll) {
@@ -23,8 +24,10 @@
       const principal = data.principal && typeof data.principal === "object" ? data.principal : {};
       const inicio = data.inicio && typeof data.inicio === "object" ? data.inicio : {};
       const cierre = data.cierre && typeof data.cierre === "object" ? data.cierre : {};
-      const title = cleanText(principal.titulo) || (para ? "Un álbum para " + para : "Álbum de recuerdos");
-      const subtitle = cleanText(principal.subtitulo);
+      const rawTitle = cleanText(principal.titulo);
+      const rawSubtitle = cleanText(principal.subtitulo);
+      const title = rawTitle || (para ? "Un álbum para " + para : (preview ? "Tu álbum de recuerdos" : "Álbum de recuerdos"));
+      const subtitle = rawSubtitle || (preview ? "Tus recuerdos, uno por uno…" : "");
       const startTitle = cleanText(inicio.titulo) || (para ? "Una sorpresa para " + para : "Un regalo para vos");
       const startLabel = cleanText(inicio.boton) || "Tocá para empezar";
       const song = safeFile(data.musica);
@@ -44,6 +47,7 @@
         alt: cleanText(photo.alt),
         epigrafe: cleanText(photo.epigrafe)
       }));
+      if (preview) while (validRecords.length < 12) validRecords.push({ src:"", alt:"", epigrafe:"" });
       const startSeconds = Number.isInteger(data.automatico) && data.automatico > 0 ? Math.min(data.automatico, 3600) : 0;
 
       const intro = document.getElementById("introScreen");
@@ -98,11 +102,17 @@
       startButton.textContent = startLabel;
       albumTitle.textContent = title;
       albumSubtitle.textContent = subtitle;
-      closingMessage.textContent = cleanText(cierre.mensaje);
-      signatureNode.textContent = cleanText(data.firma);
+      const rawClosingMessage = cleanText(cierre.mensaje);
+      const rawSignature = cleanText(data.firma);
+      closingMessage.textContent = rawClosingMessage || (preview ? "Acá va tu mensaje final…" : "");
+      signatureNode.textContent = rawSignature || (preview ? "Tu firma" : "");
+      albumTitle.classList.toggle("preview-example", preview && !rawTitle && !para);
+      albumSubtitle.classList.toggle("preview-example", preview && !rawSubtitle);
+      closingMessage.classList.toggle("preview-example", preview && !rawClosingMessage);
+      signatureNode.classList.toggle("preview-example", preview && !rawSignature);
       if (!subtitle) albumSubtitle.hidden = true;
-      if (!cleanText(cierre.mensaje)) closingMessage.hidden = true;
-      if (!cleanText(data.firma)) signatureNode.hidden = true;
+      if (!rawClosingMessage && !preview) closingMessage.hidden = true;
+      if (!rawSignature && !preview) signatureNode.hidden = true;
       if (para) {
         gameRecipient.textContent = "Un juego para " + para;
         gameRecipient.hidden = false;
@@ -124,7 +134,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "polaroid " + stackClass;
-        button.setAttribute("aria-label", record.alt || "Ampliar foto " + (photoIndex + 1));
+        button.setAttribute("aria-label", record.src ? (record.alt || "Ampliar foto " + (photoIndex + 1)) : "Lugar para la foto " + (photoIndex + 1));
         const image = document.createElement("img");
         image.className = "polaroid-image";
         image.alt = record.alt || "Foto " + (photoIndex + 1);
@@ -132,18 +142,33 @@
         image.loading = photoIndex === index ? "eager" : "lazy";
         const placeholder = document.createElement("span");
         placeholder.className = "photo-placeholder";
-        placeholder.textContent = record.src ? "La foto no está disponible" : "Todavía no se agregó una foto";
+        function setPlaceholder(label) {
+          placeholder.replaceChildren();
+          if (preview) {
+            const icon = document.createElement("span");
+            icon.className = "empty-photo-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = "♡";
+            placeholder.append(icon);
+          }
+          const textNode = document.createElement("span");
+          textNode.textContent = label;
+          placeholder.append(textNode);
+        }
+        setPlaceholder(record.src ? (preview ? "Tu foto acá" : "La foto no está disponible") : (preview ? "Tu foto acá" : "Todavía no se agregó una foto"));
         placeholder.hidden = Boolean(record.src);
         if (record.src) {
           image.src = record.src;
           on(image, "error", () => {
             image.hidden = true;
+            if (preview) setPlaceholder("Tu foto acá");
             placeholder.hidden = false;
             button.disabled = true;
-            button.setAttribute("aria-label", "Foto no disponible");
+            button.setAttribute("aria-label", preview ? "Lugar para la foto " + (photoIndex + 1) : "Foto no disponible");
           }, { once: true });
         } else {
           image.hidden = true;
+          button.disabled = preview;
         }
         button.append(image, placeholder);
         on(button, "click", () => {
@@ -174,18 +199,21 @@
           albumStage.appendChild(card);
         }
         const current = validRecords[index];
-        albumCaption.textContent = current.epigrafe;
-        albumCaption.hidden = !current.epigrafe;
+        albumCaption.textContent = current.epigrafe || (preview ? "Epígrafe " + (index + 1) : "");
+        albumCaption.classList.toggle("preview-example", preview && !current.epigrafe);
+        albumCaption.hidden = !current.epigrafe && !preview;
         albumStatus.textContent = (index + 1) + " / " + validRecords.length;
         previousButton.disabled = index === 0;
         nextButton.disabled = index >= validRecords.length - 1;
         renderGallery();
-        if (contentShown && index === validRecords.length - 1) {
+        if (preview || contentShown && index === validRecords.length - 1) {
           closingBlock.hidden = false;
-          if (!celebrationShown) {
-            celebrationShown = true;
-            celebrate();
-            stopAutomatic();
+          if (contentShown && index === validRecords.length - 1) {
+            if (!celebrationShown) {
+              celebrationShown = true;
+              celebrate();
+              stopAutomatic();
+            }
           }
         } else {
           closingBlock.hidden = true;
@@ -210,9 +238,15 @@
           } else {
             image.hidden = true;
           }
+          const placeholder = document.createElement("span");
+          placeholder.className = "gallery-placeholder";
+          placeholder.hidden = Boolean(record.src);
+          placeholder.textContent = preview ? "Tu foto acá" : "";
           const caption = document.createElement("span");
-          caption.textContent = record.epigrafe || "Foto " + (photoIndex + 1);
-          button.append(image, caption);
+          caption.textContent = record.epigrafe || (preview ? "Epígrafe " + (photoIndex + 1) : "Foto " + (photoIndex + 1));
+          if (preview && !record.epigrafe) caption.classList.add("preview-example");
+          button.append(image, placeholder, caption);
+          if (!record.src) button.disabled = preview;
           on(button, "click", () => {
             if (!record.src || image.hidden) return;
             openPhoto(record.src, image.alt);
@@ -499,5 +533,5 @@
     if (preview) current.command(options);
   }
   window.ErosPlantilla = Object.freeze({ render, destruir() { current?.destroy(); current = null; last = null; } });
-  if (!preview) render(window.DATOS || {});
+  if (!preview || parent === window) render(window.DATOS || {});
 })();

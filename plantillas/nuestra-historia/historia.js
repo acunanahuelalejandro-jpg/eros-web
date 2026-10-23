@@ -1,7 +1,7 @@
 /* Nuestra historia: reconstrucción de datos y controles permanentes separados. */
 (() => {
   'use strict';
-  const isPreview = new URLSearchParams(location.search).get('preview') === '1' && parent !== window;
+  const isPreview = new URLSearchParams(location.search).get('preview') === '1';
   if (isPreview) document.documentElement.classList.add('eros-preview-mode');
   let current = null, lastData = null;
   const gameModules = new Map();
@@ -32,8 +32,10 @@
       const cierre = data.cierre && typeof data.cierre === "object" ? data.cierre : {};
       const startTitle = text(inicio.titulo) || (para ? "Un recorrido para " + para : "Un recorrido para vos");
       const startLabel = text(inicio.boton) || "Tocá para empezar";
-      const title = text(principal.titulo) || (para ? "Nuestra historia, " + para : "Nuestra historia");
-      const subtitle = text(principal.subtitulo);
+      const rawTitle = text(principal.titulo);
+      const rawSubtitle = text(principal.subtitulo);
+      const title = rawTitle || (para ? "Nuestra historia, " + para : (isPreview ? "Nuestra historia para Nombre" : "Nuestra historia"));
+      const subtitle = rawSubtitle || (isPreview ? "Un recorrido por momentos importantes…" : "");
       const song = safeFile(data.musica);
       const preferredColor = text(data.colorPrincipal);
       const customColor = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(preferredColor) ? preferredColor : "";
@@ -69,7 +71,8 @@
       const photoDialog = document.getElementById("photoDialog");
       const lightboxImage = document.getElementById("lightboxImage");
       const effectsCanvas = document.getElementById("effectsCanvas");
-      const validMoments = Array.isArray(data.momentos) ? data.momentos.slice(0, 8) : [];
+      const validMoments = Array.isArray(data.momentos) ? data.momentos.slice(0, 8).filter((moment) => moment && typeof moment === "object") : [];
+      if (isPreview) while (validMoments.length < 8) validMoments.push({});
       let musicReady = Boolean(song);
       let gameInstance = null;
       let gameTimer = 0;
@@ -98,12 +101,18 @@
       startButton.textContent = startLabel;
       titleNode.textContent = title;
       subtitleNode.textContent = subtitle;
-      closingMessage.textContent = text(cierre.mensaje);
-      signatureNode.textContent = text(data.firma);
+      const rawClosingMessage = text(cierre.mensaje);
+      const rawSignature = text(data.firma);
+      closingMessage.textContent = rawClosingMessage || (isPreview ? "Acá va tu mensaje final…" : "");
+      signatureNode.textContent = rawSignature || (isPreview ? "Tu firma" : "");
       siteFooter.textContent = de ? "Hecho con ♡ por " + de + " · Eros Web" : "Eros Web";
       subtitleNode.hidden = !subtitle;
-      closingMessage.hidden = !text(cierre.mensaje);
-      signatureNode.hidden = !text(data.firma);
+      closingMessage.hidden = !rawClosingMessage && !isPreview;
+      signatureNode.hidden = !rawSignature && !isPreview;
+      titleNode.classList.toggle("preview-example", isPreview && !rawTitle && !para);
+      subtitleNode.classList.toggle("preview-example", isPreview && !rawSubtitle);
+      closingMessage.classList.toggle("preview-example", isPreview && !rawClosingMessage);
+      signatureNode.classList.toggle("preview-example", isPreview && !rawSignature);
       gameRecipient.hidden = !para;
       gameRecipient.textContent = "";
       if (para) {
@@ -135,7 +144,23 @@
         return svg;
       }
 
+      function createPhotoPlaceholder(index) {
+        const placeholder = document.createElement("span");
+        placeholder.className = "preview-photo-empty";
+        placeholder.setAttribute("role", "img");
+        placeholder.setAttribute("aria-label", "Lugar para la foto del momento " + index);
+        const icon = document.createElement("span");
+        icon.className = "preview-photo-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "♡";
+        const label = document.createElement("span");
+        label.textContent = "Tu foto acá";
+        placeholder.append(icon, label);
+        return placeholder;
+      }
+
       function openPhoto(image) {
+        if (!image || !image.currentSrc && !image.src) return;
         lightboxImage.src = image.currentSrc || image.src;
         lightboxImage.alt = image.alt;
         if (typeof photoDialog.showModal === "function") photoDialog.showModal();
@@ -147,7 +172,7 @@
       }
 
       function renderMoments() {
-        const records = validMoments.filter((moment) => moment && typeof moment === "object" && (text(moment.fecha) || text(moment.titulo) || text(moment.texto) || safeFile(moment.foto)));
+        const records = isPreview ? validMoments : validMoments.filter((moment) => text(moment.fecha) || text(moment.titulo) || text(moment.texto) || safeFile(moment.foto));
         timeline.hidden = !records.length;
         if (!records.length) return;
         records.forEach((moment, index) => {
@@ -157,14 +182,15 @@
           const body = document.createElement("div");
           body.className = "moment-body";
           const date = text(moment.fecha);
-          if (date) {
+          if (date || isPreview) {
             const dateNode = document.createElement("time");
             dateNode.className = "moment-date";
-            dateNode.textContent = date;
+            dateNode.textContent = date || "Tu fecha acá";
+            dateNode.classList.toggle("preview-example", isPreview && !date);
             body.appendChild(dateNode);
           }
           const imagePath = safeFile(moment.foto);
-          if (imagePath) {
+          if (imagePath || isPreview) {
             const figure = document.createElement("figure");
             figure.className = "moment-photo reveal " + (index % 2 === 0 ? "photo-left" : "photo-right");
             figure.style.setProperty("--tilt", ["-3.5deg", "3deg", "-2.5deg", "2.5deg"][index % 4]);
@@ -174,35 +200,47 @@
             trigger.type = "button";
             trigger.className = "photo-trigger";
             const alt = text(moment.alt) || (para ? "Foto de un momento de " + para + " y " + (de || "su pareja") : "Foto de un momento especial");
-            trigger.setAttribute("aria-label", "Ampliar foto: " + alt);
-            const image = document.createElement("img");
-            image.src = imagePath;
-            image.alt = alt;
-            image.loading = "lazy";
-            image.decoding = "async";
-            image.addEventListener("error", () => {
-              if (!active) return;
-              figure.remove();
-              requestRouteUpdate();
-            }, { once: true, signal: generatedEvents.signal });
-            image.addEventListener("load", requestRouteUpdate, { once: true, signal: generatedEvents.signal });
-            trigger.appendChild(image);
+            if (imagePath) {
+              trigger.setAttribute("aria-label", "Ampliar foto: " + alt);
+              const image = document.createElement("img");
+              image.src = imagePath;
+              image.alt = alt;
+              image.loading = "lazy";
+              image.decoding = "async";
+              image.addEventListener("error", () => {
+                if (!active) return;
+                if (isPreview) {
+                  image.replaceWith(createPhotoPlaceholder(index + 1));
+                  trigger.disabled = true;
+                  trigger.setAttribute("aria-label", "Lugar para la foto del momento " + (index + 1));
+                } else figure.remove();
+                requestRouteUpdate();
+              }, { once: true, signal: generatedEvents.signal });
+              image.addEventListener("load", requestRouteUpdate, { once: true, signal: generatedEvents.signal });
+              trigger.appendChild(image);
+            } else {
+              trigger.disabled = true;
+              trigger.setAttribute("aria-label", "Lugar para la foto del momento " + (index + 1));
+              trigger.appendChild(createPhotoPlaceholder(index + 1));
+            }
             frame.appendChild(trigger);
             figure.append(frame, createDoodle());
             body.appendChild(figure);
           }
           const headingText = text(moment.titulo);
-          if (headingText) {
+          if (headingText || isPreview) {
             const heading = document.createElement("h2");
             heading.className = "moment-title";
-            heading.textContent = headingText;
+            heading.textContent = headingText || "Momento " + (index + 1);
+            heading.classList.toggle("preview-example", isPreview && !headingText);
             body.appendChild(heading);
           }
           const paragraphText = text(moment.texto);
-          if (paragraphText) {
+          if (paragraphText || isPreview) {
             const paragraph = document.createElement("p");
             paragraph.className = "moment-text";
-            paragraph.textContent = paragraphText;
+            paragraph.textContent = paragraphText || "Tu momento especial…";
+            paragraph.classList.toggle("preview-example", isPreview && !paragraphText);
             body.appendChild(paragraph);
           }
           item.appendChild(body);
@@ -581,5 +619,5 @@
   window.addEventListener('resize', () => current?.requestRouteUpdate());
   window.addEventListener('orientationchange', () => current?.requestRouteUpdate());
   window.ErosPlantilla = Object.freeze({ render, destruir() { current?.destroy(); current = null; lastData = null; } });
-  if (!isPreview) render(window.DATOS || {});
+  if (!isPreview || parent === window) render(window.DATOS || {});
 })();

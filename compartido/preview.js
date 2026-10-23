@@ -17,6 +17,7 @@
     };
   }
   let received = false;
+  let lastVersion = 0;
   function renderInfo(info) {
     let badge = document.getElementById('eros-preview-music-info');
     if (!badge) {
@@ -44,11 +45,34 @@
     const message = event.data;
     if (message?.type === 'eros-preview-info') { renderInfo(message.previewInfo); log('información de música actualizada'); return; }
     if (!message || message.type !== 'eros-preview-datos' || !message.datos || typeof message.datos !== 'object' || Array.isArray(message.datos)) return;
-    received = true;
+    const nextVersion = Number.isSafeInteger(message.version) && message.version > 0 ? message.version : lastVersion + 1;
+    if (nextVersion < lastVersion) {
+      log('versión vieja ignorada', { recibida:nextVersion, vigente:lastVersion });
+      return;
+    }
+    if (nextVersion === lastVersion && received) {
+      // Repetición del mismo envío: confirmar otra vez por si se perdió el ACK anterior.
+      parent.postMessage({ type:'eros-preview-recibido', version:nextVersion }, targetOrigin);
+      log('versión repetida confirmada', { version:nextVersion });
+      return;
+    }
+    if (typeof window.ErosPlantilla?.render !== 'function') {
+      log('render todavía no disponible; el padre reintentará', { version:nextVersion });
+      return;
+    }
     clearTimeout(fallback);
-    log('eros-preview-datos recibido', { origenCorrecto:event.origin === location.origin, ventanaCorrecta:event.source === parent, campos:Object.keys(message.datos), revision:message.diagnostico?.revision });
-    window.ErosPlantilla?.render(message.datos, options(message.opciones));
-    renderInfo(message.previewInfo);
+    log('eros-preview-datos recibido', { origenCorrecto:event.origin === location.origin, ventanaCorrecta:event.source === parent, campos:Object.keys(message.datos), version:nextVersion, revision:message.diagnostico?.revision });
+    try {
+      window.ErosPlantilla.render(message.datos, options(message.opciones));
+      renderInfo(message.previewInfo);
+      lastVersion = nextVersion;
+      received = true;
+      parent.postMessage({ type:'eros-preview-recibido', version:lastVersion }, targetOrigin);
+      log('eros-preview-recibido enviado', { version:lastVersion });
+    } catch (error) {
+      parent.postMessage({ type:'eros-preview-error', version:nextVersion, error:String(error?.message || error).slice(0, 180) }, targetOrigin);
+      log('falló render', { version:nextVersion, error:error?.message || String(error) });
+    }
   });
   window.addEventListener('pagehide', () => { clearTimeout(fallback); window.ErosPlantilla?.destruir(); }, { once: true });
   parent.postMessage({ type: 'eros-preview-listo' }, targetOrigin);

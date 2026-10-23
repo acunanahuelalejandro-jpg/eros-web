@@ -383,19 +383,22 @@
   function scrollToOrder() {
     const builder = $('#order-builder');
     if (!builder) return;
-    const rect = builder.getBoundingClientRect();
     const targetTop = 90;
-    // En escritorio el asistente ya queda sticky; solo lo acercamos si quedó fuera de pantalla.
-    // En móvil, alineamos el paso actual bajo el encabezado. El desplazamiento inmediato evita
-    // carreras entre varios pasos seguidos y el scroll-restoration del navegador al recargar.
     if (matchMedia('(min-width:1024px)').matches) {
+      const rect = builder.getBoundingClientRect();
+      // En escritorio el asistente ya queda sticky; solo lo acercamos si quedó fuera de pantalla.
       if (rect.top < targetTop - 8 || rect.top > targetTop + 18) {
         window.scrollTo({ top:Math.max(0, scrollY + rect.top - targetTop), behavior:'instant' });
       }
       return;
     }
-    if (rect.top < targetTop - 8 || rect.top > targetTop + 18) {
-      window.scrollTo({ top:Math.max(0, scrollY + rect.top - targetTop), behavior:'instant' });
+    const preview = $('.order-preview-column');
+    if (!preview) return;
+    const rect = preview.getBoundingClientRect();
+    // En celular se alinea el marco bajo el encabezado fijo; el paso tiene su propio scroll.
+    const mobilePreviewTop = 76;
+    if (rect.top < mobilePreviewTop - 8 || rect.top > mobilePreviewTop + 18) {
+      window.scrollTo({ top:Math.max(0, scrollY + rect.top - mobilePreviewTop), behavior:'instant' });
     }
   }
   function firstIncompleteStep() {

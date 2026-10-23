@@ -1,7 +1,7 @@
 /* Carta para vos: DOM por render y controles estables registrados una sola vez. */
 (() => {
   'use strict';
-  const isPreview = new URLSearchParams(location.search).get('preview') === '1' && parent !== window;
+  const isPreview = new URLSearchParams(location.search).get('preview') === '1';
   let current = null, lastData = null;
   if (isPreview) document.documentElement.classList.add('eros-preview-mode');
   const gameScripts = new Map();
@@ -30,8 +30,10 @@
       const carta = raw.carta && typeof raw.carta === "object" ? raw.carta : {};
       const introTitle = asText(inicio.titulo) || (para ? "Un regalo para " + para : "Un regalo para vos");
       const introButton = asText(inicio.boton) || "Tocá para empezar";
-      const letterTitle = asText(carta.titulo) || (para ? "Una carta para " + para : "Una carta para vos");
-      const signature = asText(raw.firma);
+      const rawLetterTitle = asText(carta.titulo);
+      const letterTitle = rawLetterTitle || (isPreview ? (para ? "Para " + para : "Para Nombre") : (para ? "Una carta para " + para : "Una carta para vos"));
+      const rawSignature = asText(raw.firma);
+      const signature = rawSignature || (isPreview ? "Tu firma" : "");
       const musicPath = safeRelativeFile(raw.musica);
       const requestedColor = asText(raw.colorPrincipal);
       const customColor = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(requestedColor) ? requestedColor : "";
@@ -76,8 +78,10 @@
       introHeading.textContent = introTitle;
       startButton.textContent = introButton;
       letterHeading.textContent = letterTitle;
+      letterHeading.classList.toggle("preview-example", isPreview && !rawLetterTitle && !para);
       letterCard.setAttribute("aria-label", para ? "Carta para " + para : "Carta para vos");
       signatureNode.textContent = signature;
+      signatureNode.classList.toggle("preview-example", isPreview && !rawSignature);
       siteFooter.textContent = de ? "Hecho con ♡ por " + de + " · Eros Web" : "Eros Web";
       const counter = window.ErosContador ? window.ErosContador.montar(counterRoot, extras.contador) : null;
       // El sobre se monta solo cuando es la apertura elegida.
@@ -120,35 +124,78 @@
         return svg;
       }
 
+      function createPhotoPlaceholder(index) {
+        const placeholder = document.createElement("span");
+        placeholder.className = "photo-empty";
+        placeholder.setAttribute("role", "img");
+        placeholder.setAttribute("aria-label", "Lugar para la foto " + index);
+        const icon = document.createElement("span");
+        icon.className = "preview-photo-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "♡";
+        const label = document.createElement("span");
+        label.textContent = "Tu foto acá";
+        placeholder.append(icon, label);
+        return placeholder;
+      }
+
+      function previewBlocks() {
+        if (!isPreview) return textBlocks;
+        const paragraphs = textBlocks.filter((block) => block && typeof block === "object" && Object.hasOwn(block, "texto"));
+        const photos = textBlocks.filter((block) => block && typeof block === "object" && Object.hasOwn(block, "foto"));
+        if (!paragraphs.length) paragraphs.push({ texto:"" });
+        const after = Array.from({ length:paragraphs.length }, () => []);
+        for (let index = 0; index < 3; index += 1) {
+          const paragraphIndex = Math.min(paragraphs.length - 1, Math.floor(((index + 1) * paragraphs.length) / 4));
+          const photo = photos[index] || {};
+          after[paragraphIndex].push({ foto:photo.foto || "", alt:photo.alt || "", previewSlot:index + 1 });
+        }
+        const blocks = [];
+        paragraphs.forEach((paragraph, index) => {
+          blocks.push(paragraph);
+          after[index].forEach((photo) => blocks.push(photo));
+        });
+        return blocks;
+      }
+
       let validTextCount = 0;
       let photoCount = 0;
-      textBlocks.forEach((block) => {
+      previewBlocks().forEach((block) => {
         if (!block || typeof block !== "object") return;
         const text = asText(block.texto);
-        if (text) {
+        if (text || isPreview && Object.hasOwn(block, "texto")) {
           if (validTextCount > 0) letterBlocks.appendChild(createPetals());
           const paragraph = document.createElement("p");
           paragraph.className = "letter-text reveal";
-          paragraph.textContent = text;
+          paragraph.textContent = text || (isPreview ? "Acá va tu mensaje…" : "");
+          paragraph.classList.toggle("preview-example", isPreview && !text);
           letterBlocks.appendChild(paragraph);
           validTextCount += 1;
           return;
         }
 
         const imagePath = safeRelativeFile(block.foto);
-        if (!imagePath || photoCount >= 3) return;
+        if ((!imagePath && !isPreview) || photoCount >= 3) return;
         const imageIndex = photoCount;
         const figure = document.createElement("figure");
         const side = imageIndex % 2 === 0 ? "photo-left" : "photo-right";
         figure.className = `photo-card reveal photo-${imageIndex + 1} ${side}`;
         figure.style.setProperty("--tilt", ["-4deg", "3deg", "5deg"][imageIndex]);
-        const image = document.createElement("img");
-        image.src = imagePath;
-        image.alt = asText(block.alt) || (para ? "Foto con " + para : "Foto de un momento especial");
-        image.loading = "lazy";
-        image.decoding = "async";
-        image.addEventListener("error", () => figure.remove(), { once: true });
-        figure.append(image, createPhotoDoodle());
+        if (imagePath) {
+          const image = document.createElement("img");
+          image.src = imagePath;
+          image.alt = asText(block.alt) || (para ? "Foto con " + para : "Foto de un momento especial");
+          image.loading = "lazy";
+          image.decoding = "async";
+          image.addEventListener("error", () => {
+            if (isPreview) image.replaceWith(createPhotoPlaceholder(imageIndex + 1));
+            else figure.remove();
+          }, { once: true });
+          figure.append(image);
+        } else {
+          figure.append(createPhotoPlaceholder(imageIndex + 1));
+        }
+        figure.append(createPhotoDoodle());
         letterBlocks.appendChild(figure);
         photoCount += 1;
       });
@@ -441,5 +488,5 @@
   bind('letterBlocks', 'click', (event) => { const image = event.target.closest('.photo-card img'); if (image) current?.openPhoto(image); });
   bind('letterScreen', 'pointerdown', (event) => { if (!event.target.closest('button,a,dialog,.photo-card')) current?.spawnTapHeart(event); });
   window.ErosPlantilla = Object.freeze({ render, destruir() { current?.destroy(); current = null; lastData = null; } });
-  if (!isPreview) render(window.DATOS || {});
+  if (!isPreview || parent === window) render(window.DATOS || {});
 })();
