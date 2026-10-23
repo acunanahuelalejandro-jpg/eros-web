@@ -73,7 +73,8 @@ begin
         ' · ' || duracion_aviso || ' · $' || total_aviso
     ),
     headers := '{"Content-Type":"application/json"}'::jsonb,
-    timeout_milliseconds := 5000
+    -- Da margen para conexiones lentas; el envío sigue fuera del INSERT.
+    timeout_milliseconds := 30000
   );
   return new;
 exception
