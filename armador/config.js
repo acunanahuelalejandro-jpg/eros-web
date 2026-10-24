@@ -5,7 +5,7 @@
 // NUNCA pegues aquí la service_role ni ninguna clave secret: esas claves pueden
 // saltarse RLS y dar acceso administrativo completo.
 window.EROS_CONFIG = {
-  supabaseUrl: "https://jnkxaujpfogrfqkuewlh.supabase.co",
-  supabaseKey: "sb_publishable_r2d02aV48rBoFnvQcT-c3w_zDK806fo"
+  supabaseUrl: "https://efxqzlaauiztbrwhfmpa.supabase.co",
+  supabaseKey: "sb_publishable_dbY2M7WuGWjMpHKPhtU7lg_XQ8rZvMH"
 };
 
