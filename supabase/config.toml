@@ -11,3 +11,7 @@ verify_jwt = false
 
 [functions.obtener-pagina]
 verify_jwt = false
+
+# Solo el workflow con x-eros-limpieza conoce el secreto de esta función.
+[functions.limpiar-vencidos]
+verify_jwt = false

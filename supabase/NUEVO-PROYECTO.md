@@ -675,3 +675,218 @@ Si usás el borrado manual de fotos y datos del panel, ese pedido también queda
 - [ ] Las demos y las plantillas sin `?c=` siguen funcionando.
 
 **Lo que tenés que verificar en tus cuentas:** el despliegue de la función y de Pages, los pedidos y pagos ficticios, la firma y descarga real de fotos en Storage y el acceso desde otro dispositivo. Las pruebas locales no ejecutan esos pasos. Cuando termines, respondé **“etapa C lista”** para seguir con D.
+
+## Etapa D · vencer y borrar los regalos automáticamente
+
+Hacé esta etapa después de completar la C. El acceso al regalo ya se corta al llegar a `vence_en`; ahora se agrega el borrado de sus fotos y datos personales. GitHub ejecuta la limpieza cada hora y también permite iniciarla a mano. El proceso conserva el código, el modelo, la duración, el total, los extras necesarios para el precio, las fechas y los identificadores de pago.
+
+La limpieza trabaja con todos los pedidos vencidos pendientes, no solo con el pedido ficticio de la prueba. Antes de la primera ejecución, revisá la lista del paso 6. No borra pedidos nuevos, pagados sin publicar, vigentes o programados para más adelante.
+
+### 1. Instalar el control de limpieza
+
+1. Abrí el proyecto nuevo en **Supabase → SQL Editor → New query**.
+2. Copiá completo el archivo [`03-limpieza.sql`](03-limpieza.sql), pegalo y tocá **Run**.
+3. Si el editor muestra un error, guardá el mensaje y no ejecutes todavía el workflow.
+
+El SQL agrega `limpiado_en` y tres campos de control del servidor: `limpieza_token` y `limpieza_hasta` evitan dos borrados simultáneos; `limpieza_intentada_en` registra el último intento para organizar los reintentos. Se puede repetir; no vacía pedidos al instalarlo. No habilita lectura anónima ni altera la estructura o los registros internos de Storage. Agrega una política que impide subir más archivos a la carpeta de un pedido que ya salió de `nuevo`; conserva la subida inicial del armador antes de guardar el pedido.
+
+**Verificación:** aparece **Success**. En otra consulta, pegá esta comprobación de solo lectura:
+
+```sql
+select column_name, data_type
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'pedidos'
+  and column_name = 'limpiado_en';
+
+select
+  has_column_privilege('anon', 'public.pedidos', 'limpiado_en', 'INSERT') as anon_puede_indicar_limpieza,
+  has_column_privilege('authenticated', 'public.pedidos', 'limpiado_en', 'UPDATE') as cliente_puede_cambiar_limpieza,
+  has_column_privilege('service_role', 'public.pedidos', 'limpiado_en', 'UPDATE') as servidor_puede_limpiar;
+```
+
+**Verificación:** aparece la columna con tipo `timestamp with time zone`; los primeros dos permisos dicen `false` y el permiso del servidor dice `true`.
+
+Para comprobar las cinco funciones de control y la protección de las cargas:
+
+```sql
+select p.proname as funcion,
+       has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+       has_function_privilege('service_role', p.oid, 'EXECUTE') as servidor
+from pg_proc as p
+join pg_namespace as n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in ('eros_reclamar_vencidos', 'eros_validar_limpieza',
+    'eros_finalizar_limpieza', 'eros_liberar_limpieza', 'eros_limpiezas_pendientes')
+order by p.proname;
+
+select policyname, permissive, roles, cmd
+from pg_policies
+where schemaname = 'storage' and tablename = 'objects'
+  and policyname = 'fotos_anon_solo_antes_del_cobro';
+```
+
+**Verificación:** las cinco funciones muestran `false`, `false`, `true`; la política aparece como `RESTRICTIVE`, para `anon` y operación `INSERT`.
+
+### 2. Generar un secreto para la limpieza
+
+1. En **SQL Editor → New query**, ejecutá:
+
+```sql
+select replace(gen_random_uuid()::text, '-', '')
+    || replace(gen_random_uuid()::text, '-', '') as limpieza_secreto;
+```
+
+2. Copiá el resultado completo y guardalo en un lugar privado. Son 64 caracteres; no lo pegues dentro del texto de la consulta, en el código del sitio ni en GitHub.
+3. Abrí **Edge Functions → Secrets → Add new secret**.
+4. En **Name**, escribí exactamente `LIMPIEZA_SECRETO`; en **Value**, pegá el resultado. Tocá **Save**.
+
+La función compara este secreto con la cabecera `x-eros-limpieza`. Una petición sin el valor correcto no puede iniciar borrados. La clave interna de Supabase sigue disponible únicamente dentro del servidor; no hay que copiarla a GitHub ni al navegador.
+
+**Verificación:** `LIMPIEZA_SECRETO` aparece entre los nombres guardados en Supabase.
+
+### 3. Desplegar `limpiar-vencidos`
+
+1. En Linux, abrí una terminal en la carpeta `Descargas/ChatGPT/erosweb/` y ejecutá:
+
+```bash
+node scripts/preparar-funciones.mjs
+```
+
+2. Abrí `supabase/dashboard/limpiar-vencidos.ts` y copiá todo el archivo generado.
+3. En Supabase, entrá a **Edge Functions → Deploy a new function → Via Editor**.
+4. Poné exactamente `limpiar-vencidos`, borrá el ejemplo y pegá el código completo.
+5. Tocá **Deploy function** y esperá la confirmación.
+6. Abrí **limpiar-vencidos → Details/Settings** y desactivá **Verify JWT**; guardá si el panel lo pide. Esta función se protege con `x-eros-limpieza` y no acepta identificadores de pedidos enviados por visitantes.
+
+**Verificación:** la función aparece desplegada. Si usás el botón **Test** con método **POST**, cuerpo `{}` y sin la cabecera secreta, debe responder **401** y no borrar nada. No hagas una prueba con el secreto correcto antes de revisar el paso 6: esa llamada sí ejecuta la limpieza.
+
+### 4. Cargar el secreto de GitHub
+
+1. Abrí tu repositorio `eros-web` en GitHub.
+2. Entrá a **Settings → Secrets and variables → Actions → Repository secrets**.
+3. Confirmá que ya exista `SUPABASE_URL` y que apunte al proyecto nuevo. Si no está, tocá **New repository secret**, usá ese nombre y pegá solamente la URL del proyecto.
+4. Tocá **New repository secret**.
+5. En **Name**, escribí `LIMPIEZA_SECRETO`.
+6. En **Secret**, pegá exactamente el mismo valor de 64 caracteres que guardaste en Supabase. Tocá **Add secret**.
+
+Usá **Secrets**, no la pestaña **Variables**. El workflow no necesita una clave privada de Supabase ni el Access Token de Mercado Pago. Si cambiás este secreto, actualizalo en Supabase y GitHub antes de volver a ejecutar la limpieza. [Secrets de GitHub Actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions).
+
+**Verificación:** GitHub muestra los nombres `SUPABASE_URL` y `LIMPIEZA_SECRETO` sin enseñar sus valores.
+
+### 5. Subir el workflow
+
+1. Actualizá en GitHub el archivo `.github/workflows/vencimientos.yml`, conservando exactamente esas carpetas y ese nombre.
+2. Subilo a la rama predeterminada del repositorio, normalmente `main`. No reemplaces el workflow `keepalive.yml`.
+3. Abrí la pestaña **Actions** y buscá **Limpiar pedidos vencidos**.
+4. Si GitHub pregunta si querés habilitar Actions para el repositorio, habilitalo desde esa pantalla.
+
+**Verificación:** aparece **Limpiar pedidos vencidos** y tiene el botón **Run workflow**. El archivo programa una ejecución cada hora, en el minuto 43 UTC, y no contiene valores secretos.
+
+Los horarios de GitHub Actions pueden demorarse o perder una ejecución cuando hay mucha carga. El workflow usa un minuto distinto del inicio de hora para reducir esa posibilidad. En un repositorio público, GitHub también puede desactivar los cron después de 60 días sin actividad: si ocurre, entrá a **Actions → Limpiar pedidos vencidos → Enable workflow**. El acceso al regalo se corta igualmente en su fecha por el control de la etapa C; el borrado físico depende de que el workflow se ejecute y termine bien. [Comportamiento de las ejecuciones programadas](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+### 6. Preparar un pedido ficticio para probar
+
+1. En tu web pública, armá un pedido de prueba de **Carta para vos**, con dos fotos de prueba, sin fecha futura y sin fotos opcionales del juego. Pagalo con las cuentas y la tarjeta ficticias de B.
+2. Confirmá que esté publicado y que su link muestre esas dos fotos. Guardá su código.
+3. En **Supabase → SQL Editor → New query**, reemplazá `CODIGO` y ejecutá:
+
+```sql
+select id, codigo, estado, fotos_cantidad, publicado_en, vence_en, limpiado_en,
+       modelo, duracion, total, mp_preference_id, mp_payment_id
+from public.pedidos
+where codigo = 'CODIGO';
+```
+
+4. Debe aparecer exactamente el pedido ficticio, con estado `publicado` y dos fotos. Copiá su `id` para el siguiente bloque y guardá los valores de total e identificadores de pago para compararlos después.
+5. Reemplazá `CODIGO` y `UUID_DEL_PEDIDO_FICTICIO` en esta consulta. Solo aplicala a ese pedido de prueba:
+
+```sql
+update public.pedidos
+set publicado_en = now() - interval '2 minutes',
+    vence_en = now() - interval '1 minute'
+where codigo = 'CODIGO'
+  and id = 'UUID_DEL_PEDIDO_FICTICIO'::uuid
+  and estado = 'publicado'
+  and fotos_cantidad = 2
+  and pagado_en is not null
+  and (activar_el is null or activar_el <= (now() at time zone 'America/Argentina/Buenos_Aires')::date)
+returning codigo, publicado_en, vence_en;
+```
+
+6. Debe devolver una fila. El link de prueba ya tiene que mostrar **Esta página ya venció**, aunque todavía no hayas ejecutado el borrado.
+7. Revisá qué pedidos están pendientes de limpieza antes de la primera ejecución:
+
+```sql
+select codigo, estado, vence_en, limpiado_en
+from public.pedidos
+where limpiado_en is null
+  and (
+    (estado = 'publicado' and vence_en <= now())
+    or estado = 'vencido'
+  )
+order by vence_en nulls first, creado_en;
+```
+
+**Verificación:** reconocés el código ficticio en la lista y revisaste los demás resultados. La función va a procesar todos los vencidos pendientes que correspondan; no recibe un código para limitarse a la prueba.
+
+### 7. Ejecutar y verificar el borrado
+
+1. En GitHub, abrí **Actions → Limpiar pedidos vencidos → Run workflow**.
+2. Elegí la rama predeterminada y tocá **Run workflow**.
+3. Abrí la ejecución nueva y después el trabajo **limpiar**.
+4. Esperá el resultado. El paso muestra solamente cantidades de procesados, limpiados y fallidos; no muestra nombres, códigos, URLs, fotos ni secretos.
+5. En Supabase, abrí **Storage → fotos**, recargá y buscá la carpeta cuyo nombre es el UUID del pedido ficticio. Sus dos archivos ya no deben estar; si la carpeta desaparece, es normal.
+6. Volvé a **SQL Editor** y consultá ese pedido:
+
+```sql
+select codigo, estado, limpiado_en,
+       datos = '{}'::jsonb as contenido_vacio,
+       de_parte is null as remitente_borrado,
+       musica = '' as musica_borrada,
+       whatsapp_cliente is null as whatsapp_borrado,
+       notas is null as notas_borradas,
+       fotos_cantidad = 0 as fotos_borradas,
+       para_quien, extras,
+       modelo, duracion, total, creado_en, pagado_en, publicado_en, vence_en,
+       mp_preference_id, mp_payment_id
+from public.pedidos
+where codigo = 'CODIGO';
+```
+
+7. Los indicadores de borrado deben decir `true`, `limpiado_en` debe tener fecha y el estado debe ser `vencido`. `para_quien` dice `Datos eliminados`; los extras conservan solo juego, apertura y si incluía contador, sin fecha del contador, textos ni rutas de fotos. El código, total, fechas e identificadores de pago se conservan. También se retira la caché del checkout que ya no hace falta.
+8. Abrí un regalo de prueba que siga vigente: debe continuar mostrando su contenido y sus fotos. Volvé a ejecutar el workflow para comprobar que un pedido ya limpiado no se vuelve a publicar ni altera las fechas.
+
+**Verificación:** Actions termina en verde, no quedan archivos de ese pedido en el bucket, los datos personales se vaciaron y otro regalo vigente sigue funcionando. Los archivos se borran por la API de Storage; no se eliminan filas de `storage.objects` mediante SQL, porque eso no borra el archivo físico. [Borrado de objetos de Supabase](https://supabase.com/docs/guides/storage/management/delete-objects).
+
+El borrado es definitivo. Un pedido con `limpiado_en` no vuelve a publicarse cambiando solo su estado: ya no conserva el contenido. Durante una limpieza en curso también se bloquea la republicación para que no aparezca una página a la que se le están quitando archivos.
+
+Un intento parcial también puede haber borrado alguna foto. Por eso, si existe `limpieza_intentada_en`, el pedido sigue cerrado aunque todavía no tenga `limpiado_en`; el siguiente intento termina la limpieza. No lo reactives cambiando solo el estado.
+
+### Si algo falla
+
+- **HTTP 401:** revisá que `LIMPIEZA_SECRETO` tenga el mismo valor completo en Supabase y GitHub. No lo pegues en los logs ni en un archivo para mostrarlo.
+- **HTTP 404:** confirmá que esté desplegada la función con nombre exacto `limpiar-vencidos` y que `SUPABASE_URL` sea la del proyecto nuevo.
+- **No aparece la función SQL o hay un error de permisos:** ejecutá `03-limpieza.sql` completo en el proyecto nuevo. No concedas permisos de borrado al visitante ni cambies el bucket a público.
+- **El paso dice que quedó incompleto:** revisá **Supabase → Edge Functions → limpiar-vencidos → Logs/Invocations**. Los fallos de Storage dejan el pedido pendiente para reintentar; no marcan la limpieza como terminada. Cuando corrijas el problema, ejecutá nuevamente el workflow.
+- **Quedan pedidos después de diez lotes:** hay un límite por ejecución para evitar trabajos indefinidos. Volvé a tocar **Run workflow** para continuar con los pendientes.
+- **Un lote procesó más pedidos de los que terminó de limpiar, sin fallidos:** la función trabaja con hasta cinco pedidos y corta antes de exceder su tiempo disponible. Los que faltan quedan pendientes y el workflow pide el siguiente lote; no se dan por borrados hasta verificar que no quedan archivos y vaciar sus datos.
+- **Actions termina verde pero no limpió pedidos:** una ejecución sin vencidos pendientes también es correcta. Revisá la fecha, el estado y `limpiado_en` del pedido ficticio.
+- **No se ejecutó a la hora esperada:** verificá que el archivo esté en la rama predeterminada, que el workflow esté habilitado y que no haya una ejecución en curso. Podés usar **Run workflow** mientras revisás el cron.
+
+### Lista de comprobación de la etapa D
+
+- [ ] `03-limpieza.sql` terminó con Success y existe `limpiado_en`.
+- [ ] Los controles de limpieza no están disponibles para `anon` ni para un cliente autenticado.
+- [ ] `LIMPIEZA_SECRETO` está guardado con el mismo valor en Supabase y GitHub.
+- [ ] `limpiar-vencidos` está desplegada, tiene Verify JWT apagado y sin secreto devuelve 401.
+- [ ] El workflow está en la rama predeterminada y aparece en Actions.
+- [ ] Revisaste la lista completa de vencidos antes de la primera ejecución.
+- [ ] La ejecución manual terminó verde con el pedido ficticio.
+- [ ] Sus fotos desaparecieron de Storage y sus datos personales quedaron vacíos.
+- [ ] Los importes, identificadores de pago y fechas se conservaron.
+- [ ] Un pedido vigente no se modificó y sigue abriéndose.
+- [ ] Repetir la ejecución no altera un pedido ya limpiado.
+
+**Lo que tenés que verificar en tus cuentas:** ejecutar el SQL, desplegar la función, guardar los Secrets y comprobar el workflow verde con el pedido ficticio y el bucket real. Preparar y probar los archivos localmente no ejecuta esos borrados en Supabase ni publica el workflow en GitHub. Cuando termines, respondé **“etapa D lista”** para seguir con E.

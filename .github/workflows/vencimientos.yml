@@ -1,0 +1,91 @@
+name: Limpiar pedidos vencidos
+
+on:
+  schedule:
+    # Cada hora, en el minuto 43 UTC. Evita el inicio de hora más congestionado.
+    - cron: '43 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: eros-limpieza-vencidos
+  cancel-in-progress: false
+
+jobs:
+  limpiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      LIMPIEZA_SECRETO: ${{ secrets.LIMPIEZA_SECRETO }}
+    steps:
+      - name: Borrar fotos y datos de los pedidos vencidos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.request
+
+          url = os.environ.get('SUPABASE_URL', '').strip().rstrip('/')
+          secreto = os.environ.get('LIMPIEZA_SECRETO', '').strip()
+          if not re.fullmatch(r'https://[a-z0-9-]+\.supabase\.co', url):
+              raise SystemExit('Falta SUPABASE_URL o su formato no es válido.')
+          if not re.fullmatch(r'[a-f0-9]{64}', secreto):
+              raise SystemExit('Falta LIMPIEZA_SECRETO o no tiene los 64 caracteres esperados.')
+
+          # Nunca se sigue una redirección que pueda reenviar la cabecera secreta.
+          class SinRedirecciones(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, fp, code, msg, headers, newurl):
+                  return None
+
+          cliente = urllib.request.build_opener(SinRedirecciones())
+          endpoint = url + '/functions/v1/limpiar-vencidos'
+          headers = {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'x-eros-limpieza': secreto,
+          }
+          totales = {'procesados': 0, 'limpiados': 0, 'fallidos': 0}
+          for lote in range(10):
+              try:
+                  request = urllib.request.Request(endpoint, data=b'{}', headers=headers, method='POST')
+                  with cliente.open(request, timeout=28) as response:
+                      estado_http = response.status
+                      raw = response.read(4097)
+                  if len(raw) > 4096:
+                      raise ValueError('Respuesta excesiva')
+                  resultado = json.loads(raw)
+                  if not isinstance(resultado, dict):
+                      raise ValueError('Respuesta inválida')
+                  if type(resultado.get('ok')) is not bool or type(resultado.get('pendientes')) is not bool:
+                      raise ValueError('Respuesta inválida')
+                  for campo in totales:
+                      valor = resultado.get(campo)
+                      if type(valor) is not int or valor < 0 or valor > 1000:
+                          raise ValueError('Contador inválido')
+                      totales[campo] += valor
+                  if resultado['limpiados'] + resultado['fallidos'] > resultado['procesados']:
+                      raise ValueError('Contadores inconsistentes')
+              except urllib.error.HTTPError as error:
+                  # No imprimir URLs, cabeceras ni cuerpos de respuesta.
+                  raise SystemExit('Falló la limpieza: HTTP ' + str(error.code) + '. Revisá la función y los Secrets.')
+              except (OSError, ValueError, TypeError):
+                  raise SystemExit('Falló la limpieza: conexión o respuesta inválida. Revisá la función.')
+
+              print('Lote ' + str(lote + 1) + ': procesados=' + str(resultado['procesados'])
+                    + ', limpiados=' + str(resultado['limpiados']) + ', fallidos=' + str(resultado['fallidos']) + '.')
+              if estado_http != 200 or not resultado['ok'] or resultado['fallidos']:
+                  raise SystemExit('La limpieza quedó incompleta. Los pedidos pendientes se reintentan en la próxima ejecución.')
+              if not resultado['pendientes']:
+                  print('OK: limpieza terminada. Total limpiados=' + str(totales['limpiados']) + '.')
+                  break
+              if lote == 9:
+                  raise SystemExit('Quedan pedidos pendientes después de 10 lotes. Ejecutá otra vez el workflow y revisá los logs.')
+              time.sleep(1)
+          PY
