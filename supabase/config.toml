@@ -1,0 +1,10 @@
+# Estas funciones públicas aplican su propia autorización en el código.
+# En el editor del dashboard también hay que apagar Verify JWT al desplegarlas.
+[functions.crear-pago]
+verify_jwt = false
+
+[functions.webhook-mercadopago]
+verify_jwt = false
+
+[functions.estado-pedido]
+verify_jwt = false

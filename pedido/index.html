@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#fffaf6">
+  <title>Tu pedido | Eros Web</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f4b8c1'/%3E%3Cpath d='M32 49S12 37 12 24c0-10 13-14 20-4 7-10 20-6 20 4 0 13-20 25-20 25Z' fill='%23fffaf6'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pedido.css">
+  <script src="../armador/config.js" defer></script>
+  <script src="../armador/pagos.js" defer></script>
+  <script src="../vendor/qrcode-generator-1.4.4.js" defer></script>
+  <script src="pedido.js" defer></script>
+</head>
+<body>
+  <header class="header"><a class="brand" href="../" aria-label="Eros Web, ir al inicio"><span aria-hidden="true">♡</span> Eros Web</a><a id="support-top" class="support" href="https://wa.me/5491161360254?text=Hola%21%20Necesito%20ayuda%20con%20mi%20pedido%20de%20Eros%20Web." target="_blank" rel="noopener noreferrer">Necesito ayuda</a></header>
+  <main class="container">
+    <div class="page-heading"><span class="eyebrow">Tu regalo, un paso más cerca</span><h1>Seguí tu pedido</h1><p>Acá podés revisar el pago y encontrar el link y el QR de tu página.</p></div>
+    <section class="tracking-card" aria-labelledby="status-title" aria-busy="true" id="tracking-card">
+      <div class="status-heart" aria-hidden="true">♡</div>
+      <p class="code" id="order-code" hidden></p>
+      <div role="status" aria-live="polite" aria-atomic="true"><h2 id="status-title">Buscando tu pedido…</h2><p id="status-description">Esperá un momento.</p></div>
+      <p id="return-note" class="note" hidden></p>
+      <div class="actions" id="payment-actions" hidden><button class="button primary" id="pay-button" type="button">Pagar con Mercado Pago</button><button class="button secondary" id="refresh-button" type="button">Actualizar estado</button></div>
+      <p id="poll-note" class="note" hidden>Este estado se actualiza solo. Podés guardar este enlace para volver.</p>
+      <div class="published" id="published" hidden>
+        <label class="link-label" for="public-link">El link de tu regalo</label><input id="public-link" class="public-link" type="url" readonly aria-label="Link de tu página">
+        <div class="actions"><button class="button primary" id="copy-link" type="button">Copiar link</button><a class="button secondary" id="open-page" target="_blank" rel="noopener noreferrer">Abrir mi página</a><button class="button secondary" id="share-link" type="button">Compartir</button></div>
+        <div class="qr-wrap"><canvas id="qr-code" role="img" aria-label="Código QR para abrir tu página"></canvas><p id="qr-error" class="note" hidden>El QR no pudo generarse. Podés compartir el link de arriba.</p><a id="download-qr" class="button secondary" download="eros-web-qr.png">Descargar QR</a></div>
+        <p class="note">Si elegiste una fecha futura, tu regalo se podrá abrir a partir de ese día. Compartí el link solo con quien quieras que lo vea.</p>
+      </div>
+      <p class="error" id="tracking-error" role="alert" aria-live="assertive" hidden></p>
+      <button class="button secondary" id="retry-button" type="button" hidden>Volver a consultar</button>
+      <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+      <a class="support bottom-support" id="support-bottom" href="https://wa.me/5491161360254?text=Hola%21%20Necesito%20ayuda%20con%20mi%20pedido%20de%20Eros%20Web." target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>
+    </section>
+    <p class="privacy-note">Esta página solo muestra el estado del pedido. Guardá su enlace para encontrarla después.</p>
+  </main>
+  <footer><a class="brand" href="../">Eros Web</a></footer>
+</body>
+</html>

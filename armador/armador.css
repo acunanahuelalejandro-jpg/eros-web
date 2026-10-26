@@ -128,6 +128,10 @@
     .order-success h3 { color:#176347; font-size:clamp(1.35rem,4vw,1.8rem); }
     .success-code { display:block; margin:12px 0; color:var(--pink-dark); font-size:clamp(2.2rem,10vw,3.3rem); font-weight:800; letter-spacing:.12em; }
     .order-success .button { margin:6px 6px 0 0; }
+    .order-success [hidden] { display:none !important; }
+    .order-success .success-total { margin-top:12px; font-size:1.2rem; font-weight:700; }
+    .order-success .payment-feedback { min-height:1.55em; margin:14px 0 0; color:var(--blue-dark); font-size:.85rem; overflow-wrap:anywhere; }
+    .order-success .success-support { display:block; margin:16px 0 12px; color:var(--pink-dark); font-size:.85rem; font-weight:700; text-underline-offset:3px; }
     @media (min-width:700px) { .content-block { padding:17px; } .photo-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (prefers-reduced-motion: reduce) { .order-progress-fill { transition:none; } }
 

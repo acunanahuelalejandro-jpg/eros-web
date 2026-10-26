@@ -33,6 +33,7 @@
   let objectUrls = new Set();
   let submitting = false;
   let photoProcessing = 0;
+  let displayedSuccess = null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -524,8 +525,8 @@
       }
       if (insertError) throw insertError;
       setProgress(100, 'Pedido recibido.');
-      const success = { code: insertedCode, total: totalAmount(), model: PRICE_TABLE.models[state.model].name, savedAt: Date.now() };
-      try { localStorage.setItem(SUCCESS_KEY, JSON.stringify(success)); } catch (_) { /* Se muestra el éxito aunque no se pueda recordar tras recargar. */ }
+      const success = { id, code: insertedCode, slug: '', total: totalAmount(), model: PRICE_TABLE.models[state.model].name, savedAt: Date.now() };
+      window.ErosPagos.recordar(success);
       showSuccess(success);
     } catch (error) {
       console.warn('No se pudo guardar el pedido:', error);
@@ -534,21 +535,58 @@
   }
 
   function showSuccess(success) {
+    displayedSuccess = success;
     submitting = false; $('#order-progress-status').hidden = true; $('#order-error').textContent = ''; $('#fallback-whatsapp').hidden = true;
     $$('.order-step').forEach((panel) => { panel.hidden = true; }); $('.order-progress-head').hidden = true; $('#order-progress').hidden = true; $('.order-nav').hidden = true;
     const host = $('#order-success'); host.replaceChildren(); host.hidden = false;
     const heading = document.createElement('h3'); heading.textContent = '¡Recibimos tu pedido!'; const intro = document.createElement('p'); intro.textContent = 'Tu pedido quedó guardado. Este es tu código:';
     const code = document.createElement('strong'); code.className = 'success-code'; code.textContent = success.code; code.setAttribute('aria-label', 'Código de pedido ' + success.code);
-    const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-light'; copy.textContent = 'Copiar código'; copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(success.code); copy.textContent = 'Código copiado'; } catch (_) { const area = document.createElement('textarea'); area.value = success.code; area.style.position = 'fixed'; area.style.opacity = '0'; document.body.append(area); area.select(); try { document.execCommand('copy'); copy.textContent = 'Código copiado'; } catch (_) { copy.textContent = 'Copiá el código de arriba'; } area.remove(); } });
-    const total = document.createElement('p'); total.textContent = 'Total: ' + formatARS(success.total);
-    const instructions = document.createElement('p'); instructions.textContent = 'Transferí ' + formatARS(success.total) + ' al alias newel.mp y avisá por WhatsApp con tu código y el comprobante. Con el pago confirmado, recibís por WhatsApp el link y el QR en 2 a 3 días.';
-    const pay = document.createElement('a'); pay.className = 'button button-primary'; pay.target = '_blank'; pay.rel = 'noopener noreferrer'; pay.textContent = 'Avisar mi pago por WhatsApp'; pay.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('¡Hola! Transferí ' + formatARS(success.total) + ' por mi pedido #' + success.code + ' de Eros Web. Te comparto el comprobante para confirmar el pago.');
+    const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-light'; copy.textContent = 'Copiar código'; copy.addEventListener('click', async () => { copy.textContent = await window.ErosPagos.copiar(success.code) ? 'Código copiado' : 'Copiá el código de arriba'; });
+    const model = document.createElement('p'); model.textContent = success.model || '';
+    const total = document.createElement('p'); total.className = 'success-total'; total.textContent = 'Total: ' + formatARS(success.total);
+    const instructions = document.createElement('p'); instructions.textContent = 'Pagá con Mercado Pago y seguí el estado de tu pedido acá. El link y el QR aparecen cuando tu página está publicada.';
+    const feedback = document.createElement('p'); feedback.className = 'payment-feedback'; feedback.setAttribute('role', 'status'); feedback.setAttribute('aria-live', 'polite');
+    const pay = document.createElement('button'); pay.type = 'button'; pay.className = 'button button-primary'; pay.textContent = 'Pagar con Mercado Pago';
+    const tracking = document.createElement('a'); tracking.className = 'button button-light'; tracking.textContent = 'Ver mi pedido'; tracking.href = window.ErosPagos.urlSeguimiento(success); tracking.hidden = !tracking.getAttribute('href');
+    const support = document.createElement('a'); support.className = 'success-support'; support.target = '_blank'; support.rel = 'noopener noreferrer'; support.textContent = 'Necesito ayuda por WhatsApp'; support.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent('¡Hola! Necesito ayuda con mi pedido #' + success.code + ' de Eros Web.');
+    let paymentState = null;
+    const updateStatus = (data) => {
+      if (displayedSuccess !== success) return;
+      paymentState = data.pago || null;
+      success.slug = data.slug; window.ErosPagos.recordar(success); tracking.href = window.ErosPagos.urlSeguimiento(success); tracking.hidden = false;
+      if (data.estado === 'publicado') { pay.hidden = true; instructions.textContent = 'Tu pago está confirmado. Abrí el seguimiento para encontrar el link y el QR de tu regalo.'; }
+      else if (data.estado === 'pagado') { pay.hidden = true; instructions.textContent = 'Tu pago está confirmado. Podés revisar el estado de tu página en el seguimiento.'; }
+      else if (data.estado === 'vencido') { pay.hidden = true; instructions.textContent = 'Este pedido ya venció. Si necesitás ayuda, escribinos con tu código.'; }
+      else if (paymentState === 'pendiente') { pay.textContent = 'Revisar estado del pago'; instructions.textContent = 'Mercado Pago todavía está revisando tu pago. Esperá la confirmación para evitar pagar dos veces. Si demora, escribinos con tu código.'; }
+      else { pay.textContent = ['rechazado','cancelado'].includes(paymentState) ? 'Reintentar pago' : 'Pagar con Mercado Pago'; instructions.textContent = 'Pagá con Mercado Pago y seguí el estado de tu pedido acá. El link y el QR aparecen cuando tu página está publicada.'; }
+    };
+    pay.addEventListener('click', async () => {
+      if (pay.disabled) return;
+      pay.disabled = true; feedback.textContent = paymentState === 'pendiente' ? 'Revisando el estado del pago…' : 'Abriendo Mercado Pago…';
+      try {
+        if (paymentState === 'pendiente') { updateStatus(await window.ErosPagos.consultar(success)); feedback.textContent = 'Estado actualizado.'; return; }
+        const data = await window.ErosPagos.crear(success);
+        if (displayedSuccess !== success) return;
+        updateStatus(data);
+        if (data.estado !== 'nuevo') { location.assign(window.ErosPagos.urlSeguimiento(success)); return; }
+        const url = window.ErosPagos.urlCheckout(data.init_point);
+        if (!url) throw new Error('No pudimos abrir Mercado Pago. Reintentá en unos minutos.');
+        location.assign(url);
+      } catch (error) { if (displayedSuccess === success) { if (error.codigo === 'pago_pendiente') { paymentState = 'pendiente'; pay.textContent = 'Revisar estado del pago'; } feedback.textContent = error.message; } }
+      finally { pay.disabled = false; }
+    });
     const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'button button-light'; reset.textContent = 'Armar otro pedido'; reset.addEventListener('click', resetOrder);
-    host.append(heading, intro, code, copy, total, instructions, pay, reset); text($('#order-live'), 'Pedido recibido. Código ' + success.code + '. Total ' + formatARS(success.total) + '.');
+    host.append(heading, intro, code, copy, model, total, instructions, pay, tracking, feedback, support, reset); text($('#order-live'), 'Pedido recibido. Código ' + success.code + '. Total ' + formatARS(success.total) + '.');
     text($('#order-sidebar-total'), formatARS(success.total)); text($('#order-mobile-total'), formatARS(success.total));
+    if (window.ErosPagos.esId(success.id) || window.ErosPagos.esSlug(success.slug)) {
+      window.ErosPagos.consultar(success).then(updateStatus).catch(() => { if (displayedSuccess === success) feedback.textContent = 'Tu pedido está guardado. Si la conexión demora, podés reintentar el pago o abrir el seguimiento.'; });
+    } else {
+      pay.hidden = true; instructions.textContent = 'Este código corresponde a un pedido guardado antes del pago online. Escribinos por WhatsApp con tu código para continuarlo.';
+    }
   }
 
   function resetOrder() {
+    displayedSuccess = null;
     clearDraft(); try { localStorage.removeItem(SUCCESS_KEY); } catch (_) { /* Opcional. */ }
     $$('#pedido input[type=radio]').forEach((radio) => { radio.checked = false; }); $('#privacy-consent').checked = false;
     photos.forEach(revokePhoto); Object.values(mazePhotos).forEach(revokePhoto); photos = []; mazePhotos = { player: null, giver: null }; state = freshState();

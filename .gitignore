@@ -23,3 +23,6 @@
 
 # Copia local opcional del SQL que contiene el tópico real de ntfy.
 /supabase/aviso-pedido.private.sql
+
+# Copias generadas para pegar en el editor web de Edge Functions.
+/supabase/dashboard/
