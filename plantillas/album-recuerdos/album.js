@@ -4,7 +4,7 @@
   const preview = new URLSearchParams(location.search).get('preview') === '1';
   if (preview) document.documentElement.classList.add('eros-preview-mode');
   const original = [...document.body.children].filter(n => n.tagName !== 'SCRIPT').map(n => n.cloneNode(true));
-  let current = null, last = null;
+  let current = null, last = null, resetNeeded = false;
   function mount(data, scroll) {
     let active = true, effect = null, revealObserver = null;
     const controller = new AbortController(), timers = new Set(), frames = new Set();
@@ -14,6 +14,7 @@
       const cleanText = (value) => typeof value === "string" ? value.trim() : "";
       const safeFile = (value) => {
         const path = cleanText(value).replace(/\\/g, "/");
+        if (window.ErosPagina?.activa && window.ErosPagina.esRecursoPermitido(path)) return path;
         if (preview && path.startsWith('blob:')) { try { if (new URL(path).origin === location.origin) return path; } catch (_) {} }
         if (!path || path.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.split("/").includes("..")) return "";
         return path;
@@ -318,7 +319,7 @@
         isDragging = true;
         swipePending = false;
         pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, card };
-        try { albumStage.setPointerCapture(event.pointerId); } catch (_) {}
+        try { card.setPointerCapture(event.pointerId); } catch (_) {}
       });
       on(albumStage, "pointermove", (event) => {
         if (!isDragging || !pointerStart || event.pointerId !== pointerStart.id) return;
@@ -336,7 +337,7 @@
         const card = pointerStart.card;
         isDragging = false;
         pointerStart = null;
-        try { albumStage.releasePointerCapture(event.pointerId); } catch (_) {}
+        try { card.releasePointerCapture(event.pointerId); } catch (_) {}
         card.style.transition = "";
         if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.2) {
           swipePending = true;
@@ -528,10 +529,23 @@
     if (current && last === serialized) { if (preview) current.command(options); return; }
     const scroll = scrollY;
     current?.destroy();
-    if (current) document.body.replaceChildren(...original.map(n => n.cloneNode(true)));
+    if (current || resetNeeded) {
+      const status = document.querySelector('[data-eros-pagina-ui]');
+      document.body.replaceChildren(...original.map(n => n.cloneNode(true)));
+      if (status) document.body.append(status);
+      resetNeeded = false;
+    }
     current = mount(data,scroll); last = serialized;
     if (preview) current.command(options);
   }
-  window.ErosPlantilla = Object.freeze({ render, destruir() { current?.destroy(); current = null; last = null; } });
-  if (!preview || parent === window) render(window.DATOS || {});
+  window.ErosPlantilla = Object.freeze({ render, destruir() { if (current) resetNeeded = true; current?.destroy(); current = null; last = null; } });
+  if (new URLSearchParams(location.search).has('c') && !preview) {
+    if (window.ErosPagina?.activa) window.ErosPagina.iniciar('album-recuerdos');
+    else {
+      document.querySelector('main').hidden = true;
+      const error = document.createElement('p'); error.setAttribute('role','alert');
+      error.textContent = 'No pudimos abrir tu regalo. Revisá tu conexión y volvé a cargar la página.';
+      document.body.append(error);
+    }
+  } else if (!preview || parent === window) render(window.DATOS || {});
 })();

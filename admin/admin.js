@@ -7,22 +7,38 @@
   const money = v => window.ErosPrecios.formato(v);
   const estados = { nuevo:'Nuevo', en_proceso:'En proceso', pagado:'Pagado', publicado:'Publicado', vencido:'Vencido' };
   const juegos = { 'pintar-corazon':'Pintar el corazón', pintar:'Pintar el corazón', margarita:'Me ama / no me ama', laberinto:'Llegá a mí' };
-  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas';
+  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en';
   let client = null, userId = '', orders = [], selected = null, authGeneration = 0, detailGeneration = 0, request = null;
   let objects = [], imageBlobs = new Map(), blobURLs = new Map(), pendingBlobs = new Map(), iframe = null, previewData = null;
-  let loading = false, eraseBusy = false, sessionTimer = 0, localLogout = false, authStorage = null;
+  let loading = false, eraseBusy = false, sessionTimer = 0, deliveryTimer = 0, localLogout = false, authStorage = null;
   const current = (auth, detail = detailGeneration) => !!userId && auth === authGeneration && detail === detailGeneration;
   const errorText = e => typeof e?.message === 'string' ? e.message : 'No se pudo completar la operación.';
   const api = async promise => { const result = await promise; if (result.error) throw result.error; return result.data; };
   const dateTime = value => { const d = new Date(value); return Number.isNaN(+d) ? 'Sin fecha' : new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'}).format(d); };
   function dateLabel(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value.split('-').reverse().join('/') : 'Sin definir'; }
   function expiration(order) {
+    if (order.vence_en) { const end = new Date(order.vence_en); return Number.isFinite(+end) ? end : null; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(order.activar_el || '')) return null;
     const duration = window.ErosPrecios.duracion(order.duracion), start = new Date(order.activar_el + 'T00:00:00-03:00');
     if (!duration || !Number.isFinite(+start)) return null;
     if (duration === 'month') { const day = start.getUTCDate(); start.setUTCDate(1); start.setUTCMonth(start.getUTCMonth()+1); const last = new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,0)).getUTCDate(); start.setUTCDate(Math.min(day,last)); }
     else start.setUTCDate(start.getUTCDate() + (duration === 'week' ? 7 : 1));
     return start;
+  }
+  function livePageURL(order) {
+    if (!/^[23456789abcdefgh]{12,32}$/.test(order.slug || '')) throw new Error('Este pedido todavía no tiene un link público válido.');
+    const url = new URL('p/',new URL('../',location.href)); url.searchParams.set('c',order.slug); return url.href;
+  }
+  function publication(order) {
+    let start = order.publicado_en ? new Date(order.publicado_en) : null;
+    const activation = /^\d{4}-\d{2}-\d{2}$/.test(order.activar_el || '') ? new Date(order.activar_el + 'T00:00:00-03:00') : null;
+    if (start && activation && +activation > +start) start = activation;
+    const end = order.vence_en ? new Date(order.vence_en) : null;
+    if (order.estado !== 'publicado') return {active:false,message:order.estado === 'vencido' ? 'Esta página ya venció.' : 'El link se habilita cuando el pedido queda publicado.'};
+    if (!start || !end || !Number.isFinite(+start) || !Number.isFinite(+end) || +end <= +start) return {active:false,message:'Faltan fechas de publicación válidas. Revisá el pedido.'};
+    if (+end <= Date.now()) return {active:false,message:'Esta página ya venció.'};
+    if (+start > Date.now()) return {active:false,message:'La página está programada para el ' + dateTime(start) + ' (hora Argentina).',next:+start};
+    return {active:true,message:'La página está disponible hasta el ' + dateTime(end) + ' (hora Argentina).',next:+end};
   }
   function modelName(order) { return window.ErosPrecios.tabla.models[window.ErosPrecios.modelo(order.modelo)]?.name || String(order.modelo || 'Sin modelo'); }
   function extraLabel(order) { const e = order.extras || {}, pieces = []; if (e.juego) pieces.push(juegos[e.juego] || 'Juego desconocido'); if (e.contador === true || e.contador?.desde || e.contador?.activo) pieces.push('Contador'); return pieces.join(' · ') || 'Sin extras pagos'; }
@@ -32,12 +48,15 @@
   function link(text, href) { const a = node('a',text,'button secondary'); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; }
   function clearPreview() { iframe?.remove(); iframe = null; previewData = null; if ($('preview-dialog').open) $('preview-dialog').close(); $('preview-host').replaceChildren(); }
   function clearDetail() {
+    clearTimeout(deliveryTimer);
     detailGeneration++; clearPreview(); selected = null; objects = []; imageBlobs.clear(); pendingBlobs.clear(); blobURLs.forEach(URL.revokeObjectURL); blobURLs.clear();
     $('detail').hidden = true;
     for (const id of ['detail-fields','contact-actions','order-content','photos']) $(id).replaceChildren();
     for (const id of ['order-json','detail-title','package-status','notes-status','photos-status','erase-status','copy-status','final-link','total-check','erase-description','erase-error']) say(id,'');
     for (const id of ['notes','activation','delivery-message','erase-code']) $(id).value = '';
     $('final-link').removeAttribute('href'); $('delivery-whatsapp').removeAttribute('href');
+    $('final-link').hidden = true; $('public-page-link').hidden = true; $('public-page-link').removeAttribute('href');
+    $('copy-link').disabled = true; $('copy-message').disabled = true; $('delivery-whatsapp').hidden = true; say('delivery-note','');
   }
   function hidePrivate() {
     authGeneration++; userId = ''; orders = []; request?.abort(); request = null; clearDetail();
@@ -102,7 +121,7 @@
     const gen = authGeneration; const data = await api(client.from('pedidos').update({estado:status}).eq('id',order.id).select('id,estado').single());
     if (gen !== authGeneration || !userId) return;
     order.estado = data.estado; say('new-count',orders.filter(o => o.estado === 'nuevo').length + ' nuevos'); renderExpired();
-    if (selected?.id === order.id) { selected.estado = status; renderDetailFields(); }
+    if (selected?.id === order.id) { selected.estado = status; renderDetailFields(); updateDelivery(); }
   }
   function renderExpired() {
     $('expired-list').replaceChildren();
@@ -131,7 +150,7 @@
   function renderDetailFields() {
     if (!selected) return; const o = selected; say('detail-title','Pedido ' + o.codigo);
     $('detail-fields').replaceChildren();
-    const rows = [['Estado',estados[o.estado] || o.estado],['Creado',dateTime(o.creado_en)],['Modelo',modelName(o)],['Duración',o.duracion],['Para',o.para_quien],['De parte de',o.de_parte || 'Sin indicar'],['Tema',o.tema],['Extras',extraLabel(o)],['Contador desde',dateLabel(o.extras?.contador?.desde)],['Música',o.musica || 'Sin indicar'],['Activación',dateLabel(o.activar_el)],['Vencimiento',expiration(o) ? dateTime(expiration(o)) + ' (Argentina)' : 'Falta fecha de activación'],['WhatsApp',o.whatsapp_cliente || 'Sin indicar'],['Fotos declaradas',o.fotos_cantidad],['Total guardado',money(o.total)]];
+    const rows = [['Estado',estados[o.estado] || o.estado],['Creado',dateTime(o.creado_en)],['Modelo',modelName(o)],['Duración',o.duracion],['Para',o.para_quien],['De parte de',o.de_parte || 'Sin indicar'],['Tema',o.tema],['Extras',extraLabel(o)],['Contador desde',dateLabel(o.extras?.contador?.desde)],['Música',o.musica || 'Sin indicar'],['Activación',dateLabel(o.activar_el)],['Publicación',o.publicado_en ? dateTime(o.publicado_en) + ' (Argentina)' : 'Sin publicar'],['Vencimiento',expiration(o) ? dateTime(expiration(o)) + ' (Argentina)' : 'Falta fecha de publicación'],['WhatsApp',o.whatsapp_cliente || 'Sin indicar'],['Fotos declaradas',o.fotos_cantidad],['Total guardado',money(o.total)]];
     rows.forEach(([label,value]) => $('detail-fields').append(node('dt',label),node('dd',value)));
     const check = $('total-check');
     try { const p = ErosPrecios.calcular(o); const same = p.total === o.total; check.className = same ? 'check-ok' : 'check-error'; check.textContent = (same ? '✓ Total verificado. ' : '⚠ El total guardado NO coincide. ') + 'Modelo: ' + money(p.base) + ' · Juego: ' + money(p.juego) + ' · Contador: ' + money(p.contador) + ' · Esperado: ' + money(p.total) + (same ? '' : ' · Guardado: ' + money(o.total)); }
@@ -201,10 +220,20 @@
   }
   function postPreview(options = {}) { if (iframe && previewData && userId) iframe.contentWindow.postMessage({type:'eros-preview-datos',datos:previewData,opciones:{saltarSobre:true,saltarJuego:true,...options}},location.origin === 'null' ? '*' : location.origin); }
   function updateDelivery() {
+    clearTimeout(deliveryTimer);
     if (!selected) return;
-    try { const url = ErosPaquetes.finalURL(selected); $('final-link').href = url; say('final-link',url); const message = '¡Tu regalo ya está listo! ' + url + '\nQueda online durante ' + selected.duracion + (expiration(selected) ? ', hasta el ' + dateTime(expiration(selected)) + ' (hora Argentina).' : ' desde la fecha acordada.') + '\nDespués se da de baja.'; $('delivery-message').value = message;
+    $('final-link').hidden = true; $('final-link').removeAttribute('href'); say('final-link','');
+    $('public-page-link').hidden = true; $('public-page-link').removeAttribute('href');
+    $('copy-link').disabled = true; $('copy-message').disabled = true; $('delivery-message').value = '';
+    $('delivery-whatsapp').hidden = true; $('delivery-whatsapp').removeAttribute('href');
+    const state = publication(selected); say('delivery-note',state.message);
+    if (state.next) deliveryTimer = setTimeout(() => { if (userId && selected) updateDelivery(); },Math.min(Math.max(100,state.next-Date.now()+100),2147483647));
+    if (!state.active) return;
+    try { const url = livePageURL(selected); $('final-link').href = url; $('final-link').hidden = false; say('final-link',url);
+      $('public-page-link').href = url; $('public-page-link').hidden = false; $('copy-link').disabled = false;
+      const message = '¡Tu regalo ya está listo! ' + url + '\nQueda online durante ' + selected.duracion + ', hasta el ' + dateTime(selected.vence_en) + ' (hora Argentina).\nDespués se da de baja.'; $('delivery-message').value = message; $('copy-message').disabled = false;
       const number = whatsapp(selected.whatsapp_cliente); $('delivery-whatsapp').hidden = !number; if (number) $('delivery-whatsapp').href = 'https://wa.me/' + number + '?text=' + encodeURIComponent(message);
-    } catch(e) { say('copy-status',errorText(e)); }
+    } catch(e) { say('delivery-note',errorText(e)); }
   }
   async function copy(value) { try { await navigator.clipboard.writeText(value); say('copy-status','✓ Copiado'); } catch(_) { say('copy-status','No se pudo copiar automáticamente. Seleccioná el texto y copialo.'); $('delivery-message').focus(); $('delivery-message').select(); } }
   $('login-form').addEventListener('submit',async event => {
@@ -230,11 +259,13 @@
   window.addEventListener('message',event => { if (!userId || !iframe || event.source !== iframe.contentWindow || event.origin !== location.origin || event.data?.type !== 'eros-preview-listo') return; postPreview(); say('preview-status','Vista previa del pedido. Las fotos no son públicas.'); });
   $('package-button').addEventListener('click',async () => {
     if (!selected || !userId) return; const a = authGeneration, d = detailGeneration, order = selected; $('package-button').disabled = true;
-    try { await ErosPaquetes.generar(order,getBlob,message => { if (current(a,d)) say('package-status',message); },() => current(a,d),objects.map(f => f.name)); if (current(a,d)) say('package-status','✓ Paquete descargado. Descomprimí todo para probarlo; copiá p/' + order.codigo.toLowerCase() + '/ a tu sitio para publicarlo.'); }
+    try { await ErosPaquetes.generar(order,getBlob,message => { if (current(a,d)) say('package-status',message); },() => current(a,d),objects.map(f => f.name)); if (current(a,d)) say('package-status','✓ Paquete descargado para exportación manual. Descomprimí todo para probarlo; la entrega automática usa el link por slug de este panel.'); }
     catch(e) { if (current(a,d)) say('package-status','No se pudo generar el paquete: ' + errorText(e)); } finally { $('package-button').disabled = false; }
   });
-  $('copy-link').addEventListener('click',() => { if (selected) copy(ErosPaquetes.finalURL(selected)); }); $('copy-message').addEventListener('click',() => copy($('delivery-message').value));
-  $('erase-button').addEventListener('click',() => { if (!selected || !userId || eraseBusy) return; $('erase-code').value = ''; say('erase-error',''); say('erase-description','Se borrarán todas las fotos de Supabase, los nombres, el contenido, la música, el WhatsApp y las notas del pedido ' + selected.codigo + '. Retirá también p/' + selected.codigo.toLowerCase() + '/ de GitHub si está publicado.'); $('erase-dialog').showModal(); $('erase-code').focus(); });
+  $('copy-link').addEventListener('click',() => { if (selected && publication(selected).active) { try { copy(livePageURL(selected)); } catch(e) { say('copy-status',errorText(e)); } } else updateDelivery(); }); $('copy-message').addEventListener('click',() => { if (selected && publication(selected).active) copy($('delivery-message').value); else updateDelivery(); });
+  $('public-page-link').addEventListener('click',event => { if (!selected || !publication(selected).active) { event.preventDefault(); updateDelivery(); } });
+  $('final-link').addEventListener('click',event => { if (!selected || !publication(selected).active) { event.preventDefault(); updateDelivery(); } });
+  $('erase-button').addEventListener('click',() => { if (!selected || !userId || eraseBusy) return; $('erase-code').value = ''; say('erase-error',''); say('erase-description','Se borrarán todas las fotos de Supabase, los nombres, el contenido, la música, el WhatsApp y las notas del pedido ' + selected.codigo + '. Si exportaste una copia manual, retirala también de donde la hayas publicado.'); $('erase-dialog').showModal(); $('erase-code').focus(); });
   $('erase-cancel').addEventListener('click',() => $('erase-dialog').close());
   $('erase-form').addEventListener('submit',async event => {
     event.preventDefault(); if (!selected || !userId || eraseBusy) return;
@@ -246,8 +277,8 @@
       for (let i = 0; i < files.length; i += 100) { await api(client.storage.from('fotos').remove(files.slice(i,i+100).map(f => order.id + '/' + f.name))); if (!current(a,d)) return; }
       if ((await listObjects(order.id)).length) throw new Error('Quedaron archivos en el bucket. Volvé a intentar el borrado.');
       const extra = {juego:order.extras?.juego || '',sobre:!order.extras?.juego,contador:{activo:!!(order.extras?.contador === true || order.extras?.contador?.desde || order.extras?.contador?.activo)}};
-      await api(client.from('pedidos').update({para_quien:'Datos eliminados',de_parte:null,musica:'',whatsapp_cliente:null,datos:{},fotos_cantidad:0,notas:null,extras:extra}).eq('id',order.id).select('id').single());
-      if (!current(a,d)) return; $('erase-dialog').close(); await loadOrders(); await openDetail(order.id); say('erase-status','✓ Fotos y datos personales borrados de Supabase. Si existía una página publicada, retirala también de GitHub.');
+      await api(client.from('pedidos').update({estado:'vencido',para_quien:'Datos eliminados',de_parte:null,musica:'',whatsapp_cliente:null,datos:{},fotos_cantidad:0,notas:null,extras:extra}).eq('id',order.id).select('id').single());
+      if (!current(a,d)) return; $('erase-dialog').close(); await loadOrders(); await openDetail(order.id); say('erase-status','✓ Fotos y datos personales borrados de Supabase. Si exportaste una copia manual, retirala también de donde la hayas publicado.');
     } catch(e) { if (current(a,d)) say('erase-error','El borrado no terminó. Podés reintentar: ' + errorText(e)); }
     finally { eraseBusy = false; $('erase-confirm').disabled = false; }
   });

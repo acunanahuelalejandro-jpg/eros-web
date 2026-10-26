@@ -1,6 +1,6 @@
 import { EROS_PRECIOS } from "../_compartido/precios.ts";
 import { buscarPedido, checkoutSeguro, credencialPedido, referenciaPrecio, revisionPedido, validarPrecio, type PedidoCobro } from "../_compartido/cobros.ts";
-import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, modoMercadoPago, responderError, responderJSON, rpcCobro, urlSeguimiento } from "../_compartido/http.ts";
+import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, modoMercadoPago, responderError, responderJSON, responderPreflight, rpcCobro, urlSeguimiento } from "../_compartido/http.ts";
 import { apiMercadoPago, ErrorMercadoPago, mediosExcluidos, verificarVendedor } from "../_compartido/mercadopago.ts";
 
 function preferenciaValida(preferencia: Record<string, unknown>, pedido: PedidoCobro, referencia: string, vendedor: string): boolean {
@@ -40,8 +40,9 @@ export async function crearPago(req: Request): Promise<Response> {
   let reserva = "";
   let retenerReserva = false;
   try {
+    const preflight = responderPreflight(req);
+    if (preflight) return preflight;
     headers = cabecerasNavegador(req);
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (req.method !== "POST") throw new ErrorCobro(405, "metodo", "Usá el botón de pago del pedido.");
     await limitarCobro(req, "crear-pago", 30, 900, hasta);
     const cuerpo = await leerCuerpo(req);

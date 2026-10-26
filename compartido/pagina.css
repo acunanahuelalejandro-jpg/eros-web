@@ -1,0 +1,13 @@
+/* Solo se activa al abrir un regalo por su enlace público. */
+html.eros-pagina-bloqueada body > main,
+html.eros-pagina-bloqueada body > dialog,
+html.eros-pagina-bloqueada body > canvas,
+html.eros-pagina-bloqueada body > .confetti-layer { display:none !important; }
+.eros-pagina-estado { box-sizing:border-box; position:relative; z-index:20000; display:flex; min-height:100svh; width:min(100%,620px); flex-direction:column; align-items:center; justify-content:center; gap:18px; margin:auto; padding:32px 24px; color:var(--ink,#302b31); font-family:'DM Sans',system-ui,sans-serif; text-align:center; }
+.eros-pagina-estado[hidden] { display:none !important; }
+.eros-pagina-corazon { color:var(--wine,#8b3d52); font-size:5rem; line-height:1; }
+.eros-pagina-estado h1 { max-width:100%; margin:0; font:600 clamp(1.8rem,7vw,2.6rem)/1.18 'Playfair Display',Georgia,serif; overflow-wrap:anywhere; }
+.eros-pagina-estado p { max-width:410px; margin:0; font-size:1rem; line-height:1.6; color:var(--muted,#665f67); }
+.eros-pagina-estado button { min-height:48px; max-width:100%; margin-top:8px; padding:12px 24px; border:0; border-radius:99px; color:var(--button-ink,#fff); background:var(--wine,#8b3d52); font:700 1rem/1.4 'DM Sans',system-ui,sans-serif; cursor:pointer; }
+.eros-pagina-estado button[hidden] { display:none !important; }
+.eros-pagina-estado button:focus-visible { outline:3px solid var(--blue-deep,#315b70); outline-offset:4px; }

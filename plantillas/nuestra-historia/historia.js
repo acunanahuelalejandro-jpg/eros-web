@@ -20,6 +20,7 @@
       const text = (value) => typeof value === "string" ? value.trim() : "";
       const safeFile = (value) => {
         const path = text(value).replace(/\\/g, "/");
+        if (window.ErosPagina?.activa && window.ErosPagina.esRecursoPermitido(path)) return path;
         if (isPreview && path.startsWith("blob:") && new URL(path).origin === location.origin) return path;
         if (!path || path.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.split("/").includes("..")) return "";
         return path;
@@ -619,5 +620,13 @@
   window.addEventListener('resize', () => current?.requestRouteUpdate());
   window.addEventListener('orientationchange', () => current?.requestRouteUpdate());
   window.ErosPlantilla = Object.freeze({ render, destruir() { current?.destroy(); current = null; lastData = null; } });
-  if (!isPreview || parent === window) render(window.DATOS || {});
+  if (new URLSearchParams(location.search).has('c') && !isPreview) {
+    if (window.ErosPagina?.activa) window.ErosPagina.iniciar('nuestra-historia');
+    else {
+      document.querySelector('main').hidden = true;
+      const error = document.createElement('p'); error.setAttribute('role','alert');
+      error.textContent = 'No pudimos abrir tu regalo. Revisá tu conexión y volvé a cargar la página.';
+      document.body.append(error);
+    }
+  } else if (!isPreview || parent === window) render(window.DATOS || {});
 })();

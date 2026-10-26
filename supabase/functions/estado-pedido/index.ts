@@ -1,12 +1,13 @@
 import { buscarPedido, credencialPedido, estadoPagoPublico } from "../_compartido/cobros.ts";
-import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, responderError, responderJSON, rpcCobro, urlRegalo } from "../_compartido/http.ts";
+import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, responderError, responderJSON, responderPreflight, rpcCobro, urlRegalo } from "../_compartido/http.ts";
 
 export async function estadoPedido(req: Request): Promise<Response> {
   const hasta = Date.now() + 18000;
   let headers: Headers | undefined;
   try {
+    const preflight = responderPreflight(req);
+    if (preflight) return preflight;
     headers = cabecerasNavegador(req);
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (req.method !== "POST") throw new ErrorCobro(405, "metodo", "Usá el enlace de seguimiento del pedido.");
     await limitarCobro(req, "estado-pedido", 180, 60, hasta);
     const cuerpo = await leerCuerpo(req);

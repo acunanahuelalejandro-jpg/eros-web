@@ -26,7 +26,7 @@
       document.body.append(badge);
     }
     badge.replaceChildren();
-    if (!info || !info.modo) { badge.hidden = true; return; }
+    if (info?.elegida !== true) { badge.hidden = true; return; }
     const text = document.createElement('span'); text.textContent = 'Música: ' + (typeof info.descripcion === 'string' ? info.descripcion.slice(0, 220) : 'a elegir'); badge.append(text);
     const rawLink = typeof info.enlace === 'string' ? info.enlace : '';
     try {

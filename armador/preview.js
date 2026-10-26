@@ -114,7 +114,7 @@
     function renderMusic(snapshot) {
       musicInfo.replaceChildren();
       const music = snapshot?.musica;
-      if (!music?.modo) { musicInfo.hidden = true; return; }
+      if (music?.elegida !== true) { musicInfo.hidden = true; return; }
       const label = document.createElement('span');
       label.textContent = 'Música: ' + (music.descripcion || 'a elegir');
       musicInfo.append(label);

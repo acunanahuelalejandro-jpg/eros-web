@@ -556,3 +556,122 @@ returning pedido.codigo;
 - [ ] Los controles de cobro no quedan ejecutables por `anon` ni `authenticated`.
 
 **Lo que falta comprobar en tus cuentas:** el SQL aplicado en Supabase, las credenciales, la firma real del webhook, un pago de prueba con Mercado Pago y el despliegue de Pages. Preparar los archivos locales no ejecuta ninguno de esos pasos. Cuando lo hayas probado, respondé **“etapa B lista”** para seguir con C.
+
+## Etapa C · abrir el regalo desde Supabase
+
+Hacé esta etapa después de completar la B. Ahora el link `p/?c=SLUG_LARGO` carga el contenido del pedido desde Supabase y usa el diseño del modelo elegido. Cada pedido comparte el código de su modelo; no hace falta crear una carpeta ni subir fotos de clientes a GitHub. La limpieza automática de los datos sigue pendiente de la etapa D.
+
+### 1. Preparar la función pública
+
+1. Abrí una terminal dentro de `Descargas/ChatGPT/erosweb/`.
+2. Ejecutá:
+
+```bash
+node scripts/verificar-precios.mjs
+node scripts/preparar-funciones.mjs
+```
+
+3. Abrí el archivo local `supabase/dashboard/obtener-pagina.ts`. Es la copia completa que vas a pegar en el editor del navegador; no la edites directamente.
+
+Esta etapa no necesita otro SQL de instalación ni modifica las políticas de lectura de `pedidos` o del bucket. Reutiliza la función de límites de la etapa B. No vuelvas a ejecutar la instalación inicial ni habilites lectura anónima para resolver un error de carga.
+
+**Verificación:** la terminal confirma que los precios coinciden y que preparó `obtener-pagina.ts`, además de las funciones de cobro que ya existían.
+
+### 2. Revisar la configuración existente
+
+1. En Supabase, abrí **Edge Functions → Secrets**.
+2. Confirmá que `EROS_SITE_URL` sea la raíz real de tu web de GitHub Pages, incluyendo `/eros-web/` si corresponde. Debe tener `https://` y no terminar en `index.html`.
+3. En tu computadora, confirmá que `armador/config.js` siga apuntando al proyecto nuevo con su URL y clave **pública**.
+
+No hace falta generar otro secreto para `obtener-pagina`. El navegador identifica el regalo con su slug largo; la función usa la clave interna del servidor para consultar únicamente ese pedido y firmar sus fotos. Nunca pegues una clave privada o `service_role` en `config.js`.
+
+**Verificación:** usás el mismo proyecto y el mismo sitio que en B. No agregaste claves privadas al sitio.
+
+### 3. Desplegar `obtener-pagina`
+
+1. Abrí **Supabase → Edge Functions → Deploy a new function → Via Editor**.
+2. Poné exactamente `obtener-pagina` como nombre.
+3. Borrá el ejemplo del editor y pegá todo el contenido de `supabase/dashboard/obtener-pagina.ts`.
+4. Tocá **Deploy function** y esperá el aviso de éxito.
+5. Abrí **obtener-pagina → Details/Settings** y desactivá **Verify JWT**. Guardá si el panel lo pide.
+6. Si tenés que volver a desplegarla, regenerá primero el archivo con el comando del paso 1; después abrí **Code/Edit**, reemplazá el contenido completo y tocá **Deploy updates**.
+
+La función acepta `POST` y responde el preflight `OPTIONS` del navegador con `204`. Comprueba que el pedido esté `publicado`, que haya comenzado su fecha de publicación y que todavía no haya vencido. No devuelve contactos, notas, información del pago ni otros pedidos. Hay límites de 120 consultas por minuto por conexión y 60 por minuto por slug.
+
+**Verificación:** la función aparece desplegada y Verify JWT está apagado. No alcanza con regenerar el archivo en tu computadora: el código nuevo también tiene que estar desplegado en Supabase. [Editor del dashboard](https://supabase.com/docs/guides/functions/quickstart-dashboard).
+
+### 4. Subir el código del sitio
+
+1. Actualizá en GitHub los archivos modificados de las tres carpetas `plantillas/carta-para-vos/`, `plantillas/nuestra-historia/` y `plantillas/album-recuerdos/`. Subí tanto el `index.html` como su JavaScript del modelo.
+2. Subí la nueva página `p/` y los archivos compartidos nuevos de carga pública dentro de `compartido/` (`pagina.js` y sus recursos, si los hay).
+3. Subí los archivos modificados de `armador/`, `compartido/preview.js`, `admin/admin.js` y `admin/index.html`. Conservá la configuración pública del proyecto nuevo.
+4. Conservá los juegos, temas, efectos y el resto de `compartido/`; las plantillas los siguen usando mediante rutas relativas.
+5. Esperá el resultado verde de GitHub Pages y probá desde la URL publicada.
+
+No subas fotos de pedidos a `p/`: esta carpeta contiene solamente la página de entrada. Las fotos siguen en el bucket privado `fotos`. No hay cambios en `demos/`; las plantillas abiertas sin `?c=` conservan su funcionamiento con `datos.js`.
+
+**Verificación:** existe la ruta pública `p/` en tu sitio y las tres plantillas cargan sus archivos JavaScript sin errores 404.
+
+### 5. Probar los tres modelos y los juegos
+
+1. Armá un pedido ficticio de **Carta para vos**, subí fotos de prueba, elegí un tema y completá el pago con las cuentas de prueba de B.
+2. Cuando el seguimiento diga que está publicado, tocá **Abrir mi página**. El link debe tener `p/?c=` seguido del slug largo; el código de seis caracteres queda para soporte.
+3. Tocá **Tocá para empezar**. Sin juego elegido, debe aparecer el sobre; al abrirlo, deben verse la carta, las fotos y la firma reales del pedido, sin ejemplos ni lugares vacíos de la vista previa.
+4. Repetí el recorrido con **Nuestra historia** y **Álbum de recuerdos**. Revisá el orden de las fotos, los epígrafes o momentos, el lightbox y el contador si lo elegiste.
+5. Probá un pedido con cada juego: **Pintar el corazón**, **Me ama / no me ama** y **Llegá a mí**. En el regalo real el juego se juega con el dedo o el mouse; no se resuelve solo. Al ganar aparece el contenido, sin mostrar también un sobre.
+6. Si usaste fotos opcionales para el laberinto, comprobá que sean las del pedido correcto.
+7. Repetí en celular y computadora. Abrí otra pestaña del mismo link y comprobá que muestre el mismo pedido.
+
+**Verificación:** los tres modelos muestran su propio contenido y los tres juegos respetan la apertura elegida. La vista previa sigue siendo automática, pero el link público conserva la experiencia real.
+
+### 6. Probar fechas, fotos y acceso limitado
+
+1. Creá un pedido de prueba con una fecha de activación futura y pagalo con las cuentas ficticias. Antes de esa fecha debe aparecer un mensaje amable de que la página todavía no está disponible, sin mostrar su contenido ni fotos.
+2. Para probar un vencimiento sin esperar, abrí **Supabase → Table Editor → pedidos**, filtrá por el código de un pedido ficticio ya publicado y cambiá **solo su `vence_en`** por una fecha pasada. Conservá su estado para comprobar que el servidor rechaza el acceso por la fecha, aunque todavía diga `publicado`.
+3. Abrí ese link otra vez: debe decir **Esta página ya venció**. En esta etapa se corta el acceso, pero todavía no se borran automáticamente los archivos o textos; eso se configura en D.
+4. Probá un slug inventado y un pedido que todavía esté `nuevo`: no deben mostrar contenido. No pruebes buscando slugs de otras personas.
+5. En un pedido ficticio, probá sin fotos y con una foto ausente. El resto del regalo debe seguir funcionando.
+6. Dejá un regalo vigente abierto varios minutos y tocá una foto para ampliarla. Al recargar se vuelven a pedir enlaces firmados; al vencer el regalo no se puede volver a pedir su contenido.
+
+Las URLs de las fotos duran como máximo diez minutos y se acortan si al regalo le queda menos tiempo. El navegador puede mantener las imágenes de la experiencia actual en memoria; no se guardan los textos o fotos del regalo en `localStorage`. Cualquiera que reciba el link puede abrir el regalo mientras esté vigente. `noindex` evita pedir su indexación, pero el link no es una contraseña. [URLs firmadas de Storage](https://supabase.com/docs/reference/javascript/file-buckets-createsignedurls).
+
+Las fotos nuevas se optimizan en el navegador antes de subirlas: lado mayor de hasta **1400 px**, JPEG con calidad **0.8**, respetando su orientación. No se usa la transformación de imágenes de Storage, que es una función de planes pagos. Las fotos que ya estaban subidas no se comprimen de nuevo. [Transformaciones de imágenes de Supabase](https://supabase.com/docs/guides/storage/serving/image-transformations).
+
+**Verificación:** fecha futura, vencido, inexistente y pendiente no revelan fotos ni contenido. Un regalo vigente se ve correctamente y la tabla continúa sin permitir lectura anónima.
+
+### 7. Abrir desde el panel y revisar la música
+
+1. Entrá a tu panel `admin/` con tu sesión administradora y tocá **Actualizar**.
+2. Abrí un pedido publicado y vigente. En **Link para entregar** tiene que aparecer **Abrir página**, junto con el link y los controles para copiarlo o mandarlo por WhatsApp.
+3. Abrí un pedido programado, vencido o todavía nuevo: el panel explica su estado y no habilita **Abrir página**. La fecha de vencimiento mostrada toma primero `vence_en`, calculada por el servidor.
+4. En el armador, dejá la música sin elegir: ya no debe aparecer el texto **Música: seleccion: pendiente**. Elegí una canción disponible o pegá un enlace válido y comprobá que la información aparezca; al borrarlo debe ocultarse.
+5. La música conserva el funcionamiento actual: un archivo de la selección debe existir en el sitio para poder sonar. Un link de Spotify o YouTube no se convierte automáticamente en un MP3 ni se descarga del servicio.
+
+**Verificación:** el panel usa `p/?c=SLUG_LARGO`, no una carpeta basada en el código. La vista previa no muestra música pendiente y las fotos nuevas están optimizadas.
+
+Si usás el borrado manual de fotos y datos del panel, ese pedido también queda marcado como `vencido` para cerrar nuevas consultas de su página. La limpieza automática por fecha se configura en la etapa D.
+
+### Si algo falla
+
+- **La web no puede llamar a la función:** revisá en **obtener-pagina → Invocations** que `OPTIONS` responda `204`, Verify JWT esté apagado y `EROS_SITE_URL` tenga el dominio real. Subí y desplegá el archivo generado más reciente.
+- **La página dice que todavía no está disponible:** revisá en `pedidos` su estado, `publicado_en`, `activar_el` y `vence_en`. No cambies a mano un pedido real para evitar revisar un pago pendiente.
+- **La página dice que venció:** comprobá `vence_en` en hora argentina. Los datos de un pedido vencido todavía se conservan hasta configurar D o borrarlos con el panel.
+- **Aparece un `429`:** dejá de recargar y esperá un minuto. La página no necesita consultas continuas para mostrar las mismas fotos.
+- **Una foto no aparece:** verificá en **Storage → fotos** que el archivo del pedido exista. No cambies el bucket a público. Abrí de nuevo el link para pedir URLs nuevas.
+- **No suena la música:** tocá primero el botón de inicio, revisá el botón de pausa y que el archivo elegido exista; no esperes que un enlace de Spotify o YouTube se reproduzca como un MP3.
+- **En el panel sigue apareciendo una dirección vieja:** asegurate de haber subido `admin/admin.js` y `admin/index.html`, recargá y tocá **Actualizar** para volver a leer slug y fechas del servidor.
+
+### Lista de comprobación de la etapa C
+
+- [ ] `obtener-pagina` está desplegada, responde OPTIONS y tiene Verify JWT desactivado.
+- [ ] El link corto `p/?c=` abre el modelo correcto.
+- [ ] Carta, Historia y Álbum muestran sus textos, fotos y firma reales.
+- [ ] Los tres juegos se pueden jugar de verdad y reemplazan al sobre.
+- [ ] Funciona un pedido sin fotos y no se rompe por una foto ausente.
+- [ ] Un pedido nuevo, futuro, vencido o inexistente no entrega contenido.
+- [ ] Las fotos mantienen el bucket privado y usan URLs firmadas temporales.
+- [ ] El panel abre solo páginas publicadas y vigentes, usando el slug.
+- [ ] No aparece música pendiente cuando todavía no elegiste nada.
+- [ ] Las demos y las plantillas sin `?c=` siguen funcionando.
+
+**Lo que tenés que verificar en tus cuentas:** el despliegue de la función y de Pages, los pedidos y pagos ficticios, la firma y descarga real de fotos en Storage y el acceso desde otro dispositivo. Las pruebas locales no ejecutan esos pasos. Cuando termines, respondé **“etapa C lista”** para seguir con D.

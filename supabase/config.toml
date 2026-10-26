@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.estado-pedido]
 verify_jwt = false
+
+[functions.obtener-pagina]
+verify_jwt = false

@@ -4,6 +4,7 @@
   window.JUEGOS = window.JUEGOS || {};
   const safeFile = (value) => {
     const path = typeof value === "string" ? value.trim().replace(/\\/g, "/") : "";
+    if (window.ErosPagina?.activa && window.ErosPagina.esRecursoPermitido(path)) return path;
     if (parent !== window && new URLSearchParams(location.search).get('preview') === '1' && path.startsWith('blob:')) {
       try { if (new URL(path).origin === location.origin) return path; } catch (_) {}
     }

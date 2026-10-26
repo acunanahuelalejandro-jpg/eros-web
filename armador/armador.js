@@ -211,13 +211,13 @@
     catch (error) { if (/15 MB|Usá una foto/.test(error.message)) throw error; throw new Error('No pudimos leer esta foto, probá con otra o con una captura'); }
     try {
       const canvas = document.createElement('canvas');
-      const initialScale = Math.min(1, 1600 / Math.max(decoded.width, decoded.height));
+      const initialScale = Math.min(1, 1400 / Math.max(decoded.width, decoded.height));
       let scale = initialScale; let blob = null;
       for (let pass = 0; pass < 4; pass += 1) {
         canvas.width = Math.max(1, Math.round(decoded.width * scale)); canvas.height = Math.max(1, Math.round(decoded.height * scale));
         const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('No pudimos leer esta foto, probá con otra o con una captura');
         context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(decoded.source, 0, 0, canvas.width, canvas.height);
-        blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
         if (!blob) throw new Error('No pudimos leer esta foto, probá con otra o con una captura');
         if (blob.size <= MAX_BUCKET_BYTES) break;
         scale *= 0.82;
@@ -632,11 +632,14 @@
   window.ErosArmador = Object.freeze({
     vistaPrevia(resolvePhoto) {
       const datos = state.model ? buildTemplateData(resolvePhoto) : null;
+      const archivo = datos?.musica || '';
+      const enlace = state.musicMode === 'link' && validMusicUrl(state.musicLink) ? state.musicLink.trim() : '';
+      const elegida = state.musicMode === 'selection' ? Boolean(archivo) : state.musicMode === 'link' && Boolean(enlace);
       return {
         modelo: PRICE_TABLE.models[state.model]?.slug || '', datos,
         apertura: window.ErosApertura.elegirApertura(datos),
         paso: state.step, etapa: stepIndex() + 1, recibe:state.recipient.trim(), de:state.sender.trim(),
-        musica: { modo:state.musicMode, descripcion:musicDescription(), enlace:validMusicUrl(state.musicLink) ? state.musicLink : '', archivo:datos?.musica || '' },
+        musica: { modo:state.musicMode, elegida, descripcion:elegida ? musicDescription() : '', enlace, archivo },
         juego: state.game, contador: state.counter, desde: state.counterDate
       };
     }

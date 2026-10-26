@@ -27,17 +27,19 @@ export function modoMercadoPago(): "test" | "produccion" {
 }
 
 export function cabecerasNavegador(req: Request): Headers {
+  const origenSitio = sitioEros().origin;
   const headers = new Headers({
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
     "Vary": "Origin",
-    "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-client-info",
+    "Access-Control-Allow-Origin": origenSitio,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Expose-Headers": "Retry-After",
   });
   const origen = req.headers.get("origin");
-  const permitidos = [sitioEros().origin];
+  const permitidos = [origenSitio];
   if (Deno.env.get("MP_MODO") === "test") {
     permitidos.push("http://localhost:8000", "http://127.0.0.1:8000");
   }
@@ -48,6 +50,12 @@ export function cabecerasNavegador(req: Request): Headers {
     headers.set("Access-Control-Allow-Origin", origen);
   }
   return headers;
+}
+
+// El preflight termina antes de validar método, cuerpo, firma o credenciales.
+export function responderPreflight(req: Request): Response | null {
+  if (req.method !== "OPTIONS") return null;
+  return new Response(null, { status: 204, headers: cabecerasNavegador(req) });
 }
 
 export function responderJSON(valor: unknown, estado = 200, headers?: Headers): Response {
@@ -131,15 +139,25 @@ export function secretoServidor(): string {
   return clave;
 }
 
-export async function consultarBD(ruta: string, metodo = "GET", cuerpo?: unknown, hasta = Infinity): Promise<unknown> {
+export function baseSupabaseServidor(): string {
   const base = Deno.env.get("SUPABASE_URL") || "";
   if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(base)) {
     throw new ErrorCobro(503, "configuracion", "Falta configurar la conexión del servidor.");
   }
+  return base;
+}
+
+export function cabecerasServidor(): Record<string, string> {
   const clave = secretoServidor();
   const headers: Record<string, string> = { apikey: clave, "Content-Type": "application/json" };
   // Las claves nuevas sb_secret no son JWT y no se envían como Bearer.
   if (clave.startsWith("eyJ")) headers.Authorization = "Bearer " + clave;
+  return headers;
+}
+
+export async function consultarBD(ruta: string, metodo = "GET", cuerpo?: unknown, hasta = Infinity): Promise<unknown> {
+  const base = baseSupabaseServidor();
+  const headers = cabecerasServidor();
   const respuesta = await fetchConTiempo(base + "/rest/v1/" + ruta, {
     method: metodo, headers, body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
   }, 7000, hasta);

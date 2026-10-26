@@ -93,6 +93,39 @@ async function requestWebhook(s: Simulado, firmaValida = true) {
   });
 }
 
+Deno.test("CORS: las tres funciones responden OPTIONS 204 sin cuerpo, credenciales ni consultas", () => simular(async s => {
+  Deno.env.set("EROS_SITE_URL", "https://tienda.github.io/eros-web/");
+  for (const clave of ["SUPABASE_URL", "SUPABASE_SECRET_KEYS", "MP_ACCESS_TOKEN", "MP_WEBHOOK_SECRET", "MP_MODO"]) Deno.env.delete(clave);
+  for (const [nombre, handler] of [["crear-pago", crearPago], ["estado-pedido", estadoPedido], ["webhook-mercadopago", webhookMercadoPago]] as const) {
+    // También un OPTIONS sin Origin conserva el origen configurado, siempre sin /eros-web/.
+    for (const conOrigen of [true, false]) {
+      const headers = new Headers({
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "authorization, x-client-info, apikey, content-type",
+      });
+      if (conOrigen) headers.set("Origin", "https://tienda.github.io");
+      const respuesta = await handler(new Request("https://prueba.supabase.co/functions/v1/" + nombre, { method: "OPTIONS", headers }));
+      igual(respuesta.status, 204);
+      igual(await respuesta.text(), "");
+      igual(respuesta.headers.get("Access-Control-Allow-Origin"), "https://tienda.github.io");
+      igual(respuesta.headers.get("Access-Control-Allow-Methods"), "POST, OPTIONS");
+      igual(respuesta.headers.get("Access-Control-Allow-Headers"), "authorization, x-client-info, apikey, content-type");
+    }
+  }
+  igual(s.peticiones.length, 0); igual(s.registro.length, 0);
+}));
+Deno.test("CORS: preflight ajeno sigue rechazado y GET conserva 405 con CORS", () => simular(async s => {
+  for (const handler of [crearPago, estadoPedido, webhookMercadoPago]) {
+    const ajeno = await handler(new Request("https://prueba.supabase.co/functions/v1/prueba", {
+      method: "OPTIONS", headers: { Origin: "https://ajeno.ejemplo.test", "Access-Control-Request-Method": "POST" },
+    }));
+    igual(ajeno.status, 403); igual(ajeno.headers.get("Access-Control-Allow-Origin"), null);
+    const get = await handler(new Request("https://prueba.supabase.co/functions/v1/prueba", { headers: { Origin: "https://eros.ejemplo.test" } }));
+    igual(get.status, 405); igual(get.headers.get("Access-Control-Allow-Origin"), "https://eros.ejemplo.test");
+  }
+  igual(s.peticiones.length, 0);
+}));
+
 Deno.test("checkout: precio del servidor, moneda ARS y URLs por slug; no envía contenido personal", () => simular(async s => {
   const respuesta = await crearPago(requestPedido()); igual(respuesta.status, 200);
   const salida = await respuesta.json(); igual(salida.slug, fila.slug); afirmar(salida.init_point.startsWith("https://www.mercadopago.com/"));
@@ -129,7 +162,9 @@ Deno.test("checkout: POST ambiguo queda incierto; conciliar no repite el POST", 
   afirmar(!s.peticiones.some(p => p.url.endsWith("/checkout/preferences") && p.method === "POST"));
 }));
 Deno.test("webhook: firma inválida no consulta ni escribe la base", () => simular(async s => {
-  igual((await webhookMercadoPago(await requestWebhook(s, false))).status, 401); igual(s.peticiones.length, 0);
+  const respuesta = await webhookMercadoPago(await requestWebhook(s, false));
+  igual(respuesta.status, 401); igual(s.peticiones.length, 0);
+  igual(respuesta.headers.get("Access-Control-Allow-Origin"), "https://eros.ejemplo.test");
 }));
 Deno.test("webhook: sólo API approved por total exacto publica; reenvío no duplica", () => simular(async s => {
   igual((await webhookMercadoPago(await requestWebhook(s))).status, 200); igual(s.registro.length, 1); igual(s.registro[0].p_total, 5000); igual(s.registro[0].p_dias, 1);
