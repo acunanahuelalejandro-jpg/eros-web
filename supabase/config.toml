@@ -15,3 +15,7 @@ verify_jwt = false
 # Solo el workflow con x-eros-limpieza conoce el secreto de esta función.
 [functions.limpiar-vencidos]
 verify_jwt = false
+
+# Requiere el secreto privado x-eros-aviso; no admite sesiones del navegador.
+[functions.avisar-admin]
+verify_jwt = false

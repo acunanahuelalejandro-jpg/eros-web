@@ -1,6 +1,7 @@
 import { buscarPedido, referenciaPrecio, revisionPedido, validarPrecio } from "../_compartido/cobros.ts";
 import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, modoMercadoPago, responderError, responderJSON, responderPreflight, rpcCobro } from "../_compartido/http.ts";
 import { apiMercadoPago, firmaMercadoPagoValida, tipoAcreditacionInmediata, verificarVendedor } from "../_compartido/mercadopago.ts";
+import { avisarPagoAdmin } from "../_compartido/avisos.ts";
 
 export async function webhookMercadoPago(req: Request): Promise<Response> {
   let headers: Headers | undefined;
@@ -39,6 +40,7 @@ export async function webhookMercadoPago(req: Request): Promise<Response> {
     if (typeof filas.codigo !== "string") return responderJSON({ recibido: true, accion: "sin_pedido" }, 200, headers);
     const pedido = await buscarPedido({ id: idPedido, codigo: filas.codigo });
     if (pedido.mp_payment_id === paymentId && ["pagado", "publicado", "vencido"].includes(pedido.estado)) {
+      if (["pagado", "publicado"].includes(pedido.estado)) await avisarPagoAdmin(idPedido);
       return responderJSON({ recibido: true, accion: "repetido" }, 200, headers);
     }
     const calculo = validarPrecio(pedido);
@@ -62,6 +64,7 @@ export async function webhookMercadoPago(req: Request): Promise<Response> {
     const acciones = ["publicado", "repetido", "registrado", "ya_pagado", "cambio", "revision", "otro_pedido", "invalido"];
     const accion = acciones.includes(String(resultado.accion)) ? resultado.accion : "revisar";
     if (["cambio", "revision", "otro_pedido", "invalido", "revisar"].includes(String(accion))) console.error("pago_requiere_revision", accion);
+    if (pago.status === "approved" && ["publicado", "repetido", "ya_pagado"].includes(String(accion))) await avisarPagoAdmin(idPedido);
     return responderJSON({ recibido: true, accion }, 200, headers);
   } catch (error) {
     // Un 5xx permite el reenvío de Mercado Pago ante una caída transitoria real.

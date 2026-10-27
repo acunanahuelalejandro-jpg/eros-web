@@ -11,10 +11,11 @@ const verification = spawnSync(process.execPath, [resolve(root, 'scripts/verific
 if (verification.status !== 0) process.exit(1);
 await mkdir(outputRoot, { recursive: true });
 
-for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obtener-pagina', 'limpiar-vencidos']) {
+for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obtener-pagina', 'limpiar-vencidos', 'avisar-admin']) {
   const visited = new Set();
   const visiting = new Set();
   const chunks = [];
+  const externalImports = new Set();
   async function add(path) {
     if (visited.has(path)) return;
     if (visiting.has(path)) throw new Error('Hay una importación circular: ' + relative(root, path));
@@ -23,8 +24,9 @@ for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obten
     let source = await readFile(path, 'utf8');
     const imports = [...source.matchAll(/^import\s+[^\n]+?\s+from\s+["']([^"']+)["'];?\s*$/gm)];
     for (const match of imports) {
-      if (!match[1].startsWith('.')) throw new Error('Dependencia no local: ' + match[1]);
-      await add(resolve(dirname(path), match[1]));
+      if (match[1].startsWith('.')) await add(resolve(dirname(path), match[1]));
+      else if (match[1] === 'npm:web-push@3.6.7' || match[1] === 'node:crypto') externalImports.add(match[0].trim());
+      else throw new Error('Dependencia no permitida o sin versión fija: ' + match[1]);
       source = source.replace(match[0], '');
     }
     if (/^import\b/m.test(source)) throw new Error('Importación sin resolver: ' + relative(root, path));
@@ -34,6 +36,6 @@ for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obten
   }
   await add(resolve(functionsRoot, name, 'index.ts'));
   const file = resolve(outputRoot, name + '.ts');
-  await writeFile(file, '// GENERADO por node scripts/preparar-funciones.mjs. No editar este archivo.\n// No contiene secretos: se leen del entorno de Supabase.\n\n' + chunks.join('\n\n') + '\n');
+  await writeFile(file, '// GENERADO por node scripts/preparar-funciones.mjs. No editar este archivo.\n// No contiene secretos: se leen del entorno de Supabase.\n\n' + [...externalImports].join('\n') + '\n\n' + chunks.join('\n\n') + '\n');
   console.log('Preparado: ' + relative(root, file));
 }

@@ -7,10 +7,11 @@
   const money = v => window.ErosPrecios.formato(v);
   const estados = { nuevo:'Nuevo', en_proceso:'En proceso', pagado:'Pagado', publicado:'Publicado', vencido:'Vencido' };
   const juegos = { 'pintar-corazon':'Pintar el corazón', pintar:'Pintar el corazón', margarita:'Me ama / no me ama', laberinto:'Llegá a mí' };
-  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en';
+  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en,pagado_en';
   let client = null, userId = '', orders = [], selected = null, authGeneration = 0, detailGeneration = 0, request = null;
   let objects = [], imageBlobs = new Map(), blobURLs = new Map(), pendingBlobs = new Map(), iframe = null, previewData = null;
-  let loading = false, eraseBusy = false, sessionTimer = 0, deliveryTimer = 0, localLogout = false, authStorage = null;
+  let loading = false, reloadRequested = false, eraseBusy = false, sessionTimer = 0, deliveryTimer = 0, localLogout = false, authStorage = null;
+  let pendingCode = /^[A-Z0-9]{6}$/.test(new URLSearchParams(location.search).get('pedido') || '') ? new URLSearchParams(location.search).get('pedido') : '';
   const current = (auth, detail = detailGeneration) => !!userId && auth === authGeneration && detail === detailGeneration;
   const errorText = e => typeof e?.message === 'string' ? e.message : 'No se pudo completar la operación.';
   const api = async promise => { const result = await promise; if (result.error) throw result.error; return result.data; };
@@ -59,6 +60,7 @@
     $('copy-link').disabled = true; $('copy-message').disabled = true; $('delivery-whatsapp').hidden = true; say('delivery-note','');
   }
   function hidePrivate() {
+    window.ErosAvisos?.pausar(); loading = false; reloadRequested = false;
     authGeneration++; userId = ''; orders = []; request?.abort(); request = null; clearDetail();
     $('dashboard').hidden = true; $('logout').hidden = true; $('order-rows').replaceChildren(); $('expired-list').replaceChildren();
     $('new-count').textContent = ''; $('search').value = ''; $('status-filter').value = ''; $('erase-dialog').close();
@@ -76,10 +78,14 @@
       }
       userId = data.user.id; $('dashboard').hidden = false; $('logout').hidden = false; $('login-panel').hidden = true;
       say('global-status','Sesión administradora activa.'); await loadOrders();
+      if (gen !== authGeneration || !userId) return;
+      window.ErosAvisos?.iniciar({client,userId,orders,onChange:loadOrders,onOpen:openCode});
+      if (pendingCode) { const code = pendingCode; pendingCode = ''; await openCode(code); }
     } catch (e) { if (gen !== authGeneration && !e.message?.includes('eros_admin')) return; hidePrivate(); $('login-panel').hidden = false; say('login-error',errorText(e)); say('global-status',''); }
   }
   async function loadOrders() {
-    if (!userId || loading) return;
+    if (!userId) return;
+    if (loading) { reloadRequested = true; return; }
     loading = true; const gen = authGeneration; request?.abort(); request = new AbortController(); $('refresh').disabled = true; say('list-status','Cargando pedidos…');
     try {
       const all = []; let offset = 0;
@@ -87,9 +93,19 @@
         const page = await api(client.from('pedidos').select(fields).order('creado_en',{ascending:false}).order('id',{ascending:false}).range(offset,offset+199).abortSignal(request.signal));
         if (gen !== authGeneration || !userId) return; all.push(...page); if (page.length < 200) break; offset += 200;
       }
-      orders = all; renderList();
+      orders = all; window.ErosAvisos?.actualizarBase(orders); renderList();
+      // Una actualización en vivo no reconstruye el formulario ni pisa notas sin guardar.
+      const updated = selected && orders.find(order => order.id === selected.id);
+      if (updated) { for (const key of ['estado','pagado_en','slug','publicado_en','vence_en','total']) selected[key] = updated[key]; renderDetailFields(); updateDelivery(); }
     } catch(e) { if (gen === authGeneration && userId) say('list-status','No se pudo cargar la lista: ' + errorText(e)); }
-    finally { loading = false; $('refresh').disabled = false; }
+    finally { if (gen === authGeneration) { loading = false; $('refresh').disabled = false; if (reloadRequested) { reloadRequested = false; void loadOrders(); } } }
+  }
+  async function openCode(code) {
+    if (!userId || !/^[A-Z0-9]{6}$/.test(code || '')) return;
+    let order = orders.find(order => order.codigo === code);
+    if (!order) { await loadOrders(); if (!userId) return; order = orders.find(order => order.codigo === code); }
+    if (order) { window.ErosAvisos?.marcarLeidos(); await openDetail(order.id); }
+    else say('global-status','No se encontró el pedido ' + code + ' en esta cuenta administradora.');
   }
   const folded = value => String(value || '').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   function renderList() {
@@ -242,7 +258,15 @@
     catch(e) { say('login-error',e.status === 400 ? 'No se pudo ingresar. Revisá tu email y contraseña.' : errorText(e)); }
     finally { $('login-button').disabled = false; }
   });
-  $('logout').addEventListener('click',async () => { localLogout = true; client.auth.stopAutoRefresh(); hidePrivate(); $('login-panel').hidden = false; $('password').value = ''; try { await client.auth.signOut({scope:'local'}); say('global-status','Sesión cerrada.'); } catch(e) { say('global-status','Los datos se ocultaron. No se pudo confirmar el cierre: ' + errorText(e)); } finally { authStorage?.removeItem('erosweb-admin-auth-v1'); authStorage?.removeItem('erosweb-admin-auth-v1-code-verifier'); } });
+  $('logout').addEventListener('click',async () => {
+    localLogout = true;
+    const stopAlerts = window.ErosAvisos?.salir().catch(error => errorText(error));
+    client.auth.stopAutoRefresh(); hidePrivate(); $('login-panel').hidden = false; $('password').value = '';
+    let alertWarning = '';
+    try { alertWarning = await stopAlerts || ''; await client.auth.signOut({scope:'local'}); say('global-status','Sesión cerrada.' + (alertWarning ? ' ' + alertWarning : '')); }
+    catch(e) { say('global-status','Los datos se ocultaron. No se pudo confirmar el cierre: ' + errorText(e)); }
+    finally { authStorage?.removeItem('erosweb-admin-auth-v1'); authStorage?.removeItem('erosweb-admin-auth-v1-code-verifier'); }
+  });
   $('refresh').addEventListener('click',async () => { const id = selected?.id; await loadOrders(); if (id && userId) await openDetail(id); });
   $('search').addEventListener('input',renderList); $('status-filter').addEventListener('change',renderList);
   $('close-detail').addEventListener('click',clearDetail);
@@ -291,7 +315,7 @@
     client = window.supabase.createClient(config.supabaseUrl,config.supabaseKey,{auth:{storage,storageKey:'erosweb-admin-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
     // Una clave publishable no es un JWT: createClient la manda como apikey y usa el JWT de Auth después del login.
     client.auth.onAuthStateChange((event,session) => {
-      if (localLogout && session) return;
+      if (localLogout) { if (!session) hidePrivate(); return; }
       if (session?.user?.id === userId && ['TOKEN_REFRESHED','SIGNED_IN'].includes(event)) return;
       if (!session) hidePrivate();
       clearTimeout(sessionTimer); sessionTimer = setTimeout(() => loginState(session),0);
@@ -299,6 +323,11 @@
     setInterval(() => { if (userId) renderExpired(); },60000);
   }
   window.addEventListener('pageshow',event => { if (event.persisted && client) client.auth.getSession().then(({data}) => loginState(localLogout ? null : data.session)); });
+  window.addEventListener('eros-pedido-pendiente',event => {
+    if (!/^[A-Z0-9]{6}$/.test(event.detail || '')) return;
+    pendingCode = event.detail;
+    const url = new URL(location.href); url.searchParams.set('pedido',pendingCode); history.replaceState(null,'',url);
+  });
   window.addEventListener('pagehide',() => { hidePrivate(); clearTimeout(sessionTimer); });
   init().catch(e => { hidePrivate(); $('login-panel').hidden = false; say('global-status',errorText(e)); });
 })();

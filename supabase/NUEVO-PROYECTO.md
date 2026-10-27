@@ -890,3 +890,174 @@ Un intento parcial también puede haber borrado alguna foto. Por eso, si existe 
 - [ ] Repetir la ejecución no altera un pedido ya limpiado.
 
 **Lo que tenés que verificar en tus cuentas:** ejecutar el SQL, desplegar la función, guardar los Secrets y comprobar el workflow verde con el pedido ficticio y el bucket real. Preparar y probar los archivos localmente no ejecuta esos borrados en Supabase ni publica el workflow en GitHub. Cuando termines, respondé **“etapa D lista”** para seguir con E.
+
+## Etapa E: avisos en el panel y notificaciones al celular
+
+Esta etapa agrega avisos de **pedido nuevo** y **pago confirmado**. Con el panel abierto, Realtime actualiza la lista y el contador de pendientes; con el panel cerrado, Web Push puede mostrar la notificación del sistema. El aviso contiene únicamente código, modelo, duración y total: nunca nombres, mensajes, WhatsApp, música ni fotos.
+
+Web Push no usa ntfy. Si todavía tenés habilitado el webhook opcional de ntfy de los pasos anteriores, son dos configuraciones independientes y podrías recibir un aviso por cada canal. No hace falta volver a configurar ntfy ni borrar nada para probar E. Cuando verifiques los avisos nuevos, podés desactivar el webhook anterior desde **Database → Webhooks** si ya no querés usarlo.
+
+### 1. Preparar la base para los avisos
+
+1. Entrá al **proyecto nuevo**, donde ya ejecutaste los SQL de A, B, C y D, y abrí **SQL Editor → New query**.
+2. Abrí `supabase/04-avisos.sql` en tu computadora, copiá todo y pegalo en la consulta.
+3. Tocá **Run**. Se puede volver a ejecutar el archivo completo: conserva los pedidos y las suscripciones existentes.
+4. Abrí **Database → Publications → supabase_realtime** y comprobá que `pedidos` esté incluida. Si no encontrás esa pantalla, usá la consulta siguiente.
+
+```sql
+select schemaname, tablename
+from pg_publication_tables
+where pubname = 'supabase_realtime'
+  and schemaname = 'public'
+  and tablename = 'pedidos';
+
+select schemaname, tablename, rowsecurity
+from pg_tables
+where schemaname = 'public'
+  and tablename in ('pedidos', 'admin_push_subscriptions');
+```
+
+**Verificación:** el SQL termina con **Success**, la primera consulta devuelve `public / pedidos` y la segunda muestra `rowsecurity = true` para las dos tablas. Incluir una tabla en Realtime no la vuelve pública: las políticas siguen exigiendo una sesión de administrador para recibir sus cambios. No agregues una política de lectura para `anon`. [Realtime y políticas de acceso](https://supabase.com/docs/guides/realtime/postgres-changes).
+
+El SQL también prepara el registro interno de envíos. El navegador no puede consultarlo ni producir avisos usando la clave pública; la función de servidor comprueba que el pedido o el pago existan antes de avisar.
+
+### 2. Guardar las claves de Web Push en Supabase
+
+Web Push usa un par de claves VAPID. La **pública** identifica a Eros Web al suscribir el navegador; la **privada** permite enviar los avisos y solo va en los secretos de Supabase. No es una clave de acceso de Supabase.
+
+1. Usá el par de claves que recibiste al preparar esta etapa. La pública ya está en `admin/avisos-config.js`, en `vapidPublicKey`.
+2. En Supabase, entrá a **Edge Functions → Secrets → Add new secret**.
+3. Creá `VAPID_PUBLIC_KEY` y pegá exactamente la misma clave pública de `admin/avisos-config.js`, sin comillas.
+4. Creá `VAPID_PRIVATE_KEY` y pegá la clave privada recibida por separado. No la pegues en `admin/avisos-config.js`, en un SQL guardado, en GitHub ni en capturas.
+5. Confirmá que siga existiendo `EROS_SITE_URL`, con la raíz pública correcta de GitHub Pages, incluido `/eros-web/` cuando corresponde. La función obtiene de esa URL la dirección de contacto HTTPS de Web Push; no tenés que inventar un correo ni agregar otro secreto.
+
+**Verificación:** aparecen los nombres `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `EROS_SITE_URL` en Supabase. El archivo del navegador contiene solo la clave pública. Conservá el mismo par al volver a desplegar: cambiarlo exige volver a activar los avisos en los dispositivos. [Secretos de Edge Functions](https://supabase.com/docs/guides/functions/secrets).
+
+### 3. Crear el secreto del webhook
+
+1. En **SQL Editor → New query**, ejecutá esta consulta de solo lectura:
+
+```sql
+select replace(gen_random_uuid()::text, '-', '')
+       || replace(gen_random_uuid()::text, '-', '') as secreto_para_copiar;
+```
+
+2. Copiá el resultado completo de 64 caracteres y guardalo en un lugar privado.
+3. Volvé a **Edge Functions → Secrets → Add new secret**.
+4. En **Name**, escribí `AVISOS_SECRETO`; en **Value**, pegá el resultado y tocá **Save**.
+
+Vas a usar ese mismo valor en la cabecera `x-eros-aviso` de la prueba y del webhook. No lo escribas en ningún archivo del proyecto. Si lo cambiás, actualizá también la cabecera del webhook.
+
+**Verificación:** `AVISOS_SECRETO` aparece entre los nombres guardados. No uses la clave pública, la contraseña del administrador ni una clave privada de Supabase como reemplazo de este secreto.
+
+### 4. Desplegar la función de avisos y actualizar la de pagos
+
+1. En la terminal de Linux, desde `Descargas/ChatGPT/erosweb/`, ejecutá:
+
+```bash
+node scripts/preparar-funciones.mjs
+```
+
+2. Abrí `supabase/dashboard/avisar-admin.ts` y copiá el archivo completo.
+3. En Supabase, entrá a **Edge Functions → Deploy a new function → Via Editor**.
+4. Poné el nombre exacto `avisar-admin`, borrá el ejemplo y pegá el código completo. Tocá **Deploy function**.
+5. Abrí **avisar-admin → Details/Settings**, desactivá **Verify JWT** y guardá. La protección de esta función es el secreto de la cabecera `x-eros-aviso`; una llamada sin él debe responder **401**.
+6. Abrí `supabase/dashboard/webhook-mercadopago.ts` y copiá todo el archivo generado.
+7. En **Edge Functions → webhook-mercadopago → Code**, reemplazá el código por esa versión y volvé a desplegar. Conservá su configuración y secretos de B; Verify JWT sigue desactivado porque Mercado Pago firma sus notificaciones por su propio mecanismo.
+
+El aviso de pago se pide desde el webhook de Mercado Pago después de verificar el pago y guardarlo. No crees otro Database Webhook para todos los cambios de estado: eso podría avisar por una edición manual o duplicar el aviso.
+
+**Verificación:** las dos funciones figuran desplegadas. El archivo `avisar-admin.ts` conserva la importación `npm:web-push@3.6.7`; el servidor de Supabase resuelve esa dependencia, sin instalar npm en tu navegador. No pegues únicamente el archivo fuente que tiene importaciones relativas: usá los archivos completos generados de `supabase/dashboard/`. [Editor de funciones](https://supabase.com/docs/guides/functions/quickstart-dashboard), [dependencias compatibles](https://supabase.com/docs/guides/functions/dependencies).
+
+### 5. Publicar el panel e instalarlo en tu dispositivo
+
+1. Subí a GitHub los archivos nuevos y modificados de `admin/` de esta etapa, manteniendo sus nombres y carpetas. Incluí `admin/avisos-config.js` con su clave **pública**, el manifiesto, el service worker y sus íconos. No subas claves privadas ni valores de Secrets.
+2. Esperá a que GitHub Pages termine la publicación y abrí la dirección pública del panel: tu URL de la web seguida de `admin/`. El candado HTTPS es necesario; una dirección `file://` no sirve para Web Push.
+3. Iniciá sesión con tu usuario administrador.
+4. En Android, abrilo en Chrome y usá **⋮ → Instalar aplicación** o **Agregar a pantalla de inicio**, según lo que muestre el navegador. En computadora podés usar el ícono de instalar en la barra de direcciones o la opción de instalar del menú.
+5. En iPhone o iPad, usá **Safari → Compartir → Agregar a pantalla de inicio → Agregar**. Abrí después Eros Web desde ese ícono. Necesitás iOS/iPadOS **16.4 o posterior**; una pestaña normal de Safari no alcanza para suscribir Web Push en esos dispositivos.
+6. Desde el panel instalado o el navegador compatible, tocá **Activar avisos en este dispositivo** y elegí **Permitir** cuando el sistema pregunte. El permiso se pide después de tu toque, no automáticamente al abrir la página.
+
+**Verificación:** el panel confirma que los avisos están activados en ese dispositivo. En **Supabase → Table Editor → admin_push_subscriptions**, tu sesión de administrador permite ver una suscripción. No publiques su contenido: el endpoint y las claves de esa fila identifican la suscripción del dispositivo.
+
+La instalación no guarda páginas, fotos ni respuestas de la API para usarlas sin conexión. El service worker no crea una caché; conserva solo identificadores técnicos de los avisos y la activación del dispositivo para evitar duplicados y respetar la salida. Para ver pedidos necesitás iniciar sesión y tener conexión. En iPhone los avisos también están sujetos a los permisos y a los modos de concentración del sistema. [Web Push en iOS/iPadOS](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
+
+### 6. Probar Web Push antes de crear el webhook
+
+1. Mantené activados los avisos del paso anterior.
+2. En Supabase, abrí **Edge Functions → avisar-admin → Test/Invoke**.
+3. Elegí el método **POST**, agregá las cabeceras `Content-Type: application/json` y `x-eros-aviso: EL_SECRETO_QUE_GENERASTE`, y usá este cuerpo:
+
+```json
+{"prueba": true}
+```
+
+4. Tocá **Send request/Run** y mirá la respuesta. El secreto se pega solamente en el probador de Supabase, sin guardarlo en un archivo para compartirlo.
+5. Comprobá que el dispositivo muestre **Prueba de Eros Web**. Si el panel está abierto y el sistema agrupa u oculta la notificación, repetí la prueba con el panel cerrado, sin tocar **Salir**.
+
+**Verificación:** responde HTTP **200** con `ok: true` y al menos un aviso en `enviados`. Si indica `sin_dispositivos: true`, todavía no hay un dispositivo habilitado para recibir: volvé al paso 5. Si `enviados` es cero pero hay `fallidos` o `descartados`, revisá el diagnóstico de abajo. Una respuesta HTTP 200 por sí sola no confirma que el celular haya mostrado el aviso.
+
+Si omitís el secreto o pegás uno distinto, debe responder **401** sin mandar nada. No crees el webhook hasta recibir esta prueba. Una clave privada VAPID equivocada, o una pública diferente de la del navegador, exige corregirlas y volver a activar el dispositivo.
+
+La prueba manual admite hasta cinco llamadas por hora para evitar envíos accidentales repetidos. Si devuelve **429** con `limite_pruebas`, esperá antes de volver a usarla; no regeneres claves ni secretos para saltear ese límite.
+
+### 7. Crear el aviso automático de pedido nuevo
+
+1. En Supabase, entrá a **Database → Webhooks → Create a new hook/Create webhook**. Si la pantalla pide habilitar los webhooks, habilitalos desde ahí.
+2. Poné como nombre `eros-pedido-nuevo-admin`.
+3. Elegí **Schema: public**, **Table: pedidos** y únicamente el evento **INSERT**.
+4. Elegí el tipo **Supabase Edge Functions**, método **POST**, y la función **avisar-admin**. Si el panel pide una URL, copiá la URL de esa función desde su página de detalles, terminada en `/functions/v1/avisar-admin`.
+5. En **HTTP Headers**, agregá `Content-Type` con `application/json` y `x-eros-aviso` con el mismo valor completo de `AVISOS_SECRETO`.
+6. Guardá el webhook. Si el panel ofrece un tiempo de espera, usá **20000 ms**: la función espera el resultado del envío antes de responder al webhook.
+
+**Verificación:** el webhook está habilitado, apunta al proyecto nuevo y escucha solo INSERT en `public.pedidos`. No usa una cabecera de autorización con una clave privada de Supabase.
+
+Supabase envía su formato estándar de webhook, que incluye el registro insertado. La función toma solamente su identificador, verifica el pedido en el servidor y arma el aviso con los cuatro campos permitidos. No copies ni compartas el cuerpo completo o las cabeceras de **Invocations**: pueden contener datos del pedido y el secreto. [Database Webhooks](https://supabase.com/docs/guides/database/webhooks).
+
+### 8. Probar pedido nuevo, pago y panel cerrado
+
+1. Abrí el panel, dejá activados los avisos y tocá **Probar aviso local** para comprobar la notificación y habilitar el sonido del panel. Ese botón comprueba solo el dispositivo, no el webhook ni la función de servidor. El sonido necesita una interacción con la página y puede ser bloqueado por el navegador o por el modo silencio del dispositivo.
+2. Desde la web pública, enviá un pedido **ficticio**, usando contenido y fotos de prueba. Guardá su código.
+3. Sin recargar el panel, comprobá que aparezca en la lista, cambie el contador de nuevos y se muestre un aviso con código, modelo, duración y total. No debe revelar el nombre de quien recibe ni ningún contenido.
+4. Pagá ese pedido con las cuentas y la tarjeta de prueba de la etapa B, manteniendo el proyecto en modo de prueba. No hagas un cobro real para verificar las notificaciones.
+5. Confirmá que llegue un aviso distinto de **pago confirmado** y que el panel actualice el pedido. La repetición de una notificación del mismo pago no debería generar otro aviso del mismo evento.
+6. Cerrá la pestaña o la aplicación del panel **sin tocar Salir**. Desde otro navegador o dispositivo, mandá otro pedido ficticio.
+7. Comprobá que llegue la notificación del sistema. Tocala: debe abrir el panel y pedir login si ya no tiene una sesión válida. No debe abrir un pedido sin autenticación.
+8. Volvé a abrir el panel y recargá. Los pedidos anteriores se cargan como historial, sin volver a avisar por cada uno.
+
+**Verificación:** comprobaste un aviso nuevo, uno pagado y uno con el panel cerrado. Cerrar la pestaña mantiene la suscripción; **Salir** desactiva los avisos de ese dispositivo. Cada dispositivo se activa por separado. Para detenerlos sin cerrar tu sesión, tocá **Desactivar avisos**. **Marcar vistos** limpia el contador de avisos pendientes del panel.
+
+Los avisos no son una garantía de entrega inmediata: necesitan conexión, permiso del sistema, una suscripción válida y que el navegador o sistema no esté bloqueado. Forzar el cierre del navegador, quitar permisos o activar ciertos modos de ahorro puede impedirlos o demorarlos. El registro de pedidos y el panel siguen siendo la referencia para revisar pedidos, aunque un aviso no llegue.
+
+La función evita avisar por pedidos o pagos de hace más de 24 horas y fija los dispositivos destinatarios cuando aparece cada evento; un dispositivo activado después no recibe el historial. Admite hasta 50 dispositivos, con lotes de hasta 20 por llamada y un límite de tiempo por ejecución. Si informa `pendientes: true`, el envío quedó incompleto; no significa que todos los dispositivos hayan recibido el aviso.
+
+### Si algo falla
+
+- **HTTP 401 en `avisar-admin`:** Verify JWT debe estar apagado y `x-eros-aviso` debe coincidir con `AVISOS_SECRETO`. No confundas este secreto con el anterior `AVISO_SECRETO` de ntfy: son nombres y funciones diferentes.
+- **HTTP 503 con `configuracion`:** falta `AVISOS_SECRETO` o no tiene los 64 caracteres hexadecimales del paso 3. Revisá también las claves VAPID si la respuesta de prueba marca un fallo de configuración; no las muestres en capturas.
+- **No hay invocaciones al crear un pedido:** revisá **Database → Webhooks**: tabla `public.pedidos`, evento INSERT, función y proyecto correctos. Una invocación manual de prueba no comprueba que el webhook esté conectado.
+- **Llegan nuevos, pero no pagos:** desplegá de nuevo el archivo generado `webhook-mercadopago.ts` del paso 4 y verificá que Mercado Pago haya confirmado el pago de prueba. Cambiar el estado manualmente en el panel no simula un pago verificado.
+- **La prueba devuelve cero enviados:** revisá el permiso del navegador, activá este dispositivo y comprobá que tu usuario siga siendo administrador. Una sesión normal sin `eros_admin` no habilita suscripciones ni recibe eventos privados.
+- **El servidor informa errores de envío o `pendientes: true`:** mirá **Edge Functions → avisar-admin → Logs/Invocations**. La respuesta informa cantidades de enviados, fallidos y descartados; los logs propios muestran únicamente estados HTTP o códigos de error, sin claves, endpoints ni datos del cliente. No compartas las cabeceras o el cuerpo del webhook ni des por terminado un envío con `ok: false`.
+- **Una suscripción fue descartada:** el servicio push puede indicar que expiró o fue quitada. Abrí el panel en ese dispositivo, desactivá y volvé a activar los avisos para crear una nueva.
+- **La notificación llega, pero no suena dentro del panel:** tocá **Probar aviso local** y revisá el modo silencio. El sonido de la notificación del sistema depende del sistema; el del panel abierto depende del navegador.
+- **El panel no se actualiza solo:** revisá la publicación `supabase_realtime` del paso 1 y la sesión de administrador. No agregues lectura anónima ni cambies el bucket a público para resolverlo.
+- **iPhone no pide permiso:** instalá primero el panel en la pantalla de inicio, abrilo desde ese ícono, verificá la versión de iOS y tocá el botón de activar. Si antes elegiste no permitir, cambiá el permiso desde los ajustes del dispositivo.
+- **Se repite el mismo aviso:** comprobá que no haya dos webhooks de INSERT hacia `avisar-admin`, que actualizaste la función de pagos y que no estés confundiendo el aviso anterior de ntfy con Web Push. El registro interno evita repetir un evento ya aceptado; un fallo de red después de enviarlo puede impedir saber con certeza si el sistema lo recibió.
+
+### Lista de comprobación de la etapa E
+
+- [ ] `04-avisos.sql` terminó con Success y `pedidos` está en `supabase_realtime`.
+- [ ] Las tablas conservan RLS; sin sesión no se pueden leer pedidos ni suscripciones.
+- [ ] La clave VAPID pública coincide entre el archivo del panel y Supabase; la privada está solo en Secrets.
+- [ ] `AVISOS_SECRETO` está en Supabase y en la cabecera del webhook, sin copiarse al repositorio.
+- [ ] `avisar-admin` y la nueva versión de `webhook-mercadopago` están desplegadas.
+- [ ] Sin secreto la función devuelve 401; con la prueba válida llega **Prueba de Eros Web**.
+- [ ] El webhook INSERT existe una sola vez y apunta a la función correcta.
+- [ ] El panel abierto muestra el pedido sin recargar y no revela datos personales en los avisos.
+- [ ] Llegó un aviso distinto al confirmarse el pago ficticio.
+- [ ] Llegó un aviso con el panel cerrado y al tocarlo se exige sesión para ver datos.
+- [ ] Salir o desactivar avisos detiene la suscripción de ese dispositivo.
+- [ ] No se guardaron claves privadas, secretos, cuerpos de webhook ni suscripciones en GitHub.
+
+**Lo que tenés que verificar en tus cuentas:** ejecutar el SQL, guardar los secretos, desplegar las dos funciones, publicar el panel y hacer las pruebas en el dispositivo. Preparar estos archivos no crea el webhook ni activa los permisos por vos. Cuando esté comprobado, respondé **“etapa E lista”** para seguir con F.

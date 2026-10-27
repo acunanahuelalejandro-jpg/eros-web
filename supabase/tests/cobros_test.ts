@@ -1,6 +1,7 @@
 // Pruebas locales: fetch queda interceptado. No se crean pedidos ni cobros reales.
 import { referenciaPrecio, type PedidoCobro } from "../functions/_compartido/cobros.ts";
 import { fetchConTiempo } from "../functions/_compartido/http.ts";
+import { avisarPagoAdmin } from "../functions/_compartido/avisos.ts";
 
 const serveOriginal = Deno.serve;
 Object.defineProperty(Deno, "serve", { configurable: true, writable: true, value: () => ({}) });
@@ -29,7 +30,7 @@ type Simulado = {
 
 async function simular(probar: (s: Simulado) => Promise<void>) {
   const env = { SUPABASE_URL: "https://prueba.supabase.co", SUPABASE_SECRET_KEYS: '{"default":"valor-ficticio-local"}',
-    MP_ACCESS_TOKEN: "valor-ficticio-mercadopago", MP_WEBHOOK_SECRET: "firma-ficticia-local", MP_MODO: "test", EROS_SITE_URL: "https://eros.ejemplo.test/eros-web/" };
+    MP_ACCESS_TOKEN: "valor-ficticio-mercadopago", MP_WEBHOOK_SECRET: "firma-ficticia-local", MP_MODO: "test", AVISOS_SECRETO: "", EROS_SITE_URL: "https://eros.ejemplo.test/eros-web/" };
   const anterior = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)]));
   Object.entries(env).forEach(([k, v]) => Deno.env.set(k, v));
   const fetchOriginal = globalThis.fetch;
@@ -42,6 +43,10 @@ async function simular(probar: (s: Simulado) => Promise<void>) {
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
     s.peticiones.push({ url: url.href, body, method });
     if (url.hostname === "prueba.supabase.co") {
+      if (url.pathname === "/functions/v1/avisar-admin") {
+        igual(init?.headers && new Headers(init.headers).get("x-eros-aviso"), "a".repeat(64));
+        return Promise.resolve(json({ ok: !s.fallaPOST }, s.fallaPOST ? 503 : 200));
+      }
       const rpc = url.pathname.split("/").at(-1);
       if (url.pathname === "/rest/v1/pedidos") return Promise.resolve(json([s.pedido]));
       if (rpc === "eros_limitar_cobro") return Promise.resolve(json({ permitido: !s.limite }));
@@ -180,6 +185,23 @@ Deno.test("webhook: status del cuerpo no aprueba pago pendiente de la API", () =
   s.pago = { status: "pending" }; await webhookMercadoPago(await requestWebhook(s));
   igual(s.pedido.estado, "nuevo"); igual(s.registro[0].p_estado, "pending");
 }));
+Deno.test("webhook: pago publicado avisa solo id/tipo y un reenvío conserva publicación", () => simular(async s => {
+  Deno.env.set("AVISOS_SECRETO", "a".repeat(64));
+  igual((await webhookMercadoPago(await requestWebhook(s))).status, 200);
+  igual(s.pedido.estado, "publicado"); igual(s.registro.length, 1);
+  let avisos = s.peticiones.filter(p => p.url.endsWith("/functions/v1/avisar-admin"));
+  igual(avisos.length, 1); igual(avisos[0].body, { pedido_id: fila.id, tipo: "pagado" });
+  igual((await (await webhookMercadoPago(await requestWebhook(s))).json()).accion, "repetido");
+  igual(s.registro.length, 1);
+  avisos = s.peticiones.filter(p => p.url.endsWith("/functions/v1/avisar-admin")); igual(avisos.length, 2);
+}));
+Deno.test("webhook: un fallo de avisos no revierte el pago; pendiente no manda aviso", () => simular(async s => {
+  Deno.env.set("AVISOS_SECRETO", "a".repeat(64)); s.fallaPOST = true;
+  igual((await webhookMercadoPago(await requestWebhook(s))).status, 200); igual(s.pedido.estado, "publicado");
+  s.pedido = copiar(fila); s.peticiones = []; s.pago = { status: "pending" };
+  igual((await webhookMercadoPago(await requestWebhook(s))).status, 200);
+  afirmar(!s.peticiones.some(p => p.url.endsWith("/functions/v1/avisar-admin")));
+}));
 Deno.test("seguimiento: sólo estado/código/slug/pago/link, sin contenido personal", () => simular(async s => {
   const salida = await (await estadoPedido(requestPedido({ slug: fila.slug }))).json();
   igual(Object.keys(salida).sort(), ["codigo", "estado", "link", "pago", "slug"]); igual(salida.link, null);
@@ -200,4 +222,22 @@ Deno.test("timeout: cubre también un cuerpo lento y respeta el límite total", 
   try { await fetchConTiempo("https://simulado.ejemplo.test", {}, 8000, inicio + 50); } catch { fallo = true; }
   finally { globalThis.fetch = original; }
   afirmar(fallo); afirmar(Date.now() - inicio < 1000);
+});
+Deno.test("avisos de pago: waitUntil mantiene el trabajo sin demorar el webhook", async () => {
+  const global = globalThis as unknown as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } };
+  const previoRuntime = global.EdgeRuntime, previoFetch = globalThis.fetch;
+  const env = { AVISOS_SECRETO: "a".repeat(64), SUPABASE_URL: "https://prueba.supabase.co" };
+  const previos = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)]));
+  let resolver!: (r: Response) => void, trabajo: Promise<unknown> | undefined;
+  global.EdgeRuntime = { waitUntil(p) { trabajo = p; } };
+  globalThis.fetch = (() => new Promise<Response>(r => { resolver = r; })) as typeof fetch;
+  try {
+    Object.entries(env).forEach(([k,v]) => Deno.env.set(k,v));
+    await avisarPagoAdmin(fila.id); afirmar(trabajo); afirmar(resolver);
+    resolver(new Response('{"ok":true}', { status: 200 })); await trabajo;
+  } finally {
+    globalThis.fetch = previoFetch;
+    if (previoRuntime) global.EdgeRuntime = previoRuntime; else delete global.EdgeRuntime;
+    for (const [k,v] of Object.entries(previos)) { if (v === undefined) Deno.env.delete(k); else Deno.env.set(k,v); }
+  }
 });

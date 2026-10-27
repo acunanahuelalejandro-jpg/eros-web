@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#8b3d52">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Eros pedidos">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Pedidos · Eros Web</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23f4bac9'/%3E%3Ctext x='32' y='47' text-anchor='middle' fill='%238b3d52' font-size='44'%3E%E2%99%A5%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +22,8 @@
   <script src="../compartido/apertura.js" defer></script>
   <script src="vendor/jszip.min.js" defer></script>
   <script src="paquetes.js" defer></script>
+  <script src="avisos-config.js" defer></script>
+  <script src="avisos.js" defer></script>
   <script src="admin.js" defer></script>
 </head>
 <body>
@@ -35,6 +42,13 @@
       <p class="muted">Usá la cuenta administradora que creaste en Supabase. No hay registro público.</p>
     </section>
     <div id="dashboard" hidden>
+      <section class="card notification-settings" aria-labelledby="notifications-title">
+        <div class="section-head"><h2 id="notifications-title">Avisos de pedidos <span id="notifications-count" class="badge" hidden></span></h2><button id="notifications-read" class="secondary" type="button" hidden>Marcar vistos</button></div>
+        <p id="realtime-status" role="status" aria-live="polite">Conectando los avisos del panel…</p>
+        <div class="actions"><button id="notifications-enable" type="button">Activar avisos en este dispositivo</button><button id="notifications-disable" class="secondary" type="button" hidden>Desactivar avisos</button><button id="notifications-test" class="secondary" type="button" hidden>Probar aviso local</button><button id="install-app" class="secondary" type="button" hidden>Instalar panel</button></div>
+        <p id="notifications-status" class="muted" role="status" aria-live="polite">Los avisos muestran solo código, modelo, duración y total. El sonido del panel se habilita al tocar Activar avisos.</p>
+        <p class="muted">En iPhone (iOS 16.4 o posterior), usá Compartir → Agregar a inicio y abrí el panel desde ese ícono para activar los avisos.</p>
+      </section>
       <section class="card" aria-labelledby="orders-title">
         <div class="section-head"><div><p class="eyebrow">Tu bandeja</p><h1 id="orders-title">Pedidos <span id="new-count" class="badge"></span></h1></div><button id="refresh" class="secondary" type="button">Actualizar</button></div>
         <div class="filters"><div><label for="search">Buscar por código o nombre</label><input id="search" type="search" maxlength="120" placeholder="Código, destinatario o remitente"></div><div><label for="status-filter">Estado</label><select id="status-filter"><option value="">Todos</option value="nuevo">Nuevo</option><option value="en_proceso">En proceso</option><option value="pagado">Pagado</option><option value="publicado">Publicado</option><option value="vencido">Vencido</option></select></div></div>
