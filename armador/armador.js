@@ -544,7 +544,7 @@
     const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-light'; copy.textContent = 'Copiar código'; copy.addEventListener('click', async () => { copy.textContent = await window.ErosPagos.copiar(success.code) ? 'Código copiado' : 'Copiá el código de arriba'; });
     const model = document.createElement('p'); model.textContent = success.model || '';
     const total = document.createElement('p'); total.className = 'success-total'; total.textContent = 'Total: ' + formatARS(success.total);
-    const instructions = document.createElement('p'); instructions.textContent = 'Pagá con Mercado Pago y seguí el estado de tu pedido acá. El link y el QR aparecen cuando tu página está publicada.';
+    const instructions = document.createElement('p'); instructions.textContent = 'Pagá con Mercado Pago. Cuando el pago esté aprobado, el link y el QR aparecerán automáticamente en el seguimiento.';
     const feedback = document.createElement('p'); feedback.className = 'payment-feedback'; feedback.setAttribute('role', 'status'); feedback.setAttribute('aria-live', 'polite');
     const pay = document.createElement('button'); pay.type = 'button'; pay.className = 'button button-primary'; pay.textContent = 'Pagar con Mercado Pago';
     const tracking = document.createElement('a'); tracking.className = 'button button-light'; tracking.textContent = 'Ver mi pedido'; tracking.href = window.ErosPagos.urlSeguimiento(success); tracking.hidden = !tracking.getAttribute('href');
@@ -558,7 +558,7 @@
       else if (data.estado === 'pagado') { pay.hidden = true; instructions.textContent = 'Tu pago está confirmado. Podés revisar el estado de tu página en el seguimiento.'; }
       else if (data.estado === 'vencido') { pay.hidden = true; instructions.textContent = 'Este pedido ya venció. Si necesitás ayuda, escribinos con tu código.'; }
       else if (paymentState === 'pendiente') { pay.textContent = 'Revisar estado del pago'; instructions.textContent = 'Mercado Pago todavía está revisando tu pago. Esperá la confirmación para evitar pagar dos veces. Si demora, escribinos con tu código.'; }
-      else { pay.textContent = ['rechazado','cancelado'].includes(paymentState) ? 'Reintentar pago' : 'Pagar con Mercado Pago'; instructions.textContent = 'Pagá con Mercado Pago y seguí el estado de tu pedido acá. El link y el QR aparecen cuando tu página está publicada.'; }
+      else { pay.textContent = ['rechazado','cancelado'].includes(paymentState) ? 'Reintentar pago' : 'Pagar con Mercado Pago'; instructions.textContent = 'Pagá con Mercado Pago. Cuando el pago esté aprobado, el link y el QR aparecerán automáticamente en el seguimiento.'; }
     };
     pay.addEventListener('click', async () => {
       if (pay.disabled) return;

@@ -19,3 +19,7 @@ verify_jwt = false
 # Requiere el secreto privado x-eros-aviso; no admite sesiones del navegador.
 [functions.avisar-admin]
 verify_jwt = false
+
+# La función valida la sesión con Auth y el permiso admin actual antes de operar.
+[functions.administrar-pedido]
+verify_jwt = false

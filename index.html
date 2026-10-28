@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fffaf6">
   <title>Eros Web | Páginas web para regalar</title>
-  <meta name="description" content="Armá una página web para regalar con tus textos y fotos. Mirá la vista previa, enviá el pedido y recibí un link y un QR con el pago confirmado.">
+  <meta name="description" content="Armá una página web para regalar con tus textos y fotos. Mirá la vista previa, pagá con Mercado Pago y encontrá el link y el QR en el seguimiento.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_AR">
   <meta property="og:title" content="Eros Web | Páginas web para regalar">
-  <meta property="og:description" content="Armá tu página con textos y fotos, mirá la vista previa y enviá el pedido. Con el pago confirmado, recibís el link y el QR en 2 a 3 días.">
+  <meta property="og:description" content="Armá tu página con textos y fotos, mirá la vista previa y pagá con Mercado Pago. Con el pago aprobado, el link y el QR aparecen en el seguimiento.">
   <meta property="og:url" content="https://acunanahuelalejandro-jpg.github.io/eros-web/">
   <link rel="canonical" href="https://acunanahuelalejandro-jpg.github.io/eros-web/">
   <meta property="og:image" content="https://acunanahuelalejandro-jpg.github.io/eros-web/assets/og.jpg">
@@ -238,7 +238,7 @@
   <link rel="stylesheet" href="armador/preview.css">
 </head>
 <body>
-  <div class="announcement">Tu sorpresa en un link y un QR · 2 a 3 días con el pago confirmado</div>
+  <div class="announcement">Tu sorpresa en un link y un QR · Pago con Mercado Pago</div>
   <header class="topbar" id="inicio">
     <div class="container nav-wrap">
       <a class="brand" href="#inicio" aria-label="Eros Web, inicio">
@@ -289,7 +289,7 @@
       <div class="container">
         <div class="section-heading">
           <h2 id="models-title">Elegí tu modelo</h2>
-          <p>Cada modelo ya está diseñado: completalo acá con tus textos, fotos y link de música.</p>
+          <p>Cada modelo ya está diseñado: completalo acá con tus textos, fotos y preferencias de música.</p>
         </div>
         <div class="model-grid">
           <article class="model-card">
@@ -346,7 +346,7 @@
             </div>
           </article>
         </div>
-        <p class="includes-line">Todos incluyen link, QR descargable, música y una ronda de ajustes. Sobre animado incluido. Si elegís juego interactivo, el juego reemplaza al sobre como apertura.</p>
+        <p class="includes-line">Todos incluyen link, QR descargable, opción de música y una ronda de ajustes. Sobre animado incluido. Si elegís juego interactivo, el juego reemplaza al sobre como apertura.</p>
       </div>
     </section>
 
@@ -463,7 +463,7 @@
               <div class="order-extra-fields" id="counter-date-wrap" hidden><label class="order-field" for="counter-date">Fecha desde la que cuentan<input id="counter-date" type="date" max="2099-12-31" autocomplete="off"></label></div>
             </section>
 
-            <section class="order-step" data-order-step="6" aria-labelledby="order-step-6-title" hidden><h3 id="order-step-6-title" tabindex="-1">¿Para quién es el regalo?</h3><p class="order-step-intro">La entrega es de 2 a 3 días con el pago confirmado. Si tenés una fecha especial, indicala acá.</p>
+            <section class="order-step" data-order-step="6" aria-labelledby="order-step-6-title" hidden><h3 id="order-step-6-title" tabindex="-1">¿Para quién es el regalo?</h3><p class="order-step-intro">Con el pago aprobado, el link y el QR aparecen automáticamente en el seguimiento. Podés indicar una fecha futura para que el regalo se abra ese día.</p>
               <div class="order-extra-fields">
                 <label class="order-field" for="recipient-name">Nombre de quien recibe <span aria-hidden="true">*</span><input id="recipient-name" type="text" maxlength="120" autocomplete="given-name" placeholder="Por ejemplo, Sofi" required></label>
                 <label class="order-field" for="sender-name">Tu nombre <span>(opcional)</span><input id="sender-name" type="text" maxlength="120" autocomplete="name" placeholder="Cómo querés firmar"></label>
@@ -483,7 +483,7 @@
               <p id="photo-total" class="photo-total" aria-live="polite">Tamaño total: 0 KB</p>
             </section>
 
-            <section class="order-step" data-order-step="9" aria-labelledby="order-step-9-title" hidden><h3 id="order-step-9-title" tabindex="-1">Elegí la música</h3><p class="order-step-intro">Pegá un link de Spotify o YouTube, elegí una canción disponible o pedí ayuda.</p>
+            <section class="order-step" data-order-step="9" aria-labelledby="order-step-9-title" hidden><h3 id="order-step-9-title" tabindex="-1">Elegí la música</h3><p class="order-step-intro">Elegí una canción disponible o dejá tu preferencia para revisarla por soporte.</p>
               <fieldset class="order-choice-fieldset"><legend class="sr-only">Preferencia de música</legend><div class="order-choice-grid">
                 <div><input class="order-radio" type="radio" name="order-music" id="music-selection" value="selection"><label class="order-choice-card" for="music-selection"><strong>De la selección de Eros Web</strong></label></div>
                 <div><input class="order-radio" type="radio" name="order-music" id="music-link" value="link"><label class="order-choice-card" for="music-link"><strong>Tengo un link de Spotify o YouTube</strong></label></div>
@@ -494,7 +494,7 @@
                 <option value="musica/cancion-2.mp3">Nombre de la canción 2</option>
                 <option value="musica/cancion-3.mp3">Nombre de la canción 3</option>
               --></select><small>Todavía no hay canciones para elegir. Podés pegar un link o pedir ayuda.</small></label>
-              <label class="order-field" id="music-link-wrap" for="music-link-input" hidden>Link de Spotify o YouTube <span>(opcional)</span><input id="music-link-input" type="url" maxlength="494" inputmode="url" autocomplete="url" placeholder="https://"><small>Aceptamos open.spotify.com, spotify.link, youtube.com y youtu.be.</small></label>
+              <label class="order-field" id="music-link-wrap" for="music-link-input" hidden>Link de Spotify o YouTube <span>(opcional)</span><input id="music-link-input" type="url" maxlength="494" inputmode="url" autocomplete="url" placeholder="https://"><small>El link se guarda como preferencia; no se reproduce automáticamente en tu regalo.</small></label>
             </section>
 
             <section class="order-step" data-order-step="10" aria-labelledby="order-step-10-title" hidden><h3 id="order-step-10-title" tabindex="-1">Contacto y resumen</h3><p class="order-step-intro">Revisá que esté todo bien antes de enviar.</p>
@@ -535,11 +535,11 @@
 
     <section class="how-it-works" aria-labelledby="how-title">
       <div class="container">
-        <div class="section-heading"><h2 id="how-title">Cómo funciona</h2><p>Armás y enviás tu pedido acá. Por WhatsApp avisás el pago y recibís tu regalo.</p></div>
+        <div class="section-heading"><h2 id="how-title">Cómo funciona</h2><p>Armás tu página, pagás con Mercado Pago y seguís el pedido acá.</p></div>
         <div class="steps-grid">
-          <article class="step-card"><span class="step-number" aria-hidden="true">1</span><h3>Armás tu página</h3><p>Elegís modelo, duración, tema y extras. Escribís el texto, subís fotos y pegás el link de música.</p></article>
-          <article class="step-card"><span class="step-number" aria-hidden="true">2</span><h3>Enviás y pagás</h3><p>Recibís un código y el total. Transferís al alias que aparece después de enviar y avisás por WhatsApp con tu código.</p></article>
-          <article class="step-card"><span class="step-number" aria-hidden="true">3</span><h3>Recibís el link y el QR</h3><p>Te llegan por WhatsApp en 2 a 3 días con el pago confirmado. La página dura el tiempo que elegiste.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">1</span><h3>Armás tu página</h3><p>Elegís modelo, duración, tema y extras. Escribís el texto, subís fotos y completás tu preferencia de música.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">2</span><h3>Enviás y pagás</h3><p>Recibís un código y el total. Tocás “Pagar con Mercado Pago” para completar el pago.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">3</span><h3>Recibís el link y el QR</h3><p>Con el pago aprobado, aparecen automáticamente en el seguimiento. Si elegiste una fecha futura, el regalo se abre ese día.</p></article>
         </div>
         <div class="needs-card">
           <h3>Qué vas a cargar en la página</h3>
@@ -557,18 +557,19 @@
       <div class="container">
         <div class="section-heading"><h2 id="faq-title">Preguntas frecuentes</h2></div>
         <div class="faq-list">
-          <details class="faq-item"><summary>¿Cuánto tarda?</summary><div class="faq-answer"><p>Recibís el link y el QR por WhatsApp en 2 a 3 días con el pago confirmado.</p></div></details>
-          <details class="faq-item"><summary>¿Cuánto tiempo queda online?</summary><div class="faq-answer"><p>Elegís 1 día, 1 semana o 1 mes. Al vencer, eliminamos la página junto con tus fotos y textos.</p></div></details>
-          <details class="faq-item"><summary>¿Cómo se paga?</summary><div class="faq-answer"><p>Al enviar, recibís tu código, el total y el alias de pago. Transferís a ese alias y avisás por WhatsApp con tu código y el comprobante.</p></div></details>
-          <details class="faq-item"><summary>¿Puedo cambiar algo después de enviar?</summary><div class="faq-answer"><p>Sí, escribinos por WhatsApp con tu código. Incluimos una ronda de ajustes de textos, fotos, fecha o música antes de publicar; cambiar el diseño del modelo no está incluido.</p></div></details>
+          <details class="faq-item"><summary>¿Cuándo recibo el link y el QR?</summary><div class="faq-answer"><p>Aparecen automáticamente en el seguimiento cuando se confirma el pago. Si el pago queda pendiente, esperá la confirmación; si necesitás ayuda, escribinos por WhatsApp con tu código.</p></div></details>
+          <details class="faq-item"><summary>¿Cuánto tiempo queda online?</summary><div class="faq-answer"><p>Elegís 1 día, 1 semana (7 días) o 1 mes (30 días), desde la publicación o la fecha futura elegida. Al vencer, el link deja de dar acceso; después se procesa el borrado de fotos y textos.</p></div></details>
+          <details class="faq-item"><summary>¿Cómo se paga?</summary><div class="faq-answer"><p>Al enviar, recibís tu código y el total; desde ahí abrís Mercado Pago para pagar. La confirmación se consulta automáticamente y podés seguirla en la página de tu pedido.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo cambiar algo después de enviar?</summary><div class="faq-answer"><p>Sí, escribinos por WhatsApp con tu código mientras tu página siga vigente. Incluimos una ronda de ajustes de textos, fotos, fecha o música; cambiar el diseño del modelo no está incluido.</p></div></details>
           <details class="faq-item"><summary>¿Se abre en cualquier celular?</summary><div class="faq-answer"><p>Sí, desde el navegador, sin descargar nada. Cualquiera con el link o el QR puede abrirla.</p></div></details>
-          <details class="faq-item"><summary>¿Qué necesito cargar?</summary><div class="faq-answer"><p>Completá los nombres, textos, fotos y link de música en el armador. Ahí también elegís modelo, duración, tema y extras, y podés indicar una fecha para el regalo.</p></div></details>
+          <details class="faq-item"><summary>¿Qué necesito cargar?</summary><div class="faq-answer"><p>Completá los nombres, textos, fotos y tu preferencia de música en el armador. Ahí también elegís modelo, duración, tema y extras, y podés indicar una fecha para el regalo.</p></div></details>
           <details class="faq-item"><summary>¿Cómo subo las fotos?</summary><div class="faq-answer"><p>En el paso Fotos del armador, elegilas desde tu teléfono o computadora. Podés ordenarlas y revisarlas antes de enviar.</p></div></details>
-          <details class="faq-item"><summary>¿Qué pasa con mis fotos?</summary><div class="faq-answer"><p>Se usan solo para tu página. Las fotos y los textos se guardan en Supabase hasta el vencimiento; después se borran junto con la página.</p></div></details>
-          <details class="faq-item"><summary>¿Mis fotos son privadas?</summary><div class="faq-answer"><p>El almacenamiento del pedido en Supabase es privado. La página publicada se configura para no indexarse en buscadores, pero cualquiera con el link o el QR puede verla.</p></div></details>
-          <details class="faq-item"><summary>¿Puedo elegir la música?</summary><div class="faq-answer"><p>Pegá un link de Spotify o YouTube en el armador, elegí una canción disponible o pedí ayuda. La forma de usar los links externos se confirma antes de publicar.</p></div></details>
+          <details class="faq-item"><summary>¿Qué pasa con mis fotos?</summary><div class="faq-answer"><p>Se usan solo para tu página y permanecen en Supabase hasta la limpieza posterior al vencimiento. El link deja de dar acceso al vencer; un proceso programado cada hora borra fotos y textos, aunque puede demorarse si hay fallas.</p></div></details>
+          <details class="faq-item"><summary>¿Mis fotos son privadas?</summary><div class="faq-answer"><p>Las fotos se guardan en un bucket privado de Supabase; la página lleva una indicación de no indexar para buscadores. Cualquiera con el link o el QR puede verla, así que compartilos solo con quien quieras.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo elegir la música?</summary><div class="faq-answer"><p>Podés elegir una canción disponible de nuestra selección o dejar un link de Spotify o YouTube como preferencia. Ese link no se reproduce automáticamente; si necesitás ayuda, escribinos con tu código.</p></div></details>
           <details class="faq-item"><summary>¿Cómo funciona el juego interactivo?</summary><div class="faq-answer"><p>Elegilo en el armador para desbloquear la sorpresa jugando; suma <span data-extra-inline="game"></span>. Sobre animado incluido. Si elegís juego interactivo, el juego reemplaza al sobre como apertura.</p></div></details>
-          <details class="faq-item"><summary>¿Qué pasa si no recibo el link?</summary><div class="faq-answer"><p>Si pasaron los 2 a 3 días desde la confirmación del pago, escribinos por WhatsApp con tu código para revisar tu pedido.</p></div></details>
+          <details class="faq-item"><summary>¿Qué pasa si no recibo el link?</summary><div class="faq-answer"><p>Abrí el seguimiento de tu pedido para revisar el pago. Si ahí figura confirmado y el link no aparece, escribinos por WhatsApp con tu código.</p></div></details>
+          <details class="faq-item"><summary>¿Cómo consulto por un reembolso?</summary><div class="faq-answer"><p>Escribinos por WhatsApp con tu código para revisar el caso. Los reembolsos se gestionan manualmente por soporte; no hay una devolución automática desde la página.</p></div></details>
         </div>
       </div>
     </section>

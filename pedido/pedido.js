@@ -67,7 +67,7 @@
       text('status-title', 'Tu página ya está lista'); text('status-description', 'Copiá el link o descargá el QR para compartir tu regalo.');
       $('published').hidden = false; $('public-link').value = link; $('open-page').href = link; buildQr(link);
     } else {
-      text('status-title', 'El tiempo de tu página terminó'); text('status-description', 'Tu página ya venció. Si tenés alguna consulta, escribinos con tu código.');
+      text('status-title', 'El tiempo de tu página terminó'); text('status-description', 'Tu página ya venció y el link ya no da acceso al regalo. Si tenés alguna consulta, escribinos con tu código.');
     }
   }
   async function refresh() {

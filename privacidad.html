@@ -30,13 +30,16 @@
     <p class="updated">Usamos los datos que compartís para preparar tu regalo digital.</p>
     <article class="paper">
       <h2>Qué datos usamos</h2>
-      <p>En el armador cargás nombres, textos, fotos, fechas, tema, extras y el link o la preferencia de música. También podés dejar tu WhatsApp para coordinar el pago y la entrega.</p>
+      <p>En el armador cargás nombres, textos, fotos, fechas, tema, extras y el link o la preferencia de música. También podés dejar tu WhatsApp para recibir ayuda con el pedido.</p>
       <h2>Para qué se usan</h2>
-      <p>Usamos tus datos solo para preparar, ajustar y publicar tu página y gestionar su pago y entrega. Las fotos y los textos se usan solo para tu página.</p><p>Los datos del pedido, las fotos y los textos se guardan en Supabase hasta el vencimiento de tu página. El acceso al almacenamiento del pedido es privado y se usa solo para gestionarlo.</p>
+      <p>Usamos tus datos para preparar, ajustar y publicar tu página, procesar su pago y atender consultas. Las fotos y los textos se usan solo para tu página.</p><p>El pedido y sus fotos se guardan en Supabase mientras la página está vigente y hasta que termina la limpieza posterior al vencimiento. Las fotos se almacenan en un bucket privado, al que accede el sistema para mostrar tu regalo y el administrador para gestionarlo.</p>
       <h2>Quién puede abrir la página</h2>
-      <p>La página no aparece en un listado público y se configura para no indexarse en buscadores. Cualquier persona que reciba el link o el QR puede abrirla, así que compartilos solo con quien quieras.</p>
+      <p>La página no aparece en un listado público y lleva una indicación para que los buscadores no la indexen. Esa indicación no restringe el acceso: cualquier persona que reciba el link o el QR puede abrirla mientras esté vigente, así que compartilos solo con quien quieras.</p>
       <h2>Cuándo se borran los datos</h2>
-      <p>La página queda online el tiempo elegido: 1 día, 1 semana o 1 mes. Al vencer, eliminamos la página junto con tus fotos y textos y borramos los datos del pedido guardados en Supabase.</p>
+      <p>La página queda disponible durante 1 día, 1 semana (7 días) o 1 mes (30 días), desde la publicación o la fecha futura elegida. Al vencer, el link deja de dar acceso al regalo.</p>
+      <p>Un proceso automático programado cada hora borra las fotos y vacía nombres, textos, música, WhatsApp y notas del pedido en Supabase. El borrado puede demorarse si la ejecución se retrasa o falla; el proceso vuelve a intentarlo y la página permanece sin acceso.</p>
+      <p>Conservamos el código, modelo, duración, configuración de extras sin datos personales, total, fechas e identificadores de Mercado Pago para gestionar los cobros. El nombre y las fechas personales del contador, los textos, las fotos y el WhatsApp no forman parte de esos datos conservados después de la limpieza.</p>
+      <p>Si el pedido no se paga ni se publica, todavía no tiene un vencimiento automático. Podés pedir que lo borremos por WhatsApp con tu código.</p>
       <h2>Consultas</h2>
       <p>Si querés consultar sobre tus datos o pedir que la página se retire antes, escribinos por <a href="https://wa.me/5491161360254?text=%C2%A1Hola%21%20Tengo%20una%20consulta%20sobre%20los%20datos%20y%20la%20privacidad%20de%20mi%20pedido%20de%20Eros%20Web." target="_blank" rel="noopener noreferrer">WhatsApp</a> con tu código de pedido, si ya lo tenés.</p>
     </article>

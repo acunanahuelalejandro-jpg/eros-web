@@ -24,6 +24,7 @@
   <script src="paquetes.js" defer></script>
   <script src="avisos-config.js" defer></script>
   <script src="avisos.js" defer></script>
+  <script src="operaciones.js" defer></script>
   <script src="admin.js" defer></script>
 </head>
 <body>
@@ -51,17 +52,24 @@
       </section>
       <section class="card" aria-labelledby="orders-title">
         <div class="section-head"><div><p class="eyebrow">Tu bandeja</p><h1 id="orders-title">Pedidos <span id="new-count" class="badge"></span></h1></div><button id="refresh" class="secondary" type="button">Actualizar</button></div>
-        <div class="filters"><div><label for="search">Buscar por código o nombre</label><input id="search" type="search" maxlength="120" placeholder="Código, destinatario o remitente"></div><div><label for="status-filter">Estado</label><select id="status-filter"><option value="">Todos</option value="nuevo">Nuevo</option><option value="en_proceso">En proceso</option><option value="pagado">Pagado</option><option value="publicado">Publicado</option><option value="vencido">Vencido</option></select></div></div>
+        <div class="filters"><div><label for="search">Buscar por código o nombre</label><input id="search" type="search" maxlength="120" placeholder="Código, destinatario o remitente"></div><div><label for="status-filter">Estado</label><select id="status-filter"><option value="">Todos</option><option value="nuevo">Nuevo</option><option value="pagado">Pagado</option><option value="publicado">Publicado</option><option value="vencido">Vencido</option></select></div></div>
         <p id="list-status" role="status" aria-live="polite"></p>
         <div class="table-wrap"><table><caption class="sr-only">Pedidos, del más nuevo al más antiguo</caption><thead><tr><th>Código</th><th>Fecha</th><th>Modelo</th><th>Duración</th><th>Extras</th><th>Total</th><th>Estado</th><th>Fotos</th></tr></thead><tbody id="order-rows"></tbody></table></div>
       </section>
-      <section class="card" aria-labelledby="expired-title"><h2 id="expired-title">Publicados con plazo cumplido</h2><p class="muted">El acceso al regalo se corta al vencer. El borrado automático de fotos y textos se configura en la etapa D.</p><div id="expired-list"></div></section>
+      <section class="card" aria-labelledby="expired-title"><h2 id="expired-title">Publicados con plazo cumplido</h2><p class="muted">El acceso se corta al vencer. La limpieza automática borra fotos y textos; una vez iniciada, el pedido ya no puede republicarse.</p><div id="expired-list"></div></section>
       <section id="detail" class="card" hidden aria-labelledby="detail-title">
         <div class="section-head"><h2 id="detail-title" tabindex="-1">Detalle</h2><button id="close-detail" class="secondary" type="button">Cerrar detalle</button></div>
         <p id="detail-status" role="status" aria-live="polite"></p>
         <div id="total-check" role="status"></div>
         <dl id="detail-fields" class="detail-fields"></dl>
         <div id="contact-actions" class="actions"></div>
+        <section class="order-operations" aria-labelledby="payment-title">
+          <h3 id="payment-title">Pago y publicación</h3>
+          <p id="payment-status" role="status" aria-live="polite"></p>
+          <dl id="payment-fields" class="detail-fields"></dl>
+          <div class="actions"><button id="action-manual" type="button">Marcar pago manual</button><button id="action-republish" class="secondary" type="button">Republicar</button><button id="action-extend" class="secondary" type="button">Extender vigencia</button><button id="action-cancel" class="danger" type="button">Anular acceso</button></div>
+          <p id="operations-note" class="muted"></p><p id="operations-status" role="status" aria-live="polite"></p>
+        </section>
         <h3>Contenido completo</h3><div id="order-content" class="order-content"></div>
         <details><summary>Ver todos los datos del pedido</summary><pre id="order-json"></pre></details>
         <form id="notes-form" class="notes-form"><div><label for="activation">Fecha de activación (hora Argentina)</label><input id="activation" type="date"><p class="muted">Elegila antes del pago. Cambiarla acá después no modifica las fechas de publicación ya confirmadas.</p></div><div><label for="notes">Notas internas</label><textarea id="notes" rows="3" maxlength="1000"></textarea></div><button id="save-notes" type="submit" class="secondary">Guardar notas y fecha</button><span id="notes-status" role="status" aria-live="polite"></span></form>
@@ -75,5 +83,6 @@
   </main>
   <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title"><div class="dialog-bar"><h2 id="preview-title">Vista previa</h2><button id="preview-close" class="secondary" type="button">Cerrar</button></div><div class="actions"><button id="preview-opening" class="secondary" type="button">Ver apertura</button><button id="preview-content" class="secondary" type="button">Ver contenido final</button></div><p id="preview-status" role="status"></p><div id="preview-host"></div></dialog>
   <dialog id="erase-dialog" aria-labelledby="erase-title"><h2 id="erase-title">Confirmar borrado</h2><p id="erase-description"></p><form id="erase-form"><label for="erase-code">Escribí el código del pedido</label><input id="erase-code" autocomplete="off" maxlength="6" required><div class="actions"><button id="erase-confirm" type="submit" class="danger">Continuar con el borrado</button><button id="erase-cancel" type="button" class="secondary">Cancelar</button></div><p id="erase-error" class="error" role="alert"></p></form></dialog>
+  <dialog id="operation-dialog" aria-labelledby="operation-title" aria-describedby="operation-impact"><h2 id="operation-title"></h2><p id="operation-impact"></p><form id="operation-form"><div id="operation-date-wrap" hidden><label for="operation-date">Nuevo vencimiento (hora Argentina)</label><input id="operation-date" type="datetime-local" step="60"><p class="muted">Elegí una fecha futura, posterior al vencimiento actual y dentro de los próximos 366 días. Se usa la hora de Argentina aunque tu dispositivo esté en otra zona.</p></div><label for="operation-code">Escribí el código del pedido</label><input id="operation-code" autocomplete="off" autocapitalize="characters" maxlength="6" required><label class="confirmation-check" for="operation-ack"><input id="operation-ack" type="checkbox" required><span id="operation-ack-text"></span></label><div class="actions"><button id="operation-confirm" type="submit">Confirmar</button><button id="operation-cancel" class="secondary" type="button">Cancelar</button></div><p id="operation-error" class="error" role="alert" aria-live="assertive"></p></form></dialog>
 </body>
 </html>

@@ -5,9 +5,9 @@
   const node = (tag, text, className) => { const e = document.createElement(tag); if (text != null) e.textContent = String(text); if (className) e.className = className; return e; };
   const say = (id,message) => { $(id).textContent = message; };
   const money = v => window.ErosPrecios.formato(v);
-  const estados = { nuevo:'Nuevo', en_proceso:'En proceso', pagado:'Pagado', publicado:'Publicado', vencido:'Vencido' };
+  const estados = { nuevo:'Nuevo', pagado:'Pagado', publicado:'Publicado', vencido:'Vencido' };
   const juegos = { 'pintar-corazon':'Pintar el corazón', pintar:'Pintar el corazón', margarita:'Me ama / no me ama', laberinto:'Llegá a mí' };
-  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en,pagado_en';
+  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en,pagado_en,mp_preference_id,mp_payment_id,pago_manual_en,limpiado_en,limpieza_intentada_en';
   let client = null, userId = '', orders = [], selected = null, authGeneration = 0, detailGeneration = 0, request = null;
   let objects = [], imageBlobs = new Map(), blobURLs = new Map(), pendingBlobs = new Map(), iframe = null, previewData = null;
   let loading = false, reloadRequested = false, eraseBusy = false, sessionTimer = 0, deliveryTimer = 0, localLogout = false, authStorage = null;
@@ -49,6 +49,7 @@
   function link(text, href) { const a = node('a',text,'button secondary'); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; }
   function clearPreview() { iframe?.remove(); iframe = null; previewData = null; if ($('preview-dialog').open) $('preview-dialog').close(); $('preview-host').replaceChildren(); }
   function clearDetail() {
+    window.ErosOperaciones?.limpiar();
     clearTimeout(deliveryTimer);
     detailGeneration++; clearPreview(); selected = null; objects = []; imageBlobs.clear(); pendingBlobs.clear(); blobURLs.forEach(URL.revokeObjectURL); blobURLs.clear();
     $('detail').hidden = true;
@@ -96,7 +97,7 @@
       orders = all; window.ErosAvisos?.actualizarBase(orders); renderList();
       // Una actualización en vivo no reconstruye el formulario ni pisa notas sin guardar.
       const updated = selected && orders.find(order => order.id === selected.id);
-      if (updated) { for (const key of ['estado','pagado_en','slug','publicado_en','vence_en','total']) selected[key] = updated[key]; renderDetailFields(); updateDelivery(); }
+      if (updated) { for (const key of ['estado','pagado_en','slug','publicado_en','vence_en','total','mp_preference_id','mp_payment_id','pago_manual_en','limpiado_en','limpieza_intentada_en']) selected[key] = updated[key]; renderDetailFields(); updateDelivery(); }
     } catch(e) { if (gen === authGeneration && userId) say('list-status','No se pudo cargar la lista: ' + errorText(e)); }
     finally { if (gen === authGeneration) { loading = false; $('refresh').disabled = false; if (reloadRequested) { reloadRequested = false; void loadOrders(); } } }
   }
@@ -120,51 +121,43 @@
       values.forEach((v,i) => {
         const td = node('td'); td.dataset.label = labels[i];
         if (i === 0) { v.className = 'code-button'; v.setAttribute('aria-label','Ver pedido ' + o.codigo); td.append(v); }
-        else if (i === 6) {
-          const select = node('select'); select.setAttribute('aria-label','Estado del pedido ' + o.codigo);
-          Object.entries(estados).forEach(([key,label]) => { const op = node('option',label); op.value = key; select.append(op); }); select.value = o.estado;
-          const feedback = node('span','','status-feedback'); feedback.setAttribute('role','status');
-          select.addEventListener('change',async () => { select.disabled = true; feedback.textContent = 'Guardando…'; try { await changeStatus(o,select.value); feedback.textContent = '✓ Guardado'; } catch(e) { select.value = o.estado; feedback.textContent = errorText(e); } finally { select.disabled = false; } });
-          td.append(select,feedback);
-        } else td.textContent = v == null ? '' : String(v);
+        else if (i === 6) td.append(node('span',estados[o.estado] || 'Estado desconocido','order-state'));
+        else td.textContent = v == null ? '' : String(v);
         tr.append(td);
       }); $('order-rows').append(tr);
     }
     say('list-status',filtered.length ? filtered.length + ' pedidos' : 'No hay pedidos para esta búsqueda.'); renderExpired();
   }
-  async function changeStatus(order,status) {
-    if (!userId || !Object.hasOwn(estados,status)) throw new Error('Sesión o estado inválido.');
-    const gen = authGeneration; const data = await api(client.from('pedidos').update({estado:status}).eq('id',order.id).select('id,estado').single());
-    if (gen !== authGeneration || !userId) return;
-    order.estado = data.estado; say('new-count',orders.filter(o => o.estado === 'nuevo').length + ' nuevos'); renderExpired();
-    if (selected?.id === order.id) { selected.estado = status; renderDetailFields(); updateDelivery(); }
+  function applyOperation(order) {
+    if (!userId || !order?.id) return;
+    const cached = orders.find(item => item.id === order.id); if (cached) Object.assign(cached,order);
+    if (selected?.id === order.id) { Object.assign(selected,order); $('activation').value = selected.activar_el || ''; renderDetailFields(); updateDelivery(); say('order-json',JSON.stringify(selected,null,2)); }
+    renderList();
   }
   function renderExpired() {
     $('expired-list').replaceChildren();
     const overdue = orders.filter(o => o.estado === 'publicado' && expiration(o) && +expiration(o) <= Date.now());
     for (const o of overdue) {
       const wrap = node('div',null,'expired-item'); wrap.append(node('p',o.codigo + ' · ' + modelName(o) + ' · Venció el ' + dateTime(expiration(o))));
-      wrap.append(button('Ver pedido',() => openDetail(o.id)),button('Marcar vencido',async event => {
-        event.currentTarget.disabled = true;
-        try { await changeStatus(o,'vencido'); renderList(); } catch(e) { say('list-status',errorText(e)); event.currentTarget.disabled = false; }
-      })); $('expired-list').append(wrap);
+      wrap.append(button('Ver pedido',() => openDetail(o.id))); $('expired-list').append(wrap);
     }
     if (!overdue.length) $('expired-list').append(node('p','No hay pedidos publicados con plazo cumplido.','muted'));
     const missing = orders.filter(o => o.estado === 'publicado' && !expiration(o));
-    if (missing.length) $('expired-list').append(node('p',missing.length + ' publicados sin fecha de activación válida. Completala en su detalle para calcular el vencimiento.','error'));
+    if (missing.length) $('expired-list').append(node('p',missing.length + ' publicados sin fechas válidas. Revisá sus controles de publicación antes de entregar el link.','error'));
   }
-  async function openDetail(id) {
+  async function openDetail(id,options = {}) {
     if (!userId) return; clearDetail(); const auth = authGeneration, gen = detailGeneration;
     $('detail').hidden = false; say('detail-status','Cargando detalle…'); $('detail-title').focus(); $('detail').scrollIntoView({block:'start',behavior:'instant'});
     try {
       const order = await api(client.from('pedidos').select(fields).eq('id',id).single()); if (!current(auth,gen)) return;
-      selected = order; renderDetailFields(); renderContent(); $('notes').value = order.notas || ''; $('activation').value = order.activar_el || '';
+      selected = order; renderDetailFields(options); renderContent(); $('notes').value = order.notas || ''; $('activation').value = order.activar_el || '';
       say('order-json',JSON.stringify(order,null,2)); say('detail-status',''); updateDelivery();
       await loadPhotos(auth,gen);
     } catch(e) { if (current(auth,gen)) say('detail-status','No se pudo cargar: ' + errorText(e)); }
   }
-  function renderDetailFields() {
+  function renderDetailFields(options = {}) {
     if (!selected) return; const o = selected; say('detail-title','Pedido ' + o.codigo);
+    $('activation').disabled = o.estado !== 'nuevo' || !!o.pagado_en;
     $('detail-fields').replaceChildren();
     const rows = [['Estado',estados[o.estado] || o.estado],['Creado',dateTime(o.creado_en)],['Modelo',modelName(o)],['Duración',o.duracion],['Para',o.para_quien],['De parte de',o.de_parte || 'Sin indicar'],['Tema',o.tema],['Extras',extraLabel(o)],['Contador desde',dateLabel(o.extras?.contador?.desde)],['Música',o.musica || 'Sin indicar'],['Activación',dateLabel(o.activar_el)],['Publicación',o.publicado_en ? dateTime(o.publicado_en) + ' (Argentina)' : 'Sin publicar'],['Vencimiento',expiration(o) ? dateTime(expiration(o)) + ' (Argentina)' : 'Falta fecha de publicación'],['WhatsApp',o.whatsapp_cliente || 'Sin indicar'],['Fotos declaradas',o.fotos_cantidad],['Total guardado',money(o.total)]];
     rows.forEach(([label,value]) => $('detail-fields').append(node('dt',label),node('dd',value)));
@@ -175,6 +168,7 @@
     if (number) $('contact-actions').append(link('Escribir al cliente','https://wa.me/' + number + '?text=' + encodeURIComponent('Hola! Te escribo por tu pedido ' + o.codigo + ' de Eros Web…')));
     const match = String(o.musica || '').match(/https?:\/\/[^\s]+/i), musicURL = match && safeLink(match[0]);
     if (musicURL) $('contact-actions').append(link('Abrir música',musicURL));
+    window.ErosOperaciones?.mostrar(o,{forzar:options.forzarPago === true});
   }
   function renderContent() {
     const root = $('order-content'), d = selected.datos || {}; root.replaceChildren();
@@ -267,13 +261,13 @@
     catch(e) { say('global-status','Los datos se ocultaron. No se pudo confirmar el cierre: ' + errorText(e)); }
     finally { authStorage?.removeItem('erosweb-admin-auth-v1'); authStorage?.removeItem('erosweb-admin-auth-v1-code-verifier'); }
   });
-  $('refresh').addEventListener('click',async () => { const id = selected?.id; await loadOrders(); if (id && userId) await openDetail(id); });
+  $('refresh').addEventListener('click',async () => { const id = selected?.id; await loadOrders(); if (id && userId) await openDetail(id,{forzarPago:true}); });
   $('search').addEventListener('input',renderList); $('status-filter').addEventListener('change',renderList);
   $('close-detail').addEventListener('click',clearDetail);
   $('notes-form').addEventListener('submit',async event => {
     event.preventDefault(); if (!selected || !userId) return; const id = selected.id, a = authGeneration, d = detailGeneration;
     $('save-notes').disabled = true; say('notes-status','Guardando…');
-    try { const update = {notas:$('notes').value.trim().slice(0,1000) || null,activar_el:$('activation').value || null}; const data = await api(client.from('pedidos').update(update).eq('id',id).select('id,notas,activar_el').single()); if (!current(a,d)) return; Object.assign(selected,data); const o = orders.find(o => o.id === id); if(o) Object.assign(o,data); renderDetailFields(); updateDelivery(); renderExpired(); say('order-json',JSON.stringify(selected,null,2)); say('notes-status','✓ Guardado'); }
+    try { const update = {notas:$('notes').value.trim().slice(0,1000) || null}; if (!$('activation').disabled) update.activar_el = $('activation').value || null; const data = await api(client.from('pedidos').update(update).eq('id',id).select('id,notas,activar_el').single()); if (!current(a,d)) return; Object.assign(selected,data); const o = orders.find(o => o.id === id); if(o) Object.assign(o,data); renderDetailFields(); updateDelivery(); renderExpired(); say('order-json',JSON.stringify(selected,null,2)); say('notes-status','✓ Guardado'); }
     catch(e) { if (current(a,d)) say('notes-status',errorText(e)); } finally { $('save-notes').disabled = false; }
   });
   $('preview-button').addEventListener('click',preparePreview); $('preview-close').addEventListener('click',() => $('preview-dialog').close());
@@ -297,11 +291,14 @@
     if (!window.confirm('Segunda confirmación: ¿borrar definitivamente las fotos y los datos personales de ' + selected.codigo + '? Esta acción no se puede deshacer.')) return;
     const a = authGeneration, d = detailGeneration, order = selected; eraseBusy = true; $('erase-confirm').disabled = true; say('erase-error','Borrando…');
     try {
+      // El servidor corta el acceso antes de borrar archivos. No se cambia el estado desde el navegador.
+      if (!window.ErosOperaciones) throw new Error('No se cargaron los controles de publicación. Recargá el panel antes de borrar.');
+      await window.ErosOperaciones.anularParaBorrado(order,$('erase-code').value.trim().toUpperCase()); if (!current(a,d)) return;
       const files = await listObjects(order.id); if (!current(a,d)) return;
       for (let i = 0; i < files.length; i += 100) { await api(client.storage.from('fotos').remove(files.slice(i,i+100).map(f => order.id + '/' + f.name))); if (!current(a,d)) return; }
       if ((await listObjects(order.id)).length) throw new Error('Quedaron archivos en el bucket. Volvé a intentar el borrado.');
       const extra = {juego:order.extras?.juego || '',sobre:!order.extras?.juego,contador:{activo:!!(order.extras?.contador === true || order.extras?.contador?.desde || order.extras?.contador?.activo)}};
-      await api(client.from('pedidos').update({estado:'vencido',para_quien:'Datos eliminados',de_parte:null,musica:'',whatsapp_cliente:null,datos:{},fotos_cantidad:0,notas:null,extras:extra}).eq('id',order.id).select('id').single());
+      await api(client.from('pedidos').update({para_quien:'Datos eliminados',de_parte:null,musica:'',whatsapp_cliente:null,datos:{},fotos_cantidad:0,notas:null,extras:extra}).eq('id',order.id).select('id').single());
       if (!current(a,d)) return; $('erase-dialog').close(); await loadOrders(); await openDetail(order.id); say('erase-status','✓ Fotos y datos personales borrados de Supabase. Si exportaste una copia manual, retirala también de donde la hayas publicado.');
     } catch(e) { if (current(a,d)) say('erase-error','El borrado no terminó. Podés reintentar: ' + errorText(e)); }
     finally { eraseBusy = false; $('erase-confirm').disabled = false; }
@@ -313,6 +310,7 @@
     try { const key = 'eros-admin-test'; sessionStorage.setItem(key,'1'); sessionStorage.removeItem(key); storage = sessionStorage; } catch(_) { const memory = new Map(); storage = {getItem:k => memory.get(k) || null,setItem:(k,v) => memory.set(k,v),removeItem:k => memory.delete(k)}; }
     authStorage = storage;
     client = window.supabase.createClient(config.supabaseUrl,config.supabaseKey,{auth:{storage,storageKey:'erosweb-admin-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+    window.ErosOperaciones?.configurar({client,getPedido:() => selected,getUserId:() => userId,onUpdated:applyOperation});
     // Una clave publishable no es un JWT: createClient la manda como apikey y usa el JWT de Auth después del login.
     client.auth.onAuthStateChange((event,session) => {
       if (localLogout) { if (!session) hidePrivate(); return; }

@@ -1061,3 +1061,283 @@ La función evita avisar por pedidos o pagos de hace más de 24 horas y fija los
 - [ ] No se guardaron claves privadas, secretos, cuerpos de webhook ni suscripciones en GitHub.
 
 **Lo que tenés que verificar en tus cuentas:** ejecutar el SQL, guardar los secretos, desplegar las dos funciones, publicar el panel y hacer las pruebas en el dispositivo. Preparar estos archivos no crea el webhook ni activa los permisos por vos. Cuando esté comprobado, respondé **“etapa E lista”** para seguir con F.
+
+## Etapa F: administrar pedidos y comprobar el circuito completo
+
+Hacé esta etapa después de E. Agrega cuatro acciones con confirmación en el panel: registrar un pago recibido por fuera de Mercado Pago, republicar, extender la vigencia y anular el acceso. La función de servidor verifica tu sesión de administrador y las condiciones del pedido antes de aplicar cada acción.
+
+Durante las pruebas conservá `MP_MODO=test`, las cuentas ficticias y las fotos de prueba. El cambio a cobros reales está al final, después de comprobar pagos, publicación, avisos y borrado.
+
+Archivos de esta etapa:
+
+- Nuevos: `admin/operaciones.js`, `supabase/05-panel.sql`, `supabase/functions/administrar-pedido/index.ts` y `supabase/tests/admin_test.ts`.
+- Panel actualizado: `admin/index.html`, `admin/admin.js` y `admin/admin.css`.
+- Textos actualizados: `index.html`, `terminos.html`, `privacidad.html`, `armador/armador.js` y `pedido/pedido.js`.
+- Preparación y guía: `scripts/preparar-funciones.mjs`, `supabase/config.toml` y este `supabase/NUEVO-PROYECTO.md`.
+- Copia generada para pegar en el dashboard: `supabase/dashboard/administrar-pedido.ts`. Se mantiene fuera de Git por `.gitignore`.
+
+### 1. Ejecutar el SQL del panel
+
+1. Entrá al **proyecto nuevo de Supabase → SQL Editor → New query**.
+2. Abrí `supabase/05-panel.sql` en tu computadora, copiá el archivo completo y pegalo en la consulta.
+3. Tocá **Run**. Podés ejecutar de nuevo el archivo completo sin borrar pedidos.
+4. En otra consulta, comprobá que exista la fecha de pago manual:
+
+```sql
+select column_name, data_type
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'pedidos'
+  and column_name = 'pago_manual_en';
+
+select conname, pg_get_constraintdef(oid) as regla
+from pg_constraint
+where conrelid = 'public.pedidos'::regclass
+  and contype = 'c'
+  and conname like 'pedidos_estado%';
+```
+
+**Verificación:** el script termina con **Success**; aparece `pago_manual_en` con tipo `timestamp with time zone`. La regla de estados permite `nuevo`, `pagado`, `publicado` y `vencido`; el panel ya no ofrece `en_proceso`.
+
+Las acciones quedan registradas en el servidor con su identificador, fecha, administrador y cambio de estado o de fechas. El registro no copia la carta, las fotos, los nombres ni el WhatsApp del cliente.
+
+### 2. Desplegar `administrar-pedido`
+
+1. Abrí una terminal dentro de `Descargas/ChatGPT/erosweb/` y ejecutá:
+
+```bash
+node scripts/verificar-precios.mjs
+node scripts/preparar-funciones.mjs
+```
+
+2. Abrí `supabase/dashboard/administrar-pedido.ts` y copiá todo el archivo generado.
+3. En Supabase, entrá a **Edge Functions → Deploy a new function → Via Editor**.
+4. Poné exactamente `administrar-pedido`, borrá el ejemplo y pegá el archivo completo.
+5. Tocá **Deploy function** y esperá la confirmación.
+6. Abrí **administrar-pedido → Details/Settings**, desactivá **Verify JWT** y guardá el cambio si el panel lo pide.
+
+La función valida el token de sesión consultando Supabase Auth y exige que el usuario tenga `app_metadata.eros_admin = true`. La verificación se hace dentro de la función; apagar el control previo de la plataforma permite manejar el preflight del navegador y comprobar la sesión con este mecanismo. No habilita llamadas de visitantes. [Validación de usuarios en Supabase](https://supabase.com/docs/reference/javascript/auth-getuser).
+
+**Verificación:** la función aparece desplegada. Una llamada **POST** con cuerpo `{}` y sin sesión debe devolver **401**, sin datos de pedidos. La prueba de una acción válida se hace desde el panel iniciado con tu usuario administrador, sin copiar su token a la guía ni al repositorio.
+
+Esta etapa usa la URL pública y la sesión del panel que ya tenés. No necesita un secreto compartido nuevo en el navegador ni cambiar la clave pública de `armador/config.js`.
+
+### 3. Actualizar el panel en GitHub Pages
+
+1. Subí los archivos nuevos y modificados de `admin/` de esta etapa al mismo repositorio, conservando sus carpetas y nombres. Actualizá también cualquier archivo público compartido que figure en la lista de cambios entregada.
+2. No subas la carpeta generada `supabase/dashboard/`, contraseñas, tokens ni valores de Secrets.
+3. Esperá a que termine la publicación de Pages y abrí el panel desde su URL pública terminada en `admin/`.
+4. Si está abierto desde antes de la actualización, recargalo. Iniciá sesión y abrí un pedido ficticio.
+5. Comprobá que aparezcan **Marcar pago manual**, **Republicar**, **Extender vigencia** y **Anular acceso**. Según el estado y los datos del pedido, una acción puede estar deshabilitada.
+
+**Verificación:** ves las cuatro acciones en el detalle. Abrir un diálogo o cancelarlo no cambia el pedido. Para confirmar, el panel pide escribir su código y marcar la casilla que explica el efecto de la acción; una confirmación con otro código debe rechazarse.
+
+### 4. Qué hace cada acción
+
+| Acción | Cuándo usarla | Resultado que tenés que comprobar |
+| --- | --- | --- |
+| **Marcar pago manual** | Verificaste un cobro recibido fuera de Mercado Pago. Para la prueba, usá un pedido ficticio sin checkout ni cobro en curso. | Registra la confirmación manual y calcula su vigencia, respetando una fecha de activación futura si está configurada. No inventa un identificador de pago de Mercado Pago. |
+| **Republicar** | El pedido fue pagado y todavía conserva su contenido; querés comenzar otra vigencia completa. | Mantiene el link, publica desde ese momento y comienza un plazo de 1, 7 o 30 días, según la duración. Quita una fecha de activación programada anterior. |
+| **Extender vigencia** | El pedido está en estado `publicado`, conserva su contenido y querés fijar un vencimiento posterior. | En **Nuevo vencimiento (hora Argentina)** elegís la fecha y hora. Debe ser futura y mayor que el vencimiento actual; no admite más de 366 días hacia adelante. |
+| **Anular acceso** | Querés cortar el link sin esperar el vencimiento. | Pasa a `vencido` y el regalo deja de abrirse. La limpieza horaria de D elimina después las fotos y los textos. No hace un reembolso. |
+
+Confirmar un pago manual no reemplaza la comprobación del cobro: usalo únicamente cuando hayas verificado el ingreso. Los reembolsos se gestionan aparte en el medio de pago correspondiente; **Anular acceso** no devuelve dinero.
+
+Confirmar **Borrar fotos del pedido** inicia un borrado irreversible: registra el comienzo de la limpieza antes de eliminar el primer archivo y bloquea la republicación desde ese momento. Si falla a mitad del borrado, el acceso queda cerrado y la limpieza horaria de D completa lo pendiente; **Anular acceso** por sí solo no inicia ese borrado manual.
+
+No se puede registrar un pago manual, republicar ni extender un pedido cuyo contenido ya se borró o cuya limpieza comenzó. Esas tres acciones también se bloquean si el total guardado no coincide con el precio recalculado. **Anular acceso** permite mantener cerrado un pedido incluso si ya está vencido o empezó su limpieza. El precio se calcula con la misma fuente de datos del armador, sin agregar una tabla manual a esta guía.
+
+Si otro proceso cambió el contenido, el estado o las fechas desde que abriste el detalle, el panel pide actualizarlo antes de confirmar. Si la conexión se corta, conservá el pedido abierto y reintentá desde el mismo diálogo: el identificador de la operación permite reconocer una confirmación repetida.
+
+El detalle muestra el **último estado de pago registrado** por el servidor. Ese dato no consulta Mercado Pago en vivo: si un cobro todavía está pendiente de conciliar, revisá también la operación y su historial de Webhooks en Mercado Pago antes de decidir una acción manual.
+
+### 5. Comprobar permisos y configuración sin modificar pedidos
+
+En **Supabase → SQL Editor → New query**, ejecutá estas consultas de solo lectura:
+
+```sql
+select has_table_privilege('anon', 'public.pedidos', 'SELECT') as anon_lee_tabla,
+       has_column_privilege('anon', 'public.pedidos', 'datos', 'SELECT') as anon_lee_contenido,
+       has_column_privilege('anon', 'public.pedidos', 'estado', 'UPDATE') as anon_cambia_estado,
+       has_column_privilege('anon', 'public.pedidos', 'pago_manual_en', 'INSERT') as anon_inventa_pago,
+       has_column_privilege('anon', 'public.pedidos', 'pago_manual_en', 'UPDATE') as anon_edita_pago;
+
+select schemaname, tablename, rowsecurity
+from pg_tables
+where schemaname = 'public'
+  and tablename in ('pedidos', 'admin_push_subscriptions');
+
+select policyname, cmd, roles, qual, with_check
+from pg_policies
+where schemaname = 'public'
+  and tablename = 'pedidos'
+order by policyname;
+
+select id, public, file_size_limit, allowed_mime_types
+from storage.buckets
+where id = 'fotos';
+
+select p.proname as funcion,
+       has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') as autenticado,
+       has_function_privilege('service_role', p.oid, 'EXECUTE') as servidor
+from pg_proc as p
+join pg_namespace as n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in ('eros_admin_estado_pago', 'eros_admin_buscar_accion', 'eros_admin_accion')
+order by p.proname;
+```
+
+**Verificación:** los cinco permisos de `anon` dicen `false`; las dos tablas tienen RLS; las políticas de lectura exigen el permiso de administrador. El bucket `fotos` sigue privado, con límite `5242880` bytes y tipos JPEG, PNG y WebP. No cambies el bucket a público para resolver un error de miniaturas.
+
+La última consulta devuelve tres funciones: `anon` dice `false` en todas. `eros_admin_accion` y `eros_admin_buscar_accion` tienen `autenticado = false` y `servidor = true`; el navegador pasa por la Edge Function para ejecutar o recuperar el resultado de una acción. `eros_admin_estado_pago` admite al rol autenticado y además verifica que la sesión sea de un administrador autorizado; un login sin ese permiso no habilita su lectura.
+
+El SQL Editor trabaja con un rol de administración: ver filas ahí no comprueba que sean públicas. Para probar al visitante, abrí `supabase/probar-conexion.html` sin iniciar sesión y tocá **Probar lectura sin sesión**. Tiene que rechazar la lectura o no devolver pedidos ni archivos. Abrí también `admin/` en incógnito: debe pedir login y no mostrar datos.
+
+Para revisar un pedido ficticio sin mostrar su contenido, reemplazá `CODIGO` por sus seis caracteres:
+
+```sql
+select id, codigo, modelo, duracion, total, estado,
+       creado_en, activar_el, pagado_en, pago_manual_en,
+       publicado_en, vence_en, limpiado_en, limpieza_intentada_en,
+       mp_preference_id, mp_payment_id, fotos_cantidad,
+       datos = '{}'::jsonb as contenido_vacio
+from public.pedidos
+where codigo = 'CODIGO';
+```
+
+**Verificación:** un pago de Mercado Pago conserva sus identificadores y `pagado_en`. Una confirmación manual tiene `pago_manual_en`; no genera un `mp_payment_id` ficticio. El link habilitado debe coincidir con `publicado_en` y `vence_en`, y el total debe ser el que mostraba el pedido antes del pago.
+
+Después de una acción de prueba, podés revisar su registro interno con el UUID del pedido. La consulta muestra estados y fechas, sin contenido personal:
+
+```sql
+select solicitud_id, pedido_id, accion, creado_en, antes, despues
+from eros_private.panel_acciones
+where pedido_id = 'UUID_DEL_PEDIDO_FICTICIO'::uuid
+order by creado_en desc
+limit 20;
+```
+
+**Verificación:** cada operación confirmada tiene su registro. Reintentar la misma operación con el mismo identificador no agrega otra aplicación de esa acción ni vuelve a empezar el plazo. Si el pedido cambió entre intentos, se revisa de nuevo antes de confirmar.
+
+### 6. Prueba final con cuentas y contenido ficticios
+
+1. En **Supabase → Edge Functions → Secrets**, comprobá que `MP_MODO` siga en `test` y que `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` sean los de la aplicación del vendedor ficticio de B.
+2. En tu web pública, completá estos pedidos de prueba. Usá imágenes que puedas borrar y textos claramente ficticios:
+
+| Pedido | Duración y extras | Total esperado |
+| --- | --- | --- |
+| Carta para vos | 1 día, sin extras pagos y sin juego | $5.000 |
+| Carta para vos | 1 día y Pintar el corazón | $8.000 |
+| Nuestra historia | 1 semana y Me ama / no me ama | $15.000 |
+| Álbum de recuerdos | 1 mes, Llegá a mí y contador | $29.000 |
+
+3. Antes de enviar cada uno, comprobá la vista previa, el orden de sus fotos y el total. Sin juego se ve el sobre; con un juego se ve únicamente ese juego como apertura. Cambiá el tema y revisá que el texto siga legible.
+4. Guardá el código y el enlace de seguimiento de cada pedido. Confirmá que el panel reciba el pedido nuevo y que el aviso muestre solo código, modelo, duración y total.
+5. Pagá cada uno usando la cuenta compradora ficticia, distinta de la vendedora, y las tarjetas oficiales de prueba indicadas en B. No uses una tarjeta real ni confirmes esos pedidos como pagos manuales: esta parte comprueba la integración con Mercado Pago. [Compras de prueba de Checkout Pro](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro-preferences/integration-test/test-purchases).
+6. Esperá la confirmación del servidor. El seguimiento debe mostrar la publicación, el link y el QR; el panel debe recibir el aviso de pago. Abrí el QR desde otro dispositivo y comprobá que lleve al mismo regalo.
+7. En el regalo publicado, completá su apertura: abrí el sobre o jugá hasta ganar. Revisá texto, fotos, lightbox, música cuando exista y contador cuando esté activado. Repetí al menos en un celular y en una computadora.
+8. Recargá el seguimiento y el regalo. Conservan el mismo link y las fechas; recibir otra notificación del mismo pago no reinicia la vigencia.
+9. Mandá otro pedido ficticio para probar **Marcar pago manual**, sin abrir el checkout de Mercado Pago. Confirmalo desde el panel, revisá su publicación y comprobá `pago_manual_en` con la consulta del paso 5.
+10. Con uno de esos pedidos ficticios que conserve su contenido, probá **Extender vigencia** con una fecha posterior y **Republicar**. Compará las fechas antes y después. No uses un pedido de un cliente para estas pruebas.
+11. Probá **Anular acceso** con otro pedido ficticio. Su link tiene que cerrarse sin hacer un reembolso; comprobá que el panel lo muestre como vencido.
+
+**Verificación:** probaste los tres modelos, los tres juegos y una apertura con sobre; cada total coincide con la tabla. Los pagos aprobados publican, las acciones del panel piden confirmación y los enlaces anulados dejan de abrir el contenido.
+
+### 7. Comprobar vencimiento y borrado de un pedido ficticio
+
+La acción **Extender vigencia** no acepta fechas pasadas. Para comprobar el borrado sin esperar un día, usá solamente el pedido ficticio de Carta con dos fotos y el procedimiento controlado de D.
+
+1. Elegí un pedido ficticio ya publicado por pago de prueba, con exactamente dos fotos y sin fecha de activación futura. Anotá su código y su UUID con la consulta del paso 5.
+2. En **SQL Editor → New query**, reemplazá ambos marcadores por los datos de ese pedido y ejecutá este bloque. Es el único paso de esta comprobación que cambia fechas por SQL:
+
+```sql
+update public.pedidos
+set publicado_en = now() - interval '2 minutes',
+    vence_en = now() - interval '1 minute'
+where codigo = 'CODIGO_FICTICIO'
+  and id = 'UUID_DEL_PEDIDO_FICTICIO'::uuid
+  and estado = 'publicado'
+  and fotos_cantidad = 2
+  and pagado_en is not null
+  and mp_payment_id is not null
+  and pago_manual_en is null
+  and limpiado_en is null
+  and limpieza_intentada_en is null
+  and (activar_el is null or activar_el <= (now() at time zone 'America/Argentina/Buenos_Aires')::date)
+returning codigo, publicado_en, vence_en;
+```
+
+3. Debe devolver una sola fila, con el código ficticio. Si devuelve cero, revisá sus condiciones; no quites los filtros para forzar la prueba.
+4. Abrí el link en otro dispositivo o en incógnito: debe decir que la página venció, sin mostrar la carta ni descargar sus fotos.
+5. Revisá la lista de todos los vencidos pendientes con la consulta de D. Después entrá a **GitHub → Actions → Limpiar pedidos vencidos → Run workflow** y ejecutalo en la rama predeterminada. Procesa todos los vencidos pendientes, no solo la prueba.
+6. Cuando termine en verde, reemplazá el código y el UUID en estas consultas de solo lectura:
+
+```sql
+select codigo, estado, limpiado_en,
+       datos = '{}'::jsonb as contenido_vacio,
+       fotos_cantidad = 0 as sin_fotos,
+       para_quien = 'Datos eliminados' as destinatario_borrado,
+       de_parte is null as remitente_borrado,
+       musica = '' as musica_borrada,
+       whatsapp_cliente is null as whatsapp_borrado,
+       notas is null as notas_borradas,
+       total, mp_payment_id, pagado_en, publicado_en, vence_en
+from public.pedidos
+where codigo = 'CODIGO_FICTICIO'
+  and id = 'UUID_DEL_PEDIDO_FICTICIO'::uuid;
+
+select count(*) as archivos_restantes
+from storage.objects
+where bucket_id = 'fotos'
+  and (storage.foldername(name))[1] = 'UUID_DEL_PEDIDO_FICTICIO';
+```
+
+7. Confirmá también en **Storage → fotos** que ya no estén sus archivos. Los indicadores deben decir `true`, `archivos_restantes` debe ser cero y `limpiado_en` debe tener fecha.
+8. Abrí otro pedido ficticio vigente: su contenido y sus fotos deben seguir disponibles. Intentar republicar el pedido borrado debe rechazarse; el panel no puede reconstruir sus fotos.
+
+**Verificación:** el regalo dejó de ser accesible al vencer, el workflow borró sus archivos y vació sus datos personales. Se conservaron el código, el importe y los datos de pago necesarios para el registro del pedido. No borres filas de `storage.objects` por SQL: el borrado físico se hace por la API de Storage de D.
+
+### 8. Pasar a cobros reales después de las pruebas
+
+Hacé este paso cuando hayas completado la lista final y decidas empezar a cobrar de verdad. Cambiar los Secrets afecta a los nuevos cobros del mismo proyecto; terminá primero los pagos ficticios y no mezcles una compra iniciada en prueba con credenciales reales.
+
+1. Iniciá sesión en **Mercado Pago Developers** con tu cuenta vendedora real y abrí su aplicación de **Checkout Pro**. Si falta, creala desde **Tus integraciones → Crear aplicación**.
+2. En **Credenciales**, seleccioná **Producción** y completá la activación que pida Mercado Pago. Copiá el Access Token de esa aplicación de forma privada. [Credenciales de Mercado Pago](https://www.mercadopago.com.ar/developers/es/docs/your-integrations/credentials).
+3. En esa misma aplicación, abrí **Webhooks → Configurar notificaciones**, guardá la URL real de `/functions/v1/webhook-mercadopago`, elegí **Pagos** y copiá la clave secreta de esa configuración. Conservá la misma URL de Supabase usada en las pruebas; cambia la aplicación y sus credenciales.
+4. En **Supabase → Edge Functions → Secrets**, reemplazá `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` por los valores de esa aplicación real y cambiá `MP_MODO` a `produccion`.
+5. Confirmá que `EROS_SITE_URL` siga siendo la raíz HTTPS correcta de GitHub Pages. Conservá `AVISOS_SECRETO`, las claves VAPID y los Secrets de limpieza que ya funcionan.
+6. No cambies `armador/config.js`: sigue con la URL y clave pública del proyecto nuevo. No se agrega ningún Access Token ni clave de Webhooks de Mercado Pago al sitio.
+7. Cuando autorices tu primer pedido real, verificá su importe antes de pagar y revisá después la operación en Mercado Pago, la publicación en el seguimiento, el QR y el aviso al administrador. Esa compra mueve dinero real y no se ejecuta automáticamente como parte de estas instrucciones.
+
+**Verificación:** el modo es `produccion`, el token y la firma pertenecen a la misma aplicación real, y el primer cobro autorizado aparece por el importe correcto. No consideres que una simulación de webhook reemplaza esa comprobación ni uses el pago manual para ocultar un fallo de la integración.
+
+### Si algo falla
+
+- **La acción devuelve 401:** volvé a iniciar sesión en el panel. No pegues la clave pública como token de administrador ni desactives la comprobación de usuario dentro de la función.
+- **La acción devuelve 403:** revisá que tu usuario siga teniendo `app_metadata.eros_admin = true` en el proyecto nuevo. No habilites lectura o actualización para visitantes.
+- **El navegador muestra un error CORS:** confirmá la versión desplegada de `administrar-pedido`, Verify JWT apagado y `EROS_SITE_URL` correcto. El preflight debe responder antes de intentar leer la sesión.
+- **El pedido cambió mientras lo confirmabas:** actualizá el detalle, revisá los datos nuevos y volvé a elegir la acción. La comprobación evita sobrescribir un pago o una limpieza que ocurrió en otra pestaña.
+- **Hay un cobro pendiente o un checkout en preparación:** revisá esa operación en Mercado Pago. El pago manual se bloquea mientras el servidor tenga un pago pendiente, en proceso, autorizado o en mediación, o una creación de checkout activa. No confirmes otro ingreso para saltear ese control.
+- **La acción devuelve 429:** esperá un minuto antes de reintentar. El servidor limita las acciones por administrador para evitar repeticiones accidentales.
+- **El total no coincide:** compará el modelo, la duración y los extras con el resumen original y corré `node scripts/verificar-precios.mjs`. No fuerces la publicación ni edites el importe para hacer coincidir un cobro ya recibido.
+- **No permite republicar o extender:** revisá `limpiado_en` y `limpieza_intentada_en`. Una limpieza iniciada puede haber borrado parte de las fotos y se bloquea la reapertura aunque todavía falte finalizarla.
+- **Anulaste un pedido por error:** si la limpieza todavía no comenzó y el pedido conserva el contenido, revisá las condiciones de republicación. Una vez borrado, hace falta cargar un pedido nuevo con sus archivos; anular no conserva una copia recuperable.
+- **Un pago real no se confirma:** revisá el historial de Webhooks de Mercado Pago y **Supabase → Edge Functions → webhook-mercadopago → Logs/Invocations**. Compará aplicación, modo, firma e importe antes de repetir un cobro o registrar un pago manual.
+
+### Lista de comprobación final
+
+- [ ] `05-panel.sql` terminó con Success y `administrar-pedido` está desplegada.
+- [ ] El panel publicado ofrece las cuatro acciones con confirmación por código.
+- [ ] Sin sesión no se leen pedidos ni se ejecutan acciones; el bucket sigue privado.
+- [ ] Probaste los tres modelos, los tres juegos y el sobre sin juego con contenido ficticio.
+- [ ] La vista previa, los precios y las fotos coinciden con cada regalo publicado.
+- [ ] Los pagos ficticios aprobados publicaron; uno rechazado no publicó.
+- [ ] El seguimiento conserva el link, permite descargar el QR y funciona en otro dispositivo.
+- [ ] Llegaron avisos de pedido nuevo y pago con el panel abierto y cerrado.
+- [ ] Pago manual, republicación, extensión y anulación tienen los efectos indicados.
+- [ ] Un vencimiento de prueba bloqueó el regalo y el workflow borró sus fotos y textos.
+- [ ] Un pedido vigente siguió funcionando y uno borrado no se pudo republicar.
+- [ ] Si elegiste cobrar de verdad, cambiaste juntos el modo y las credenciales de la aplicación real, sin agregarlos al repositorio.
+
+**Comprobaciones en tus cuentas:** aplicar el SQL, desplegar la función, publicar el panel y completar los pedidos ficticios requiere que ejecutes estos pasos en Supabase, GitHub, Mercado Pago y tus dispositivos. La preparación local de los archivos no confirma esos resultados ni realiza un cobro real.
