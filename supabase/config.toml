@@ -23,3 +23,7 @@ verify_jwt = false
 # La función valida la sesión con Auth y el permiso admin actual antes de operar.
 [functions.administrar-pedido]
 verify_jwt = false
+
+# Valida el MP3 del pedido nuevo mediante UUID/código, origen y límites del servidor.
+[functions.validar-audio]
+verify_jwt = false

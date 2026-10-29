@@ -26,6 +26,7 @@ type Simulado = {
   pagoEstado: string | null; accionReserva: string; limite: boolean; vendedorPrueba: boolean;
   preferencia: Record<string, unknown> | null; pago: Record<string, unknown>; referencia: string;
   registro: Record<string, unknown>[]; fallaPOST: boolean; modo: string;
+  audioRespuesta?: "ausente" | "invalido";
 };
 
 async function simular(probar: (s: Simulado) => Promise<void>) {
@@ -43,6 +44,11 @@ async function simular(probar: (s: Simulado) => Promise<void>) {
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
     s.peticiones.push({ url: url.href, body, method });
     if (url.hostname === "prueba.supabase.co") {
+      if (url.pathname === "/storage/v1/object/authenticated/audios/" + s.pedido.id + "/cancion.mp3") {
+        return Promise.resolve(s.audioRespuesta === "invalido"
+          ? new Response(new Uint8Array([1, 2, 3]), { headers: { "Content-Type": "audio/mpeg" } })
+          : json({ error: "Object not found" }, 404));
+      }
       if (url.pathname === "/functions/v1/avisar-admin") {
         igual(init?.headers && new Headers(init.headers).get("x-eros-aviso"), "a".repeat(64));
         return Promise.resolve(json({ ok: !s.fallaPOST }, s.fallaPOST ? 503 : 200));
@@ -146,6 +152,23 @@ Deno.test("checkout: total manipulado y extras inconsistentes se rechazan antes 
   igual((await crearPago(requestPedido())).status, 409);
   afirmar(s.peticiones.every(p => !p.url.includes("api.mercadopago.com")));
 }));
+Deno.test("checkout: audio sin verificar o borrado impide crear o reservar un cobro", () => simular(async s => {
+  for (const verificado of [false, true]) {
+    s.pedido = copiar(fila); s.peticiones = [];
+    Object.assign(s.pedido, {
+      audio_ruta: fila.id + "/cancion.mp3", audio_nombre: "prueba.mp3", audio_bytes: 3,
+      audio_consentimiento: true, audio_verificado_en: verificado ? new Date().toISOString() : null,
+      audio_sha256: verificado ? "a".repeat(64) : null,
+    });
+    s.pedido.datos.audio = { src: "audio/cancion.mp3" };
+    const respuesta = await crearPago(requestPedido());
+    igual(respuesta.status, 409);
+    igual((await respuesta.json()).error, verificado ? "audio_ausente" : "audio_sin_verificar");
+    afirmar(!s.peticiones.some(p => p.url.includes("api.mercadopago.com")));
+    afirmar(!s.peticiones.some(p => p.url.endsWith("eros_reservar_checkout") || p.url.endsWith("eros_guardar_checkout")));
+    igual(s.preferencia, null); igual(s.registro.length, 0); igual(s.pedido.estado, "nuevo");
+  }
+}));
 Deno.test("checkout: código solo, origen ajeno y límite no permiten iniciar un pago", () => simular(async s => {
   igual((await crearPago(requestPedido({ codigo: fila.codigo }))).status, 400);
   const ajeno = requestPedido(); ajeno.headers.set("origin", "https://ajeno.ejemplo.test"); igual((await crearPago(ajeno)).status, 403);
@@ -174,6 +197,18 @@ Deno.test("webhook: firma inválida no consulta ni escribe la base", () => simul
 Deno.test("webhook: sólo API approved por total exacto publica; reenvío no duplica", () => simular(async s => {
   igual((await webhookMercadoPago(await requestWebhook(s))).status, 200); igual(s.registro.length, 1); igual(s.registro[0].p_total, 5000); igual(s.registro[0].p_dias, 1);
   const repetido = await webhookMercadoPago(await requestWebhook(s)); igual((await repetido.json()).accion, "repetido"); igual(s.registro.length, 1);
+}));
+Deno.test("webhook: un pago aprobado con audio inválido no se registra ni publica", () => simular(async s => {
+  Object.assign(s.pedido, {
+    audio_ruta: fila.id + "/cancion.mp3", audio_nombre: "prueba.mp3", audio_bytes: 3,
+    audio_consentimiento: true, audio_verificado_en: new Date().toISOString(), audio_sha256: "a".repeat(64),
+  });
+  s.pedido.datos.audio = { src: "audio/cancion.mp3" }; s.audioRespuesta = "invalido";
+  const respuesta = await webhookMercadoPago(await requestWebhook(s));
+  igual(respuesta.status, 503); igual((await respuesta.json()).error, "audio_no_disponible");
+  afirmar(s.peticiones.some(p => p.url.includes("/storage/v1/object/authenticated/audios/")));
+  afirmar(!s.peticiones.some(p => p.url.endsWith("eros_registrar_pago") || p.url.endsWith("/functions/v1/avisar-admin")));
+  igual(s.registro.length, 0); igual(s.pedido.estado, "nuevo"); igual(s.pedido.mp_payment_id, null);
 }));
 Deno.test("webhook: no acepta monto, moneda ni vendedor distintos", () => simular(async s => {
   for (const cambio of [{ transaction_amount: 1 }, { currency_id: "USD" }, { collector_id: 999 }]) {

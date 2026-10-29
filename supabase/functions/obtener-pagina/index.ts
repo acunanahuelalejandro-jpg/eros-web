@@ -1,5 +1,6 @@
 import { baseSupabaseServidor, cabecerasNavegador, cabecerasServidor, consultarBD, ErrorCobro, fetchConTiempo, hashCobro, leerCuerpo, limitarCobro, responderError, responderJSON, responderPreflight, rpcCobro, secretoServidor } from "../_compartido/http.ts";
 import { datosPublicosPagina, disponibilidadPagina, modeloPagina, type PedidoPagina } from "../_compartido/paginas.ts";
+import { verificarAudioPedido } from "../_compartido/audio.ts";
 
 function noDisponible(): ErrorCobro {
   // La misma respuesta para desconocido, impago, incompleto o con fecha futura.
@@ -43,6 +44,31 @@ async function firmarFotos(pedido: PedidoPagina, nombres: Set<string>, segundos:
   return fotos;
 }
 
+async function firmarAudio(pedido:PedidoPagina,segundos:number,hasta:number):Promise<string> {
+  if(!segundos || !pedido.audio_ruta) return "";
+  try {
+    const plazoAudio=Math.min(hasta,Date.now()+9000);
+    const audio=await verificarAudioPedido(pedido,plazoAudio);
+    if(!audio) return "";
+    // La lectura y validación del MP3 consume tiempo: recalcular antes de firmar.
+    const restantes=Math.min(segundos,Math.max(0,Math.floor((Date.parse(pedido.vence_en||"")-Date.now())/1000)-1));
+    if(!restantes)return "";
+    const base=baseSupabaseServidor();
+    const respuesta=await fetchConTiempo(base+"/storage/v1/object/sign/audios/"+audio.ruta,{
+      method:"POST",headers:cabecerasServidor(),body:JSON.stringify({expiresIn:restantes}),redirect:"error",
+    },7000,plazoAudio);
+    if(!respuesta.ok)return "";
+    const body=await respuesta.json(),raw=body.signedURL||body.signedUrl;
+    if(typeof raw!=="string" || raw.length>8192)return "";
+    const url=new URL(raw.startsWith("/object/sign/")?"/storage/v1"+raw:raw,base);
+    return url.origin===base && !url.username && !url.password && !url.hash &&
+      decodeURIComponent(url.pathname)==="/storage/v1/object/sign/audios/"+audio.ruta && url.searchParams.get("token") ? url.href : "";
+  } catch {
+    // Si falta el MP3 o falla su validación, el texto y las fotos siguen disponibles.
+    console.error("pagina_audio_no_disponible"); return "";
+  }
+}
+
 export async function obtenerPagina(req: Request): Promise<Response> {
   const hasta = Date.now() + 18000;
   let headers: Headers | undefined;
@@ -59,7 +85,7 @@ export async function obtenerPagina(req: Request): Promise<Response> {
     const clave = await hashCobro(secretoServidor() + ":pagina:" + slug);
     const limite = await rpcCobro("eros_limitar_cobro", { p_clave: clave, p_limite: 60, p_segundos: 60 }, hasta);
     if (limite.permitido !== true) throw new ErrorCobro(429, "limite", "Este regalo recibió varias consultas seguidas. Esperá un minuto y volvé a abrirlo.");
-    const columnas = "id,estado,modelo,datos,extras,tema,para_quien,de_parte,publicado_en,vence_en,activar_el";
+    const columnas = "id,estado,modelo,datos,extras,tema,para_quien,de_parte,publicado_en,vence_en,activar_el,audio_ruta,audio_nombre,audio_bytes,audio_duracion,audio_consentimiento,audio_verificado_en,audio_sha256,limpiado_en,limpieza_intentada_en";
     const filas = await consultarBD("pedidos?select=" + columnas + "&slug=eq." + encodeURIComponent(slug) + "&limit=1", "GET", undefined, hasta) as PedidoPagina[];
     const pedido = Array.isArray(filas) && filas.length ? filas[0] : null;
     comprobarVigencia(pedido);
@@ -71,11 +97,14 @@ export async function obtenerPagina(req: Request): Promise<Response> {
     const fin = Date.parse(pedido.vence_en!);
     const segundos = Math.min(600, Math.max(0, Math.floor((fin - ahora) / 1000)));
     // Storage usa segundos enteros. No se firma una foto por más tiempo del que queda.
-    const fotos = segundos ? await firmarFotos(pedido, nombres, segundos, hasta) : new Map<string, string>();
+    const [fotos,audio] = await Promise.all([
+      segundos ? firmarFotos(pedido, nombres, segundos, hasta) : Promise.resolve(new Map<string,string>()),
+      firmarAudio(pedido,segundos,hasta),
+    ]);
     comprobarVigencia(pedido);
-    const datos = datosPublicosPagina(pedido, nombre => fotos.get(nombre) || "");
+    const datos = datosPublicosPagina(pedido, nombre => fotos.get(nombre) || "",audio);
     return responderJSON({
-      modelo: modeloPagina(pedido), datos, fotos: Array.from(fotos.values()),
+      modelo: modeloPagina(pedido), datos, fotos: Array.from(fotos.values()), audio,
       vence_en: pedido.vence_en,
       urls_vencen_en: new Date(Math.min(fin, ahora + segundos * 1000)).toISOString(),
     }, 200, headers);

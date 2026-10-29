@@ -169,6 +169,15 @@
   .order-progress-head, #order-progress { flex:none; }
   .photo-list { grid-template-columns:1fr; }
 }
+
+#pedido .audio-selected { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:14px 0; padding:14px; border:1px solid var(--line, #eadfe0); border-radius:18px; background:var(--paper, #fffdfb); }
+#pedido .audio-selected[hidden] { display:none; }
+#pedido .audio-selected > div { min-width:0; }
+#pedido .audio-selected strong { display:block; overflow-wrap:anywhere; }
+#pedido .audio-selected small { display:block; margin-top:4px; color:var(--muted, #665f67); }
+#pedido .audio-selected .button { flex:none; min-width:0; min-height:44px; padding:9px 13px; }
+#pedido #audio-consent-row { align-items:flex-start; }
+#pedido #audio-consent { flex:none; margin-top:4px; }
 @media(max-width:1023px) {
   .order-layout { grid-template-columns:1fr; }
   .order-step-viewport { min-height:45dvh; }

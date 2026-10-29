@@ -28,13 +28,16 @@ type RedPagina = {
   pedido: PedidoPagina | null; requests: { path: string; body: Record<string, unknown> }[];
   paths: string[]; ttl: number; falta: boolean; almacenamientoHTTP: number; limite: boolean;
   firmadaAjena: boolean; demora: number;
+  audioHTTP:number; audioTipo:string; audioBytes:Uint8Array; audioTTL:number; audioFirmas:number;
 };
 async function conPagina(probar: (s: RedPagina) => Promise<void>, modelo?: string, juego?: string) {
   const env = { SUPABASE_URL: "https://prueba.supabase.co", SUPABASE_SECRET_KEYS: '{"default":"valor-ficticio-local"}', EROS_SITE_URL: "https://tienda.github.io/eros-web/", MP_MODO: "test" };
   const anterior = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)]));
   Object.entries(env).forEach(([k, v]) => Deno.env.set(k, v));
   const originalFetch = globalThis.fetch;
-  const s: RedPagina = { pedido: pedidoDePagina(modelo, juego), requests: [], paths: [], ttl: 0, falta: false, almacenamientoHTTP: 200, limite: false, firmadaAjena: false, demora: 0 };
+  const mp3=new Uint8Array(1668);for(let i=0;i<4;i++)mp3.set([255,251,144,0],i*417);
+  const s: RedPagina = { pedido: pedidoDePagina(modelo, juego), requests: [], paths: [], ttl: 0, falta: false, almacenamientoHTTP: 200, limite: false, firmadaAjena: false, demora: 0,
+    audioHTTP:200,audioTipo:"audio/mpeg",audioBytes:mp3,audioTTL:0,audioFirmas:0 };
   const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { "Content-Type": "application/json" } });
   globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
     const url = new URL(String(input));
@@ -53,6 +56,11 @@ async function conPagina(probar: (s: RedPagina) => Promise<void>, modelo?: strin
       if (s.almacenamientoHTTP !== 200) return json({}, s.almacenamientoHTTP);
       return json(s.paths.map(path => ({ path, error: s.falta ? "Object not found" : null,
         signedURL: s.falta ? null : s.firmadaAjena ? "https://ajeno.ejemplo.test/foto.jpg?token=ficticio" : "/object/sign/fotos/" + path + "?token=firma-ficticia-local" })));
+    }
+    if(url.pathname==="/storage/v1/object/authenticated/audios/"+idPagina+"/cancion.mp3")return new Response(new Uint8Array(s.audioBytes),{status:s.audioHTTP,headers:{"Content-Type":s.audioTipo,"Content-Length":String(s.audioBytes.length)}});
+    if(url.pathname==="/storage/v1/object/sign/audios/"+idPagina+"/cancion.mp3"){
+      s.audioTTL=body.expiresIn;s.audioFirmas++;
+      return json({signedURL:s.firmadaAjena?"https://ajeno.ejemplo.test/privado.mp3?token=marca":"/object/sign/audios/"+idPagina+"/cancion.mp3?token=firma-audio-prueba"});
     }
     throw new Error("Ruta de prueba no reconocida.");
   }) as typeof fetch;
@@ -129,12 +137,42 @@ Deno.test("página: límites429 y slug inválido404 no permiten leer un regalo",
   afirmarPagina(!s.requests.some(r => r.path === "/rest/v1/pedidos"));
   s.limite = false; igualPagina((await obtenerPagina(pedirPagina({ slug: "TES234" }))).status, 404);
 }));
-Deno.test("página: música propia conserva carpeta correcta, no convierte enlaces externos en audio", () => conPagina(async s => {
-  const p = s.pedido!; const data = p.datos as Record<string, unknown>;
-  data.musica = "musica/cancion-1.mp3";
-  igualPagina(datosPublicosPagina(p, () => "").musica, "https://tienda.github.io/eros-web/musica/cancion-1.mp3");
-  for (const ruta of ["https://open.spotify.com/track/ejemplo", "../musica.mp3", "/musica/cancion.mp3", "musica/../../privado.mp3", "musica/cancion.mp3?x=1"]) {
-    data.musica = ruta; igualPagina(datosPublicosPagina(p, () => "").musica, "");
+Deno.test("página: ignora enlaces y archivos del sistema anterior sin modificar pedidos", () => conPagina(async s => {
+  const p=s.pedido!,data=p.datos as Record<string,unknown>;
+  for(const valor of ["musica/cancion.mp3","musica.mp3","https://youtu.be/M7lc1UVf-VE","https://open.spotify.com/track/ejemplo"]){
+    data.musica=valor;data.musicaYoutube=valor;
+    const salida=await(await obtenerPagina(pedirPagina())).json();
+    igualPagina(salida.audio,"");igualPagina(salida.datos.audio,null);
+    afirmarPagina(!("musica" in salida.datos) && !("musicaYoutube" in salida.datos));
+    igualPagina(data.musica,valor);
   }
-  data.musica = "musica.mp3"; igualPagina(datosPublicosPagina(p, () => "").musica, "https://tienda.github.io/eros-web/plantillas/carta-para-vos/musica.mp3");
+}));
+
+async function agregarAudioPagina(s:RedPagina) {
+  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(s.audioBytes).buffer));
+  Object.assign(s.pedido!,{audio_ruta:idPagina+"/cancion.mp3",audio_nombre:"NOMBRE_AUDIO_PRIVADO.mp3",audio_bytes:s.audioBytes.length,
+    audio_duracion:1,audio_consentimiento:true,audio_verificado_en:new Date().toISOString(),audio_sha256:Array.from(digest,b=>b.toString(16).padStart(2,"0")).join("")});
+}
+Deno.test("página: firma el audio privado solo vigente, con TTL limitado y sin nombre ni metadata",()=>conPagina(async s=>{
+  await agregarAudioPagina(s);s.pedido!.vence_en=new Date(Date.now()+120000).toISOString();
+  const salida=await(await obtenerPagina(pedirPagina())).json();
+  igualPagina(s.audioFirmas,1);afirmarPagina(s.audioTTL>0 && s.audioTTL<=120);
+  afirmarPagina(salida.audio.startsWith("https://prueba.supabase.co/storage/v1/object/sign/audios/"+idPagina+"/cancion.mp3?token="));
+  igualPagina(salida.datos.audio.src,salida.audio);
+  afirmarPagina(!/NOMBRE_AUDIO_PRIVADO|audio_sha256|audio_consentimiento|audio_ruta/.test(JSON.stringify(salida)));
+}));
+Deno.test("página: nunca firma audio de pedidos impagos, futuros o vencidos",()=>conPagina(async s=>{
+  await agregarAudioPagina(s);
+  for(const cambio of [{estado:"nuevo"},{estado:"pagado"},{estado:"publicado",publicado_en:new Date(Date.now()+3600000).toISOString()},{estado:"vencido"}]){
+    Object.assign(s.pedido!,cambio);const r=await obtenerPagina(pedirPagina());afirmarPagina([404,410].includes(r.status));
+  }
+  igualPagina(s.audioFirmas,0);afirmarPagina(!s.requests.some(r=>r.path.includes("audios/")));
+}));
+Deno.test("página: MP3 ausente, MIME falso o firma de otro host no rompen el texto ni filtran audio",()=>conPagina(async s=>{
+  await agregarAudioPagina(s);
+  for(const cambiar of [()=>{s.audioHTTP=404;},()=>{s.audioHTTP=200;s.audioTipo="text/html";},()=>{s.audioTipo="audio/mpeg";s.firmadaAjena=true;}]){
+    cambiar();const r=await obtenerPagina(pedirPagina());igualPagina(r.status,200);const salida=await r.json();
+    igualPagina(salida.audio,"");igualPagina(salida.datos.audio,null);afirmarPagina(!JSON.stringify(salida).includes("ajeno.ejemplo"));
+    igualPagina(salida.datos.carta.titulo,"Para vos");
+  }
 }));

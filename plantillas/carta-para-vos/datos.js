@@ -34,6 +34,6 @@ window.DATOS = {
   },
 
   firma: "", // Firma debajo del corazón final.
-  musica: "", // Por ejemplo "musica.mp3". Vacío = sin música ni botón.
+  audio: null, // El armador carga un MP3 opcional; no se aceptan enlaces ni catálogos.
   colorPrincipal: "" // Vacío usa el color del tema; también acepta un hexadecimal como "#8b3d52".
 };

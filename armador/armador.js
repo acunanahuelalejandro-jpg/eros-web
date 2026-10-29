@@ -19,7 +19,7 @@
 
   const freshState = () => ({
     model: '', duration: '', game: '', theme: 'eros', counter: false, counterDate: '',
-    recipient: '', sender: '', activationDate: '', musicMode: '', musicTrack: '', musicLink: '', whatsapp: '', photoMeta: [],
+    recipient: '', sender: '', activationDate: '', whatsapp: '', photoMeta: [], audioPendiente:false,
     content: {
       carta: { title: '', paragraphs: [''], signature: '' },
       historia: { moments: [{ date: '', title: '', text: '' }], final: '', signature: '' },
@@ -34,6 +34,8 @@
   let submitting = false;
   let photoProcessing = 0;
   let displayedSuccess = null;
+  let audioUpload = null;
+  let pendingSubmission = null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -48,7 +50,7 @@
     changeQueued = true;
     queueMicrotask(() => { changeQueued = false; document.dispatchEvent(new Event('eros-armador-cambio')); });
   }
-  const saveDraft = () => { notifyPreview(); try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* El armador sigue funcionando si el navegador bloquea el almacenamiento. */ } };
+  const saveDraft = () => { notifyPreview(); try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, audioPendiente:Boolean(audioUpload?.valor()) })); } catch (_) { /* El armador sigue funcionando si el navegador bloquea el almacenamiento. */ } };
   const clearDraft = () => { try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) { /* Opcional. */ } };
   const readDraft = () => {
     try {
@@ -64,9 +66,7 @@
       clean.recipient = clamp(saved.recipient, 120);
       clean.sender = clamp(saved.sender, 120);
       clean.activationDate = typeof saved.activationDate === 'string' ? saved.activationDate.slice(0, 10) : '';
-      clean.musicMode = ['selection', 'link', 'help'].includes(saved.musicMode) ? saved.musicMode : '';
-      clean.musicTrack = clamp(saved.musicTrack, 200);
-      clean.musicLink = clamp(saved.musicLink, 494);
+      clean.audioPendiente = saved.audioPendiente === true;
       clean.whatsapp = clamp(saved.whatsapp, 30);
       clean.photoMeta = Array.isArray(saved.photoMeta) ? saved.photoMeta.slice(0, 12).map((m, i) => ({ alt: clamp(m?.alt, 120), caption: clamp(m?.caption, 80), momentIndex: Number.isInteger(m?.momentIndex) ? Math.max(0, Math.min(7, m.momentIndex)) : i })) : [];
       clean.step = Number.isInteger(saved.step) && saved.step >= 1 && saved.step <= 10 ? saved.step : 1;
@@ -112,9 +112,9 @@
 
   function hydrateInputs() {
     setRadio('order-model', state.model); setRadio('order-duration', state.duration); setRadio('order-game', state.game); setRadio('order-theme', state.theme);
-    setRadio('order-counter', state.counter ? 'yes' : 'no'); setRadio('order-music', state.musicMode);
+    setRadio('order-counter', state.counter ? 'yes' : 'no');
     $('#counter-date').value = state.counterDate; $('#recipient-name').value = state.recipient; $('#sender-name').value = state.sender;
-    $('#activation-date').value = state.activationDate; $('#music-link-input').value = state.musicLink; $('#music-track').value = state.musicTrack; $('#client-whatsapp').value = state.whatsapp;
+    $('#activation-date').value = state.activationDate; $('#client-whatsapp').value = state.whatsapp;
   }
 
   function createField(labelText, id, type = 'text', maxLength = null, hint = '', value = '', required = false) {
@@ -279,14 +279,7 @@
     finally { photoProcessing = Math.max(0, photoProcessing - 1); text($('#photo-error'), issue); updateAvailability(); renderSummary(); }
   }
 
-  function musicDescription() {
-    if (state.musicMode === 'selection') return state.musicTrack ? 'seleccion: ' + state.musicTrack : 'seleccion: pendiente';
-    if (state.musicMode === 'link') return state.musicLink ? 'link: ' + state.musicLink : 'link pendiente';
-    return 'ayuda para elegir';
-  }
-  function validMusicUrl(value) {
-    try { const url = new URL(value); if (url.protocol !== 'https:') return false; const host = url.hostname.toLowerCase(); return ['open.spotify.com', 'spotify.link', 'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'].includes(host); } catch (_) { return false; }
-  }
+  function musicDescription() { const audio = audioUpload?.valor(); return audio ? audio.name + ' · ' + new Intl.NumberFormat('es-AR', { maximumFractionDigits:2 }).format(audio.size / 1024 / 1024) + ' MB' : 'Sin audio'; }
   function normalizeWhatsapp(value) { return String(value || '').replace(/\D/g, ''); }
   function validWhatsappInput(value) { const trimmed = String(value || '').trim(); if (!trimmed) return true; return /^\+?[0-9\s().-]{8,30}$/.test(trimmed) && normalizeWhatsapp(trimmed).length >= 8 && normalizeWhatsapp(trimmed).length <= 20; }
   function validDate(value) { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false; const [y, m, d] = value.split('-').map(Number); const dt = new Date(Date.UTC(y, m - 1, d)); return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d; }
@@ -342,8 +335,8 @@
       if (state.model === 'album') { const c = state.content.album; if (!c.title.trim()) return fail('Agregá un título para el álbum.', $('#album-title')); if (!c.subtitle.trim()) return fail('Agregá un subtítulo para el álbum.', $('#album-subtitle')); if (!c.final.trim()) return fail('Agregá el mensaje final del álbum.', $('#album-final')); if (!c.signature.trim()) return fail('Agregá la firma del álbum.', $('#album-signature')); }
     }
     if (step === 9) {
-      if (!state.musicMode) return fail('Elegí una opción de música.', $('input[name="order-music"]'));
-      if (state.musicMode === 'link' && state.musicLink && !validMusicUrl(state.musicLink)) return fail('Usá un link https de open.spotify.com, spotify.link, youtube.com o youtu.be.', $('#music-link-input'));
+      if (audioUpload?.procesando()) return fail('Esperá a que termine de revisarse el MP3.', $('#audio-upload-input'));
+      if (audioUpload?.valor() && !audioUpload.valor().consentimiento) return fail('Confirmá que tenés derecho a usar el archivo de audio.', $('#audio-consent'));
     }
     if (step === 10) {
       if (!$('#privacy-consent').checked) return fail('Confirmá que tenés permiso para usar las fotos y aceptás la política de privacidad.', $('#privacy-consent'));
@@ -353,13 +346,11 @@
   }
   function fail(message, target) { text($('#order-error'), message); if (target && target.focus) target.focus(); return false; }
   function updateAvailability() {
-    const next = $('#order-next'); if (next) next.disabled = submitting || photoProcessing > 0;
-    const send = $('#send-order'); if (send && !submitting) send.disabled = photoProcessing > 0;
+    const next = $('#order-next'); if (next) next.disabled = submitting || photoProcessing > 0 || audioUpload?.procesando() === true;
+    const send = $('#send-order'); if (send && !submitting) send.disabled = photoProcessing > 0 || audioUpload?.procesando() === true;
   }
   function updateDependentFields() {
     $('#counter-date-wrap').hidden = !state.counter;
-    $('#music-link-wrap').hidden = state.musicMode !== 'link';
-    $('#music-selection-wrap').hidden = state.musicMode !== 'selection';
     $('#labyrinth-photos').hidden = state.game !== 'laberinto';
     $$('[data-duration-price]').forEach((el) => {
       text(el, state.model ? formatARS(PRICE_TABLE.models[state.model].prices[el.dataset.durationPrice]) : 'Elegí un modelo primero');
@@ -407,11 +398,11 @@
     return 0;
   }
 
-  function buildTemplateData(resolvePhoto = (photo, filename) => filename) {
+  function buildTemplateData(resolvePhoto = (photo, filename) => filename, resolveAudio = () => 'audio/cancion.mp3') {
     const base = {
       version: 2, para: state.recipient.trim(), de: state.sender.trim(), tema: state.theme,
       extras: { juego: state.game ? GAME_DATA[state.game] : '', contador: { desde: state.counter ? state.counterDate : '', etiqueta: 'Juntos desde hace' } },
-      inicio: { titulo: 'Un regalo para ' + state.recipient.trim(), boton: 'Tocá para empezar' }, firma: '', musica: '', colorPrincipal: ''
+      inicio: { titulo: 'Un regalo para ' + state.recipient.trim(), boton: 'Tocá para empezar' }, firma: '', colorPrincipal: ''
     };
     base.extras.sobre = window.ErosApertura.elegirApertura(base) === 'sobre';
     if (state.game === 'laberinto') {
@@ -420,8 +411,8 @@
         fotoQuienRegala: mazePhotos.giver ? resolvePhoto(mazePhotos.giver, 'imagenes/juego-regala.jpg') : ''
       };
     }
-    const selectedTrack = $('#music-track').value;
-    if (state.musicMode === 'selection' && selectedTrack) base.musica = selectedTrack;
+    const audio = audioUpload?.valor();
+    if (audio) base.audio = { src:resolveAudio(audio) };
     if (state.model === 'carta') {
       const c = state.content.carta; const paragraphs = c.paragraphs.map((p) => p.trim()); const blocks = [];
       const photosAfter = Array.from({ length: paragraphs.length }, () => []);
@@ -447,13 +438,16 @@
   }
 
   function buildRow(id, code, data) {
+    const audio = audioUpload?.valor();
     const extras = { juego: data.extras.juego, sobre: data.extras.sobre, contador: data.extras.contador };
     if (data.extras.laberinto) extras.laberinto = data.extras.laberinto;
     const row = {
       id, codigo: code, modelo: PRICE_TABLE.models[state.model].slug,
       duracion: PRICE_TABLE.durations[state.duration], extras, tema: state.theme,
       para_quien: state.recipient.trim(), de_parte: state.sender.trim() || null,
-      musica: musicDescription(), activar_el: state.activationDate || null,
+      activar_el: state.activationDate || null,
+      audio_ruta:audio ? id + '/cancion.mp3' : null, audio_nombre:audio?.name || null, audio_bytes:audio?.size || null,
+      audio_duracion:audio?.duration || null, audio_consentimiento:audio?.consentimiento === true,
       whatsapp_cliente: normalizeWhatsapp(state.whatsapp) || null, datos: data,
       total: totalAmount(), fotos_cantidad: photos.length
     };
@@ -490,47 +484,73 @@
     let lastError;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const { error: uploadError } = await client.storage.from('fotos').upload(id + '/' + item.name, item.blob, { contentType: 'image/jpeg', upsert: false, cacheControl: '3600' });
-      if (!uploadError) return;
+      if (!uploadError || Number(uploadError.statusCode || uploadError.status) === 409 || uploadError.error === 'Duplicate') return;
       lastError = uploadError;
       if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 450));
     }
     throw lastError || new Error('No se pudo subir una foto.');
   }
   function isDuplicateCode(error) { return error && (error.code === '23505' || /duplicate key|unique constraint|pedidos_codigo/i.test(error.message || '')); }
+  function lockPendingFields(locked) {
+    $$('#pedido input, #pedido textarea, #pedido select, [data-order-model], [data-order-game], [data-order-counter], [data-order-theme]').forEach(control => { control.disabled = locked; });
+    audioUpload?.bloquear(locked);
+  }
+  async function enviarAudio(client, intento) {
+    if (!intento.audio) return;
+    if (!intento.uploadedAudio) {
+      const {error} = await client.storage.from('audios').upload(intento.id + '/cancion.mp3', intento.audio.file, {contentType:'audio/mpeg',upsert:false,cacheControl:'0'});
+      if (error && Number(error.statusCode || error.status) !== 409 && error.error !== 'Duplicate') throw new Error('No pudimos subir el MP3. Reintentá para terminar el mismo pedido.');
+      intento.uploadedAudio = true;
+    }
+    const {data,error} = await client.functions.invoke('validar-audio',{body:{id:intento.id,codigo:intento.codigo}});
+    if (error || data?.ok !== true) throw new Error('No pudimos confirmar el MP3. Reintentá o consultanos con el código de tu pedido.');
+  }
   async function submitOrder() {
     if (submitting) return;
     text($('#order-error'), ''); $('#fallback-whatsapp').hidden = true;
-    for (let step = 1; step <= 10; step += 1) {
-      if (!validateStep(step)) { state.step = step; showStep(step); scrollToOrder(); return; }
+    if (!pendingSubmission) {
+      for (let step = 1; step <= 10; step += 1) {
+        if (!validateStep(step)) { state.step = step; showStep(step); scrollToOrder(); return; }
+      }
+      if ($('#website-field').value.trim()) { text($('#order-live'), ''); return; }
     }
-    if ($('#website-field').value.trim()) { text($('#order-live'), ''); return; }
     if (!window.EROS_CONFIG || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(window.EROS_CONFIG.supabaseUrl || '') || !window.EROS_CONFIG.supabaseKey || !window.supabase?.createClient) {
       showFallback('No pudimos enviar tu pedido ahora porque la conexión no está disponible. Lo que cargaste sigue en esta pestaña; reintentá o pedí ayuda por WhatsApp.'); return;
     }
     submitting = true; $('#send-order').disabled = true; $('#order-next').disabled = true; $('#order-progress-status').hidden = false; $('#order-progress-status').scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'nearest' }); setProgress(0, 'Preparando el pedido…');
     try {
-      // UUID generado una vez para este intento; todos los objetos quedan dentro de su carpeta.
-      const id = generateUUID(); const client = window.supabase.createClient(window.EROS_CONFIG.supabaseUrl, window.EROS_CONFIG.supabaseKey);
-      const files = uploadableFiles(); const data = buildTemplateData();
-      for (let i = 0; i < files.length; i += 1) {
-        const item = files[i]; setProgress(Math.round((i / Math.max(1, files.length + 1)) * 90), 'Subiendo foto ' + (i + 1) + ' de ' + files.length + '…'); await uploadWithRetry(client, id, item);
+      const client = window.supabase.createClient(window.EROS_CONFIG.supabaseUrl, window.EROS_CONFIG.supabaseKey, {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+      if (!pendingSubmission) {
+        const id = generateUUID(); const row = buildRow(id, generateCode(), buildTemplateData());
+        pendingSubmission = {id,codigo:row.codigo,row,files:uploadableFiles(),photoIndex:0,inserted:false,audio:audioUpload?.valor(),uploadedAudio:false,total:totalAmount(),model:PRICE_TABLE.models[state.model].name};
+        lockPendingFields(true);
       }
-      const rowBase = buildRow(id, generateCode(), data); let insertError = null; let insertedCode = '';
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        const code = attempt === 0 ? rowBase.codigo : generateCode(); rowBase.codigo = code;
-        setProgress(95, 'Guardando el pedido…');
-        const { error: errorInsert } = await client.from('pedidos').insert(rowBase);
-        if (!errorInsert) { insertedCode = code; insertError = null; break; }
-        insertError = errorInsert; if (!isDuplicateCode(errorInsert)) break;
+      const intento = pendingSubmission;
+      while (intento.photoIndex < intento.files.length) {
+        const i = intento.photoIndex; setProgress(Math.round(i / Math.max(1,intento.files.length + 2) * 80),'Subiendo foto ' + (i + 1) + ' de ' + intento.files.length + '…');
+        await uploadWithRetry(client,intento.id,intento.files[i]); intento.photoIndex++;
       }
-      if (insertError) throw insertError;
-      setProgress(100, 'Pedido recibido.');
-      const success = { id, code: insertedCode, slug: '', total: totalAmount(), model: PRICE_TABLE.models[state.model].name, savedAt: Date.now() };
-      window.ErosPagos.recordar(success);
+      if (!intento.inserted) {
+        let insertError = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          setProgress(85,'Guardando el pedido…');
+          const {error} = await client.from('pedidos').insert(intento.row);
+          if (!error) { intento.inserted = true; insertError = null; break; }
+          insertError = error;
+          if (!isDuplicateCode(error) || /pedidos_pkey/i.test(error.message || '')) break;
+          intento.codigo = generateCode(); intento.row.codigo = intento.codigo;
+        }
+        if (insertError) throw insertError;
+      }
+      if (intento.audio) { setProgress(92,'Subiendo y verificando el MP3…'); await enviarAudio(client,intento); }
+      setProgress(100,'Pedido recibido.');
+      const success = {id:intento.id,code:intento.codigo,slug:'',total:intento.total,model:intento.model,savedAt:Date.now()};
+      window.ErosPagos.recordar(success); pendingSubmission = null;
       showSuccess(success);
-    } catch (error) {
-      console.warn('No se pudo guardar el pedido:', error);
-      showFallback('No pudimos enviar tu pedido ahora. Lo que cargaste sigue en esta pestaña; reintentá o pedí ayuda por WhatsApp.');
+    } catch (_) {
+      console.warn('envio_pedido_incompleto');
+      const intento = pendingSubmission;
+      showFallback(intento?.inserted ? 'El pedido #' + intento.codigo + ' quedó guardado, pero falta terminar la carga o verificación del audio. Tocá Enviar mi pedido para reintentar sin duplicarlo. Si recargás, consultanos por WhatsApp con ese código.' : 'No pudimos terminar el envío. Lo que cargaste sigue en esta pestaña: reintentá o pedí ayuda por WhatsApp.');
     }
   }
 
@@ -586,16 +606,18 @@
   }
 
   function resetOrder() {
-    displayedSuccess = null;
+    displayedSuccess = null; pendingSubmission = null; lockPendingFields(false); audioUpload?.quitar(false);
     clearDraft(); try { localStorage.removeItem(SUCCESS_KEY); } catch (_) { /* Opcional. */ }
     $$('#pedido input[type=radio]').forEach((radio) => { radio.checked = false; }); $('#privacy-consent').checked = false;
     photos.forEach(revokePhoto); Object.values(mazePhotos).forEach(revokePhoto); photos = []; mazePhotos = { player: null, giver: null }; state = freshState();
-    $('#order-success').hidden = true; $('.order-progress-head').hidden = false; $('#order-progress').hidden = false; $('.order-nav').hidden = false; $('#fallback-whatsapp').hidden = true; $('#privacy-consent').checked = false; $('#photo-error').textContent = ''; $('#order-error').textContent = ''; $('#music-track').value = ''; $('#photo-input').value = ''; $('#maze-player-input').value = ''; $('#maze-giver-input').value = '';
+    $('#order-success').hidden = true; $('.order-progress-head').hidden = false; $('#order-progress').hidden = false; $('.order-nav').hidden = false; $('#fallback-whatsapp').hidden = true; $('#privacy-consent').checked = false; $('#photo-error').textContent = ''; $('#order-error').textContent = ''; $('#photo-input').value = ''; $('#maze-player-input').value = ''; $('#maze-giver-input').value = '';
     hydrateInputs(); renderContentFields(); renderPhotos(); showStep(1); scrollToOrder();
   }
 
   function init() {
-    updatePrices(); const restored = readDraft(); if (restored) state = restored; hydrateInputs(); renderContentFields(); renderPhotos();
+    updatePrices(); const restored = readDraft(); if (restored) state = restored;
+    audioUpload = window.ErosAudioCarga?.montar(() => { saveDraft(); updateAvailability(); renderSummary(); }, state.audioPendiente);
+    hydrateInputs(); renderContentFields(); renderPhotos();
     const success = (() => { try { const value = JSON.parse(localStorage.getItem(SUCCESS_KEY) || 'null'); return value && /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(value.code) && Number.isInteger(value.total) ? value : null; } catch (_) { return null; } })();
     renderSummary();
     if (success) showSuccess(success); else showStep(state.step, false);
@@ -605,13 +627,10 @@
     $$('input[name="order-game"]').forEach((input) => input.addEventListener('change', () => { state.game = input.value; renderPhotos(); saveDraft(); renderSummary(); }));
     $$('input[name="order-theme"]').forEach((input) => input.addEventListener('change', () => { state.theme = input.value; saveDraft(); renderSummary(); }));
     $$('input[name="order-counter"]').forEach((input) => input.addEventListener('change', () => { state.counter = input.value === 'yes'; if (!state.counter) state.counterDate = ''; $('#counter-date').value = state.counterDate; saveDraft(); renderSummary(); }));
-    $$('input[name="order-music"]').forEach((input) => input.addEventListener('change', () => { state.musicMode = input.value; showStep(9, false); saveDraft(); renderSummary(); }));
     $('#counter-date').addEventListener('change', (e) => { state.counterDate = e.target.value; saveDraft(); renderSummary(); });
     $('#recipient-name').addEventListener('input', (e) => { state.recipient = clamp(e.target.value, 120); saveDraft(); renderSummary(); });
     $('#sender-name').addEventListener('input', (e) => { state.sender = clamp(e.target.value, 120); saveDraft(); renderSummary(); });
     $('#activation-date').addEventListener('change', (e) => { state.activationDate = e.target.value; saveDraft(); renderSummary(); });
-    $('#music-track').addEventListener('change', (e) => { state.musicTrack = clamp(e.target.value, 200); saveDraft(); renderSummary(); });
-    $('#music-link-input').addEventListener('input', (e) => { state.musicLink = clamp(e.target.value, 494); saveDraft(); renderSummary(); });
     $('#client-whatsapp').addEventListener('input', (e) => { state.whatsapp = clamp(e.target.value, 30); saveDraft(); renderSummary(); });
     $('#photo-input').addEventListener('change', (e) => addSelectedPhotos(e.target.files));
     $('#maze-player-input').addEventListener('change', (e) => setMazePhoto('player', e.target.files && e.target.files[0]));
@@ -626,20 +645,17 @@
     $$('[data-order-theme]').forEach((button) => button.addEventListener('click', () => { showStep(4); scrollToOrder(); }));
     $$('.whatsapp-link').forEach((link) => { const message = link.dataset.message || '¡Hola! Tengo una consulta sobre cómo armar y enviar mi pedido en Eros Web.'; link.href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(message); });
     const year = $('#current-year'); if (year) year.textContent = String(new Date().getFullYear());
-    window.addEventListener('beforeunload', () => { objectUrls.forEach((url) => URL.revokeObjectURL(url)); });
+    window.addEventListener('beforeunload', () => { objectUrls.forEach((url) => URL.revokeObjectURL(url)); audioUpload?.destruir(); });
   }
   // El pedido final y la vista previa usan el mismo conversor; solo cambia la ruta de las fotos.
   window.ErosArmador = Object.freeze({
     vistaPrevia(resolvePhoto) {
-      const datos = state.model ? buildTemplateData(resolvePhoto) : null;
-      const archivo = datos?.musica || '';
-      const enlace = state.musicMode === 'link' && validMusicUrl(state.musicLink) ? state.musicLink.trim() : '';
-      const elegida = state.musicMode === 'selection' ? Boolean(archivo) : state.musicMode === 'link' && Boolean(enlace);
+      const datos = state.model ? buildTemplateData(resolvePhoto, audio => audio.previewUrl) : null;
       return {
         modelo: PRICE_TABLE.models[state.model]?.slug || '', datos,
         apertura: window.ErosApertura.elegirApertura(datos),
         paso: state.step, etapa: stepIndex() + 1, recibe:state.recipient.trim(), de:state.sender.trim(),
-        musica: { modo:state.musicMode, elegida, descripcion:elegida ? musicDescription() : '', enlace, archivo },
+        audio:audioUpload?.valor() ? {cargado:true,nombre:audioUpload.valor().name,peso:audioUpload.valor().size} : null,
         juego: state.game, contador: state.counter, desde: state.counterDate
       };
     }

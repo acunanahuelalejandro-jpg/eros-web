@@ -1,0 +1,56 @@
+Archivos web creados o modificados para subir conservando sus rutas:
+admin/admin.css
+admin/admin.js
+admin/index.html
+admin/leeme.md
+admin/operaciones.js
+admin/paquetes.js
+armador/armador.css
+armador/armador.js
+armador/audio.js
+armador/preview.js
+compartido/audio.js
+compartido/pagina.js
+compartido/preview.js
+index.html
+plantillas/album-recuerdos/album.js
+plantillas/album-recuerdos/datos.js
+plantillas/album-recuerdos/index.html
+plantillas/carta-para-vos/carta.js
+plantillas/carta-para-vos/datos.js
+plantillas/carta-para-vos/index.html
+plantillas/nuestra-historia/datos.js
+plantillas/nuestra-historia/historia.js
+plantillas/nuestra-historia/index.html
+privacidad.html
+terminos.html
+
+Fuentes, SQL, pruebas y guía para versionar:
+docs/audio-archivos.txt
+docs/audio.md
+scripts/preparar-funciones.mjs
+supabase/06-audio.sql
+supabase/config.toml
+supabase/functions/_compartido/audio.ts
+supabase/functions/_compartido/cobros.ts
+supabase/functions/_compartido/paginas.ts
+supabase/functions/administrar-pedido/index.ts
+supabase/functions/crear-pago/index.ts
+supabase/functions/limpiar-vencidos/index.ts
+supabase/functions/obtener-pagina/index.ts
+supabase/functions/validar-audio/index.ts
+supabase/functions/webhook-mercadopago/index.ts
+supabase/tests/admin_test.ts
+supabase/tests/audio_test.ts
+supabase/tests/cobros_test.ts
+supabase/tests/limpieza_test.ts
+supabase/tests/paginas_test.ts
+supabase/tests/validar-audio_test.ts
+tests/armador-audio.test.mjs
+tests/audio-browser.cjs
+tests/audio-playback.test.cjs
+tests/audio-upload.test.cjs
+
+Si antes se subieron: eliminar compartido/youtube.js y compartido/youtube.css.
+Los archivos supabase/dashboard/*.ts se pegan en Edge Functions; no son SQL.
+No subir archivos MP3 de clientes, fotos de pedidos ni paquetes ZIP.

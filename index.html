@@ -289,7 +289,7 @@
       <div class="container">
         <div class="section-heading">
           <h2 id="models-title">Elegí tu modelo</h2>
-          <p>Cada modelo ya está diseñado: completalo acá con tus textos, fotos y preferencias de música.</p>
+          <p>Cada modelo ya está diseñado: completalo acá con tus textos, fotos y un MP3 opcional.</p>
         </div>
         <div class="model-grid">
           <article class="model-card">
@@ -483,18 +483,11 @@
               <p id="photo-total" class="photo-total" aria-live="polite">Tamaño total: 0 KB</p>
             </section>
 
-            <section class="order-step" data-order-step="9" aria-labelledby="order-step-9-title" hidden><h3 id="order-step-9-title" tabindex="-1">Elegí la música</h3><p class="order-step-intro">Elegí una canción disponible o dejá tu preferencia para revisarla por soporte.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Preferencia de música</legend><div class="order-choice-grid">
-                <div><input class="order-radio" type="radio" name="order-music" id="music-selection" value="selection"><label class="order-choice-card" for="music-selection"><strong>De la selección de Eros Web</strong></label></div>
-                <div><input class="order-radio" type="radio" name="order-music" id="music-link" value="link"><label class="order-choice-card" for="music-link"><strong>Tengo un link de Spotify o YouTube</strong></label></div>
-                <div><input class="order-radio" type="radio" name="order-music" id="music-help" value="help"><label class="order-choice-card" for="music-help"><strong>Que me ayuden a elegir</strong></label></div>
-              </div></fieldset>
-              <label class="order-field music-select-wrap" id="music-selection-wrap" for="music-track" hidden>Canción de la selección<select id="music-track"><option value="">No hay canciones cargadas todavía</option><!-- Cuando exista musica/, reemplazá el ejemplo por canciones reales:
-                <option value="musica/cancion-1.mp3">Nombre de la canción 1</option>
-                <option value="musica/cancion-2.mp3">Nombre de la canción 2</option>
-                <option value="musica/cancion-3.mp3">Nombre de la canción 3</option>
-              --></select><small>Todavía no hay canciones para elegir. Podés pegar un link o pedir ayuda.</small></label>
-              <label class="order-field" id="music-link-wrap" for="music-link-input" hidden>Link de Spotify o YouTube <span>(opcional)</span><input id="music-link-input" type="url" maxlength="494" inputmode="url" autocomplete="url" placeholder="https://"><small>El link se guarda como preferencia; no se reproduce automáticamente en tu regalo.</small></label>
+            <section class="order-step" data-order-step="9" aria-labelledby="order-step-9-title" hidden><h3 id="order-step-9-title" tabindex="-1">Sumá tu canción <span>(opcional)</span></h3><p class="order-step-intro">Subí un MP3 de hasta 10 MB y 10 minutos. Se reproduce al abrir el regalo; si el navegador lo pide, hay que tocar “Reproducir música”.</p>
+              <label class="order-field" for="audio-upload-input">Archivo MP3<input id="audio-upload-input" type="file" accept=".mp3,audio/mpeg,audio/mp3" aria-describedby="audio-upload-help audio-upload-status"><small id="audio-upload-help">El archivo se guarda de forma privada y se borra cuando vence el regalo. Podés seguir sin música.</small></label>
+              <div id="audio-selected" class="audio-selected" hidden><div><strong id="audio-upload-name"></strong><small id="audio-upload-size"></small></div><button id="audio-remove" class="button button-light" type="button">Quitar audio</button></div>
+              <label id="audio-consent-row" class="consent-row" hidden><input id="audio-consent" type="checkbox"><span>Declaro que tengo derecho a usar este archivo y me hago responsable de su contenido</span></label>
+              <p id="audio-upload-status" class="inline-status" role="status" aria-live="polite"></p>
             </section>
 
             <section class="order-step" data-order-step="10" aria-labelledby="order-step-10-title" hidden><h3 id="order-step-10-title" tabindex="-1">Contacto y resumen</h3><p class="order-step-intro">Revisá que esté todo bien antes de enviar.</p>
@@ -522,7 +515,7 @@
               <div class="order-preview-panel" id="preview-panel">
                 <div class="preview-phone" id="preview-phone"><div id="preview-frame-host" class="preview-frame-host"><p class="preview-placeholder" id="preview-placeholder" role="status">Elegí un modelo para empezar</p></div></div>
                 <div class="preview-controls" role="group" aria-label="Probar la sorpresa"><button class="small-action" type="button" data-preview-action="repetir">Repetir la apertura</button><button class="small-action" type="button" data-preview-action="contenido">Saltar al contenido</button><button class="small-action" type="button" data-preview-action="manual" hidden>Probar el juego yo</button></div>
-                <p class="preview-caption" id="preview-caption">Mirá cómo queda tu página mientras la armás.</p><p class="preview-music" id="preview-music" hidden></p><p class="sr-only" id="preview-status" role="status" aria-live="polite"></p>
+                <p class="preview-caption" id="preview-caption">Mirá cómo queda tu página mientras la armás.</p><p class="sr-only" id="preview-status" role="status" aria-live="polite"></p>
               </div>
             </div>
             </dialog>
@@ -537,7 +530,7 @@
       <div class="container">
         <div class="section-heading"><h2 id="how-title">Cómo funciona</h2><p>Armás tu página, pagás con Mercado Pago y seguís el pedido acá.</p></div>
         <div class="steps-grid">
-          <article class="step-card"><span class="step-number" aria-hidden="true">1</span><h3>Armás tu página</h3><p>Elegís modelo, duración, tema y extras. Escribís el texto, subís fotos y completás tu preferencia de música.</p></article>
+          <article class="step-card"><span class="step-number" aria-hidden="true">1</span><h3>Armás tu página</h3><p>Elegís modelo, duración, tema y extras. Escribís el texto, subís fotos y, si querés música, cargás tu MP3.</p></article>
           <article class="step-card"><span class="step-number" aria-hidden="true">2</span><h3>Enviás y pagás</h3><p>Recibís un código y el total. Tocás “Pagar con Mercado Pago” para completar el pago.</p></article>
           <article class="step-card"><span class="step-number" aria-hidden="true">3</span><h3>Recibís el link y el QR</h3><p>Con el pago aprobado, aparecen automáticamente en el seguimiento. Si elegiste una fecha futura, el regalo se abre ese día.</p></article>
         </div>
@@ -546,7 +539,7 @@
           <ul class="needs-list">
             <li>Nombre de quien recibe y tu nombre para la firma</li><li>Textos según el modelo elegido</li>
             <li>Fotos y epígrafes, si corresponden</li><li>Fecha de inicio, si querés el contador</li>
-            <li>El tema de color y el juego opcional</li><li>El link de Spotify o YouTube, o tu preferencia de música</li>
+            <li>El tema de color y el juego opcional</li><li>Un archivo MP3, si querés música</li>
           </ul>
           <p class="preview-note">Mirá cómo queda tu página mientras la armás.</p>
         </div>
@@ -560,13 +553,13 @@
           <details class="faq-item"><summary>¿Cuándo recibo el link y el QR?</summary><div class="faq-answer"><p>Aparecen automáticamente en el seguimiento cuando se confirma el pago. Si el pago queda pendiente, esperá la confirmación; si necesitás ayuda, escribinos por WhatsApp con tu código.</p></div></details>
           <details class="faq-item"><summary>¿Cuánto tiempo queda online?</summary><div class="faq-answer"><p>Elegís 1 día, 1 semana (7 días) o 1 mes (30 días), desde la publicación o la fecha futura elegida. Al vencer, el link deja de dar acceso; después se procesa el borrado de fotos y textos.</p></div></details>
           <details class="faq-item"><summary>¿Cómo se paga?</summary><div class="faq-answer"><p>Al enviar, recibís tu código y el total; desde ahí abrís Mercado Pago para pagar. La confirmación se consulta automáticamente y podés seguirla en la página de tu pedido.</p></div></details>
-          <details class="faq-item"><summary>¿Puedo cambiar algo después de enviar?</summary><div class="faq-answer"><p>Sí, escribinos por WhatsApp con tu código mientras tu página siga vigente. Incluimos una ronda de ajustes de textos, fotos, fecha o música; cambiar el diseño del modelo no está incluido.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo cambiar algo después de enviar?</summary><div class="faq-answer"><p>Sí, escribinos por WhatsApp con tu código mientras tu página siga vigente. Incluimos una ronda de ajustes de textos, fotos o fecha; cambiar el diseño del modelo no está incluido. Si necesitás cambiar el MP3 después de enviar, consultanos antes.</p></div></details>
           <details class="faq-item"><summary>¿Se abre en cualquier celular?</summary><div class="faq-answer"><p>Sí, desde el navegador, sin descargar nada. Cualquiera con el link o el QR puede abrirla.</p></div></details>
-          <details class="faq-item"><summary>¿Qué necesito cargar?</summary><div class="faq-answer"><p>Completá los nombres, textos, fotos y tu preferencia de música en el armador. Ahí también elegís modelo, duración, tema y extras, y podés indicar una fecha para el regalo.</p></div></details>
+          <details class="faq-item"><summary>¿Qué necesito cargar?</summary><div class="faq-answer"><p>Completá los nombres, textos y fotos en el armador. Podés subir un MP3 opcional de hasta 10 MB y 10 minutos. Ahí también elegís modelo, duración, tema y extras, y podés indicar una fecha para el regalo.</p></div></details>
           <details class="faq-item"><summary>¿Cómo subo las fotos?</summary><div class="faq-answer"><p>En el paso Fotos del armador, elegilas desde tu teléfono o computadora. Podés ordenarlas y revisarlas antes de enviar.</p></div></details>
           <details class="faq-item"><summary>¿Qué pasa con mis fotos?</summary><div class="faq-answer"><p>Se usan solo para tu página y permanecen en Supabase hasta la limpieza posterior al vencimiento. El link deja de dar acceso al vencer; un proceso programado cada hora borra fotos y textos, aunque puede demorarse si hay fallas.</p></div></details>
           <details class="faq-item"><summary>¿Mis fotos son privadas?</summary><div class="faq-answer"><p>Las fotos se guardan en un bucket privado de Supabase; la página lleva una indicación de no indexar para buscadores. Cualquiera con el link o el QR puede verla, así que compartilos solo con quien quieras.</p></div></details>
-          <details class="faq-item"><summary>¿Puedo elegir la música?</summary><div class="faq-answer"><p>Podés elegir una canción disponible de nuestra selección o dejar un link de Spotify o YouTube como preferencia. Ese link no se reproduce automáticamente; si necesitás ayuda, escribinos con tu código.</p></div></details>
+          <details class="faq-item"><summary>¿Puedo elegir la música?</summary><div class="faq-answer"><p>Podés subir tu canción en un archivo MP3 de hasta 10 MB y 10 minutos, si tenés derecho a usarlo. Se guarda de forma privada y se borra al vencer el regalo; si no suena al abrirlo, tocá “Reproducir música”.</p></div></details>
           <details class="faq-item"><summary>¿Cómo funciona el juego interactivo?</summary><div class="faq-answer"><p>Elegilo en el armador para desbloquear la sorpresa jugando; suma <span data-extra-inline="game"></span>. Sobre animado incluido. Si elegís juego interactivo, el juego reemplaza al sobre como apertura.</p></div></details>
           <details class="faq-item"><summary>¿Qué pasa si no recibo el link?</summary><div class="faq-answer"><p>Abrí el seguimiento de tu pedido para revisar el pago. Si ahí figura confirmado y el link no aparece, escribinos por WhatsApp con tu código.</p></div></details>
           <details class="faq-item"><summary>¿Cómo consulto por un reembolso?</summary><div class="faq-answer"><p>Escribinos por WhatsApp con tu código para revisar el caso. Los reembolsos se gestionan manualmente por soporte; no hay una devolución automática desde la página.</p></div></details>
@@ -607,6 +600,7 @@
   <script src="armador/config.js" defer></script>
   <script src="compartido/apertura.js" defer></script>
   <script src="compartido/precios.js" defer></script>
+  <script src="armador/audio.js" defer></script>
   <script src="armador/pagos.js" defer></script>
   <script src="armador/armador.js" data-eros-armador defer></script>
   <script src="armador/preview.js" defer></script>

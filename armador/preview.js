@@ -24,7 +24,6 @@
     const placeholder = document.getElementById('preview-placeholder');
     const status = document.getElementById('preview-status');
     const caption = document.getElementById('preview-caption');
-    const musicInfo = document.getElementById('preview-music');
     const closeButton = document.getElementById('preview-close');
     const desktop = matchMedia('(min-width:1024px)');
     const origin = location.origin;
@@ -111,29 +110,11 @@
       return snapshot;
     }
 
-    function renderMusic(snapshot) {
-      musicInfo.replaceChildren();
-      const music = snapshot?.musica;
-      if (music?.elegida !== true) { musicInfo.hidden = true; return; }
-      const label = document.createElement('span');
-      label.textContent = 'Música: ' + (music.descripcion || 'a elegir');
-      musicInfo.append(label);
-      if (music.enlace) {
-        musicInfo.append(document.createTextNode(' · '));
-        const link = document.createElement('a');
-        link.href = music.enlace;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = 'Abrir enlace';
-        musicInfo.append(link);
-      }
-      musicInfo.hidden = false;
-    }
-
     function makeFrame() {
       if (iframe) return iframe;
       iframe = document.createElement('iframe');
       iframe.title = 'Vista previa de Eros Web';
+      iframe.allow = 'autoplay';
       iframe.addEventListener('load', () => {
         if (!iframe || !srcAssigned || iframe.src !== expectedSrc) {
           log('evento load inicial o anterior ignorado', { src:iframe?.src || '', esperado:expectedSrc });
@@ -229,13 +210,11 @@
         type:'eros-preview-datos',
         version:++version,
         datos,
-        previewInfo:snapshot.musica,
         opciones:options,
         diagnostico:debug ? { revision:version, etapa:snapshot.etapa, modelo:snapshot.modelo } : undefined
       };
       retryCount = 0;
       clearAckTimer();
-      renderMusic(snapshot);
       if (!frameHasContent) setLoading('Cargando la vista previa…');
       else textStatus('Actualizando la vista previa…');
       log('nueva versión preparada', { version, modelo:snapshot.modelo, opciones:options });
@@ -264,7 +243,6 @@
         clearWatchdog();
         showPlaceholder('Elegí un modelo para empezar');
         textStatus('');
-        renderMusic(snapshot);
         return;
       }
 
@@ -280,6 +258,8 @@
       if (previous && snapshot.modelo === previous.modelo) {
         if (snapshot.juego !== previous.juego) pendingOptions = { repetir:'apertura' };
         else if (snapshot.contador && (!previous.contador || snapshot.desde !== previous.desde)) pendingOptions = { irA:'contador' };
+        else if (snapshot.paso === 9 && snapshot.datos?.audio?.src &&
+          (previous.paso !== 9 || snapshot.datos.audio.src !== previous.datos?.audio?.src)) pendingOptions = { irA:models[snapshot.modelo]?.content || null };
         else if (snapshot.etapa !== previous.etapa) {
           const config = models[snapshot.modelo];
           const sectionByStep = { 4:'contador', 5:config?.content, 6:config?.photos, 7:'cierre' };

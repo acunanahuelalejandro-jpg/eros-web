@@ -23,7 +23,7 @@
       tema:temas.includes(pedido.tema) ? pedido.tema : 'eros',
       extras:{ juego, sobre:!juego, contador:{ desde:texto(extra.contador?.desde,10), etiqueta:texto(extra.contador?.etiqueta,120) || 'Juntos desde hace' } },
       inicio:{ titulo:texto(origen.inicio?.titulo,200), boton:texto(origen.inicio?.boton,80) || 'Tocá para empezar' },
-      firma:texto(origen.firma,200), musica:texto(origen.musica,300),
+      firma:texto(origen.firma,200), audio:{src:''},
       colorPrincipal:/^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(origen.colorPrincipal || '') ? origen.colorPrincipal : ''
     };
     if (juego === 'laberinto') data.extras.laberinto = {
@@ -57,15 +57,12 @@
     if (!r.ok) throw new Error('No se pudo cargar ' + ruta + ' (' + r.status + ').');
     return binario ? r.blob() : r.text();
   }
-  async function musica(pedido) {
-    const ruta = texto(pedido.datos?.musica,300);
-    if (!ruta) return null;
-    if (!/^[a-z0-9_./-]+\.(mp3|ogg|wav|m4a)$/i.test(ruta) || ruta.startsWith('/') || ruta.split('/').includes('..')) throw new Error('La música debe ser un archivo propio con ruta relativa. El link del cliente se muestra en el detalle.');
-    let ultimo;
-    for (const p of [ruta, 'plantillas/' + modelo(pedido) + '/' + ruta]) {
-      try { const blob = await recurso(p,true); if (!blob.size || blob.type.includes('text/html')) throw new Error('Archivo de música inválido.'); return { blob, nombre:'musica.' + ruta.split('.').pop().toLowerCase() }; } catch (e) { ultimo = e; }
-    }
-    throw new Error('Falta el archivo de música elegido: ' + ruta + '. Agregalo al sitio antes de descargar el paquete. ' + ultimo.message);
+  async function audio(pedido, descargar) {
+    if (!pedido.audio_ruta) return null;
+    if (pedido.audio_ruta !== pedido.id + '/cancion.mp3' || typeof descargar !== 'function') throw new Error('No se puede descargar el audio privado de este pedido.');
+    const blob = await descargar();
+    if (!blob || blob.type.split(';')[0] !== 'audio/mpeg' || blob.size !== pedido.audio_bytes || blob.size < 1 || blob.size > 10*1024*1024) throw new Error('El MP3 no coincide con el audio del pedido.');
+    return {blob,nombre:'audio/cancion.mp3'};
   }
   async function jpeg(blob) {
     let imagen, temporal = '';
@@ -84,7 +81,7 @@
   const guardar = (blob,nombre) => {
     const url = URL.createObjectURL(blob), enlace = document.createElement('a'); enlace.href = url; enlace.download = nombre; enlace.click(); setTimeout(() => URL.revokeObjectURL(url),60000);
   };
-  async function generar(pedido, descargar, avisar, vigente = () => true, archivos = []) {
+  async function generar(pedido, descargar, avisar, vigente = () => true, archivos = [], descargarAudio = null) {
     if (!window.JSZip) throw new Error('No se cargó la biblioteca ZIP local. Recargá la página.');
     const code = codigo(pedido), slug = modelo(pedido), zip = new JSZip(), carpeta = zip.folder('p/' + code);
     const mapa = new Map(); const nombres = [...new Set([...referencias(pedido), ...archivos.filter(n => /^[a-z0-9][a-z0-9._-]*\.(?:jpe?g|png|webp)$/i.test(n))])];
@@ -95,32 +92,33 @@
       const imagen = await jpeg(await descargar(nombre)); carpeta.file(destino,await imagen.arrayBuffer()); mapa.set(nombre,destino);
     }
     const data = crearDatos(pedido,p => mapa.get(nombreFoto(p)) || '');
-    const audio = await musica(pedido);
-    if (audio) { carpeta.file(audio.nombre,await audio.blob.arrayBuffer()); data.musica = audio.nombre; } else data.musica = '';
+    const pista = await audio(pedido,descargarAudio);
+    if (pista) { carpeta.file(pista.nombre,await pista.blob.arrayBuffer()); data.audio.src = pista.nombre; }
     // JSON.stringify escapa las comillas: el contenido no se ejecuta como código.
     carpeta.file('datos.js','/* Datos del pedido. No incluye tokens ni enlaces firmados. */\nwindow.DATOS = ' + JSON.stringify(data,null,2).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029') + ';\n');
     const juego = data.extras.juego;
     for (const archivo of modelos[slug]) {
       let fuente = await recurso('plantillas/' + slug + '/' + archivo);
-      if (archivo === 'index.html' && juego) {
+      if (archivo === 'index.html') {
         const doc = new DOMParser().parseFromString(fuente,'text/html');
-        doc.querySelectorAll('script[src="../../compartido/sobre.js"]').forEach(n => n.remove());
+        if (juego) doc.querySelectorAll('script[src="../../compartido/sobre.js"]').forEach(n => n.remove());
+        doc.querySelectorAll('script[src="../../armador/config.js"],script[src="../../compartido/pagina.js"]').forEach(n => n.remove());
         fuente = '<!doctype html>\n' + doc.documentElement.outerHTML;
       }
       carpeta.file(archivo,fuente);
     }
-    const comunes = ['temas.js','contador.js','apertura.js','preview.js'];
+    const comunes = ['temas.js','contador.js','apertura.js','preview.js','audio.js'];
     if (!juego) comunes.push('sobre.js');
     for (const archivo of comunes) zip.file('compartido/' + archivo,await recurso('compartido/' + archivo));
-    const modulos = ['nucleo/efectos.js','nucleo/musica.js'];
+    const modulos = ['nucleo/efectos.js'];
     if (juego) modulos.push('juegos/' + juego + '.js');
     for (const archivo of modulos) zip.file('plantillas/juegos-interactivos/' + archivo,await recurso('plantillas/juegos-interactivos/' + archivo));
-    zip.file('leeme.txt','Pedido ' + code + '\n\nPara probar: descomprimí todo y abrí p/' + code + '/index.html.\nPara publicar: copiá la carpeta ' + code + ' desde p/ a la carpeta p/ de tu sitio. Conservá compartido/ y plantillas/juegos-interactivos/ actualizados.\nEl ZIP incluye estas dependencias para la prueba local. No incluye el panel ni claves.\nEl estado Publicado no sube archivos ni da de baja páginas automáticamente.\n');
+    zip.file('leeme.txt','Pedido ' + code + '\n\nCopia privada para revisar sin conexión. Descomprimí todo y abrí p/' + code + '/index.html.\nNo subas este paquete a GitHub ni a un sitio público: contiene fotos y puede contener un MP3 privado.\nLa entrega del regalo usa el link del panel y enlaces firmados temporales. La copia descargada no vence ni se elimina automáticamente de este dispositivo.\nNo incluye el panel ni claves.\n');
     if (!vigente()) throw new Error('La sesión o el pedido cambió.');
     avisar('Preparando ZIP…'); const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 } });
     if (!vigente()) throw new Error('La sesión o el pedido cambió.');
     guardar(blob,code + '.zip'); return { datos:data, url:finalURL(pedido) };
   }
-  function finalURL(pedido) { return 'https://acunanahuelalejandro-jpgi.github.io/eros-web/p/' + codigo(pedido) + '/'; }
-  window.ErosPaquetes = Object.freeze({ modelo, codigo, nombreFoto, crearDatos, referencias, generar, musica, guardar, finalURL });
+  function finalURL(pedido) { return /^[23456789abcdefgh]{12,32}$/.test(pedido.slug || '') ? new URL('p/?c=' + pedido.slug,base).href : ''; }
+  window.ErosPaquetes = Object.freeze({ modelo, codigo, nombreFoto, crearDatos, referencias, generar, audio, guardar, finalURL });
 })();

@@ -1,7 +1,8 @@
 import { calcularPrecioPedido, EROS_PRECIOS } from "./precios.ts";
 import { consultarBD, ErrorCobro, hashCobro } from "./http.ts";
+import type { AudioPedido } from "./audio.ts";
 
-export type PedidoCobro = {
+export type PedidoCobro = AudioPedido & {
   id: string; codigo: string; slug: string; estado: string;
   modelo: string; duracion: string; extras: Record<string, unknown>;
   datos: Record<string, unknown>; total: number; activar_el: string | null;
@@ -24,7 +25,7 @@ export function credencialPedido(cuerpo: Record<string, unknown>): CredencialPed
 
 export async function buscarPedido(credencial: CredencialPedido, completo = true, hasta = Infinity): Promise<PedidoCobro> {
   const columnas = completo
-    ? "id,codigo,slug,estado,modelo,duracion,extras,datos,total,activar_el,fotos_cantidad,mp_preference_id,mp_payment_id"
+    ? "id,codigo,slug,estado,modelo,duracion,extras,datos,total,activar_el,fotos_cantidad,mp_preference_id,mp_payment_id,audio_ruta,audio_nombre,audio_bytes,audio_duracion,audio_consentimiento,audio_verificado_en,audio_sha256,limpiado_en,limpieza_intentada_en"
     : "id,codigo,slug,estado,mp_payment_id,vence_en";
   const filtro = "slug" in credencial
     ? "slug=eq." + encodeURIComponent(credencial.slug)

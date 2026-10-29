@@ -7,14 +7,18 @@
   const money = v => window.ErosPrecios.formato(v);
   const estados = { nuevo:'Nuevo', pagado:'Pagado', publicado:'Publicado', vencido:'Vencido' };
   const juegos = { 'pintar-corazon':'Pintar el corazón', pintar:'Pintar el corazón', margarita:'Me ama / no me ama', laberinto:'Llegá a mí' };
-  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,musica,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en,pagado_en,mp_preference_id,mp_payment_id,pago_manual_en,limpiado_en,limpieza_intentada_en';
+  const fields = 'id,codigo,creado_en,estado,modelo,duracion,extras,tema,para_quien,de_parte,activar_el,whatsapp_cliente,datos,total,fotos_cantidad,notas,slug,publicado_en,vence_en,pagado_en,mp_preference_id,mp_payment_id,pago_manual_en,limpiado_en,limpieza_intentada_en,audio_ruta,audio_nombre,audio_bytes,audio_duracion,audio_consentimiento,audio_verificado_en,audio_sha256';
   let client = null, userId = '', orders = [], selected = null, authGeneration = 0, detailGeneration = 0, request = null;
   let objects = [], imageBlobs = new Map(), blobURLs = new Map(), pendingBlobs = new Map(), iframe = null, previewData = null;
+  let audioBlob = null, pendingAudio = null;
   let loading = false, reloadRequested = false, eraseBusy = false, sessionTimer = 0, deliveryTimer = 0, localLogout = false, authStorage = null;
   let pendingCode = /^[A-Z0-9]{6}$/.test(new URLSearchParams(location.search).get('pedido') || '') ? new URLSearchParams(location.search).get('pedido') : '';
   const current = (auth, detail = detailGeneration) => !!userId && auth === authGeneration && detail === detailGeneration;
   const errorText = e => typeof e?.message === 'string' ? e.message : 'No se pudo completar la operación.';
   const api = async promise => { const result = await promise; if (result.error) throw result.error; return result.data; };
+  const audioFields = ['audio_ruta','audio_nombre','audio_bytes','audio_duracion','audio_consentimiento','audio_verificado_en','audio_sha256'];
+  const audioSize = value => Number.isFinite(value) ? (value / 1024 / 1024).toLocaleString('es-AR',{maximumFractionDigits:2}) + ' MB' : 'Sin indicar';
+  function audioPath(order) { const id = uuid(order?.id); if (order.audio_ruta !== id + '/cancion.mp3') throw new Error('La ruta del audio no corresponde a este pedido.'); return order.audio_ruta; }
   const dateTime = value => { const d = new Date(value); return Number.isNaN(+d) ? 'Sin fecha' : new Intl.DateTimeFormat('es-AR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Argentina/Buenos_Aires'}).format(d); };
   function dateLabel(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value.split('-').reverse().join('/') : 'Sin definir'; }
   function expiration(order) {
@@ -51,10 +55,10 @@
   function clearDetail() {
     window.ErosOperaciones?.limpiar();
     clearTimeout(deliveryTimer);
-    detailGeneration++; clearPreview(); selected = null; objects = []; imageBlobs.clear(); pendingBlobs.clear(); blobURLs.forEach(URL.revokeObjectURL); blobURLs.clear();
+    detailGeneration++; clearPreview(); $('order-audio').querySelectorAll('audio').forEach(audio => { audio.pause(); audio.removeAttribute('src'); audio.load(); }); audioBlob = null; pendingAudio = null; selected = null; objects = []; imageBlobs.clear(); pendingBlobs.clear(); blobURLs.forEach(URL.revokeObjectURL); blobURLs.clear();
     $('detail').hidden = true;
-    for (const id of ['detail-fields','contact-actions','order-content','photos']) $(id).replaceChildren();
-    for (const id of ['order-json','detail-title','package-status','notes-status','photos-status','erase-status','copy-status','final-link','total-check','erase-description','erase-error']) say(id,'');
+    for (const id of ['detail-fields','contact-actions','order-content','photos','order-audio']) $(id).replaceChildren();
+    for (const id of ['order-json','detail-title','package-status','notes-status','photos-status','audio-status','erase-status','copy-status','final-link','total-check','erase-description','erase-error']) say(id,'');
     for (const id of ['notes','activation','delivery-message','erase-code']) $(id).value = '';
     $('final-link').removeAttribute('href'); $('delivery-whatsapp').removeAttribute('href');
     $('final-link').hidden = true; $('public-page-link').hidden = true; $('public-page-link').removeAttribute('href');
@@ -97,7 +101,7 @@
       orders = all; window.ErosAvisos?.actualizarBase(orders); renderList();
       // Una actualización en vivo no reconstruye el formulario ni pisa notas sin guardar.
       const updated = selected && orders.find(order => order.id === selected.id);
-      if (updated) { for (const key of ['estado','pagado_en','slug','publicado_en','vence_en','total','mp_preference_id','mp_payment_id','pago_manual_en','limpiado_en','limpieza_intentada_en']) selected[key] = updated[key]; renderDetailFields(); updateDelivery(); }
+      if (updated) { for (const key of ['estado','pagado_en','slug','publicado_en','vence_en','total','mp_preference_id','mp_payment_id','pago_manual_en','limpiado_en','limpieza_intentada_en',...audioFields]) selected[key] = updated[key]; renderDetailFields(); updateDelivery(); }
     } catch(e) { if (gen === authGeneration && userId) say('list-status','No se pudo cargar la lista: ' + errorText(e)); }
     finally { if (gen === authGeneration) { loading = false; $('refresh').disabled = false; if (reloadRequested) { reloadRequested = false; void loadOrders(); } } }
   }
@@ -152,22 +156,20 @@
       const order = await api(client.from('pedidos').select(fields).eq('id',id).single()); if (!current(auth,gen)) return;
       selected = order; renderDetailFields(options); renderContent(); $('notes').value = order.notas || ''; $('activation').value = order.activar_el || '';
       say('order-json',JSON.stringify(order,null,2)); say('detail-status',''); updateDelivery();
-      await loadPhotos(auth,gen);
+      await Promise.all([loadPhotos(auth,gen),loadAudio(auth,gen)]);
     } catch(e) { if (current(auth,gen)) say('detail-status','No se pudo cargar: ' + errorText(e)); }
   }
   function renderDetailFields(options = {}) {
     if (!selected) return; const o = selected; say('detail-title','Pedido ' + o.codigo);
     $('activation').disabled = o.estado !== 'nuevo' || !!o.pagado_en;
     $('detail-fields').replaceChildren();
-    const rows = [['Estado',estados[o.estado] || o.estado],['Creado',dateTime(o.creado_en)],['Modelo',modelName(o)],['Duración',o.duracion],['Para',o.para_quien],['De parte de',o.de_parte || 'Sin indicar'],['Tema',o.tema],['Extras',extraLabel(o)],['Contador desde',dateLabel(o.extras?.contador?.desde)],['Música',o.musica || 'Sin indicar'],['Activación',dateLabel(o.activar_el)],['Publicación',o.publicado_en ? dateTime(o.publicado_en) + ' (Argentina)' : 'Sin publicar'],['Vencimiento',expiration(o) ? dateTime(expiration(o)) + ' (Argentina)' : 'Falta fecha de publicación'],['WhatsApp',o.whatsapp_cliente || 'Sin indicar'],['Fotos declaradas',o.fotos_cantidad],['Total guardado',money(o.total)]];
+    const rows = [['Estado',estados[o.estado] || o.estado],['Creado',dateTime(o.creado_en)],['Modelo',modelName(o)],['Duración',o.duracion],['Para',o.para_quien],['De parte de',o.de_parte || 'Sin indicar'],['Tema',o.tema],['Extras',extraLabel(o)],['Contador desde',dateLabel(o.extras?.contador?.desde)],['Audio',o.audio_ruta ? (o.audio_nombre || 'cancion.mp3') + ' · ' + audioSize(o.audio_bytes) : 'Sin audio'],['Activación',dateLabel(o.activar_el)],['Publicación',o.publicado_en ? dateTime(o.publicado_en) + ' (Argentina)' : 'Sin publicar'],['Vencimiento',expiration(o) ? dateTime(expiration(o)) + ' (Argentina)' : 'Falta fecha de publicación'],['WhatsApp',o.whatsapp_cliente || 'Sin indicar'],['Fotos declaradas',o.fotos_cantidad],['Total guardado',money(o.total)]];
     rows.forEach(([label,value]) => $('detail-fields').append(node('dt',label),node('dd',value)));
     const check = $('total-check');
     try { const p = ErosPrecios.calcular(o); const same = p.total === o.total; check.className = same ? 'check-ok' : 'check-error'; check.textContent = (same ? '✓ Total verificado. ' : '⚠ El total guardado NO coincide. ') + 'Modelo: ' + money(p.base) + ' · Juego: ' + money(p.juego) + ' · Contador: ' + money(p.contador) + ' · Esperado: ' + money(p.total) + (same ? '' : ' · Guardado: ' + money(o.total)); }
     catch(e) { check.className = 'check-error'; check.textContent = '⚠ No se puede verificar el total: ' + errorText(e); }
     $('contact-actions').replaceChildren(); const number = whatsapp(o.whatsapp_cliente);
     if (number) $('contact-actions').append(link('Escribir al cliente','https://wa.me/' + number + '?text=' + encodeURIComponent('Hola! Te escribo por tu pedido ' + o.codigo + ' de Eros Web…')));
-    const match = String(o.musica || '').match(/https?:\/\/[^\s]+/i), musicURL = match && safeLink(match[0]);
-    if (musicURL) $('contact-actions').append(link('Abrir música',musicURL));
     window.ErosOperaciones?.mostrar(o,{forzar:options.forzarPago === true});
   }
   function renderContent() {
@@ -212,6 +214,63 @@
     const promise = api(client.storage.from('fotos').download(uuid(id) + '/' + name)).then(blob => { if (!current(auth,gen)) throw new Error('La sesión o el pedido cambió.'); imageBlobs.set(name,blob); return blob; }).finally(() => { if (current(auth,gen)) pendingBlobs.delete(name); });
     pendingBlobs.set(name,promise); return promise;
   }
+  async function loadAudio(auth,gen) {
+    $('order-audio').replaceChildren();
+    if (!selected?.audio_ruta) { say('audio-status','Este pedido no tiene audio.'); return; }
+    const order = selected; say('audio-status','Cargando audio privado…');
+    try {
+      const ruta = audioPath(order);
+      const signed = await api(client.storage.from('audios').createSignedUrl(ruta,600));
+      if (!current(auth,gen)) return;
+      const caption = node('p',(order.audio_nombre || 'cancion.mp3') + ' · ' + audioSize(order.audio_bytes));
+      const audio = node('audio'); audio.controls = true; audio.preload = 'none'; audio.src = signed.signedUrl;
+      audio.setAttribute('aria-label','Escuchar audio del pedido ' + order.codigo);
+      audio.addEventListener('error',() => { if (!current(auth,gen)) return; order.audio_ausente = true; window.ErosOperaciones?.mostrar(order); say('audio-status','No se pudo cargar el audio. Tocá Actualizar para renovar el enlace privado y revisar el archivo.'); },{once:true});
+      $('order-audio').append(caption,audio);
+      say('audio-status',order.audio_verificado_en ? 'MP3 validado. El enlace privado vence a los 10 minutos.' : 'El audio todavía no fue validado por el servidor. No se puede publicar.');
+    } catch(e) { if (current(auth,gen)) { order.audio_ausente = true; window.ErosOperaciones?.mostrar(order); say('audio-status','No se pudo cargar el audio privado: ' + errorText(e)); } }
+  }
+  async function getAudioBlob() {
+    if (!userId || !selected) throw new Error('Iniciá sesión para escuchar el audio.');
+    if (!selected.audio_ruta) return null;
+    if (audioBlob) return audioBlob;
+    if (pendingAudio) return pendingAudio;
+    const ruta = audioPath(selected), auth = authGeneration, gen = detailGeneration;
+    const promise = api(client.storage.from('audios').download(ruta)).then(blob => {
+      if (!current(auth,gen)) throw new Error('La sesión o el pedido cambió.');
+      if (!blob.size || blob.size > 10*1024*1024 || blob.size !== selected.audio_bytes || blob.type.split(';')[0] !== 'audio/mpeg') throw new Error('El archivo de audio no coincide con el MP3 del pedido.');
+      audioBlob = blob; return blob;
+    }).finally(() => { if (current(auth,gen)) pendingAudio = null; });
+    pendingAudio = promise; return promise;
+  }
+  async function vaciarBucketPedido(bucket,id,auth,gen) {
+    if (!['fotos','audios'].includes(bucket)) throw new Error('Bucket no permitido.');
+    uuid(id);
+    async function vaciar(prefix,depth) {
+      if (depth > 5 || (prefix !== id && !prefix.startsWith(id + '/'))) throw new Error('Carpeta fuera del pedido.');
+      let previous = '';
+      while (true) {
+        const rows = await api(client.storage.from(bucket).list(prefix,{limit:100,offset:0,sortBy:{column:'name',order:'asc'}}));
+        if (!current(auth,gen)) throw new Error('La sesión o el pedido cambió.');
+        if (!Array.isArray(rows) || rows.length > 100) throw new Error('No se pudo verificar la carpeta privada.');
+        if (!rows.length) return;
+        const mark = JSON.stringify(rows.map(row => [row.name,row.id]));
+        if (mark === previous) throw new Error('El borrado no avanzó. Volvé a intentar.'); previous = mark;
+        const files = [],folders = [];
+        for (const row of rows) {
+          if (!/^[a-z0-9][a-z0-9._-]{0,119}$/i.test(row?.name || '')) throw new Error('Se encontró un nombre de archivo no permitido.');
+          const path = prefix + '/' + row.name;
+          if (typeof row.id === 'string' && row.id) files.push(path);
+          else if (row.id === null && row.metadata == null) folders.push(path);
+          else throw new Error('No se pudo verificar un archivo privado.');
+        }
+        if (files.length) await api(client.storage.from(bucket).remove(files));
+        if (!current(auth,gen)) throw new Error('La sesión o el pedido cambió.');
+        for (const folder of folders) await vaciar(folder,depth+1);
+      }
+    }
+    await vaciar(id,0);
+  }
   async function preparePreview() {
     if (!selected || !userId) return;
     const order = selected, a = authGeneration, d = detailGeneration; $('preview-button').disabled = true; say('package-status','Preparando vista previa…');
@@ -220,9 +279,10 @@
         const blob = await getBlob(name); if (!current(a,d)) return; if (!blobURLs.has(name)) blobURLs.set(name,URL.createObjectURL(blob));
       }
       previewData = ErosPaquetes.crearDatos(order,p => blobURLs.get(ErosPaquetes.nombreFoto(p)) || '');
-      const audio = await ErosPaquetes.musica(order); if (!current(a,d)) return;
-      if (audio) { const name = '__musica'; if (!blobURLs.has(name)) blobURLs.set(name,URL.createObjectURL(audio.blob)); previewData.musica = blobURLs.get(name); } else previewData.musica = '';
-      const slug = ErosPaquetes.modelo(order); $('preview-host').replaceChildren(); iframe = document.createElement('iframe'); iframe.title = 'Vista previa de ' + modelName(order); iframe.src = '../plantillas/' + slug + '/index.html?preview=1';
+      const audio = await getAudioBlob(); if (!current(a,d)) return;
+      previewData.audio = {src:''};
+      if (audio) { const name = '__audio'; if (!blobURLs.has(name)) blobURLs.set(name,URL.createObjectURL(audio)); previewData.audio.src = blobURLs.get(name); }
+      const slug = ErosPaquetes.modelo(order); $('preview-host').replaceChildren(); iframe = document.createElement('iframe'); iframe.title = 'Vista previa de ' + modelName(order); iframe.allow = 'autoplay'; iframe.src = '../plantillas/' + slug + '/index.html?preview=1';
       $('preview-host').append(iframe); say('preview-status','Cargando vista previa…'); $('preview-dialog').showModal();
       say('preview-opening',previewData.extras.juego ? 'Probar el juego' : 'Ver el sobre'); say('package-status','');
     } catch(e) { if (current(a,d)) say('package-status','No se pudo preparar la vista previa: ' + errorText(e)); }
@@ -277,29 +337,27 @@
   window.addEventListener('message',event => { if (!userId || !iframe || event.source !== iframe.contentWindow || event.origin !== location.origin || event.data?.type !== 'eros-preview-listo') return; postPreview(); say('preview-status','Vista previa del pedido. Las fotos no son públicas.'); });
   $('package-button').addEventListener('click',async () => {
     if (!selected || !userId) return; const a = authGeneration, d = detailGeneration, order = selected; $('package-button').disabled = true;
-    try { await ErosPaquetes.generar(order,getBlob,message => { if (current(a,d)) say('package-status',message); },() => current(a,d),objects.map(f => f.name)); if (current(a,d)) say('package-status','✓ Paquete descargado para exportación manual. Descomprimí todo para probarlo; la entrega automática usa el link por slug de este panel.'); }
+    try { await ErosPaquetes.generar(order,getBlob,message => { if (current(a,d)) say('package-status',message); },() => current(a,d),objects.map(f => f.name),getAudioBlob); if (current(a,d)) say('package-status','✓ Copia privada descargada. No la subas a GitHub: contiene archivos del pedido. La entrega usa el link de este panel.'); }
     catch(e) { if (current(a,d)) say('package-status','No se pudo generar el paquete: ' + errorText(e)); } finally { $('package-button').disabled = false; }
   });
   $('copy-link').addEventListener('click',() => { if (selected && publication(selected).active) { try { copy(livePageURL(selected)); } catch(e) { say('copy-status',errorText(e)); } } else updateDelivery(); }); $('copy-message').addEventListener('click',() => { if (selected && publication(selected).active) copy($('delivery-message').value); else updateDelivery(); });
   $('public-page-link').addEventListener('click',event => { if (!selected || !publication(selected).active) { event.preventDefault(); updateDelivery(); } });
   $('final-link').addEventListener('click',event => { if (!selected || !publication(selected).active) { event.preventDefault(); updateDelivery(); } });
-  $('erase-button').addEventListener('click',() => { if (!selected || !userId || eraseBusy) return; $('erase-code').value = ''; say('erase-error',''); say('erase-description','Se borrarán todas las fotos de Supabase, los nombres, el contenido, la música, el WhatsApp y las notas del pedido ' + selected.codigo + '. Si exportaste una copia manual, retirala también de donde la hayas publicado.'); $('erase-dialog').showModal(); $('erase-code').focus(); });
+  $('erase-button').addEventListener('click',() => { if (!selected || !userId || eraseBusy) return; $('erase-code').value = ''; say('erase-error',''); say('erase-description','Se borrarán todas las fotos y el audio de Supabase, los nombres, el contenido, el WhatsApp y las notas del pedido ' + selected.codigo + '. Si exportaste una copia manual, retirala también de donde la hayas publicado.'); $('erase-dialog').showModal(); $('erase-code').focus(); });
   $('erase-cancel').addEventListener('click',() => $('erase-dialog').close());
   $('erase-form').addEventListener('submit',async event => {
     event.preventDefault(); if (!selected || !userId || eraseBusy) return;
     if ($('erase-code').value.trim().toUpperCase() !== selected.codigo.toUpperCase()) { say('erase-error','El código no coincide.'); return; }
-    if (!window.confirm('Segunda confirmación: ¿borrar definitivamente las fotos y los datos personales de ' + selected.codigo + '? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('Segunda confirmación: ¿borrar definitivamente las fotos, el audio y los datos personales de ' + selected.codigo + '? Esta acción no se puede deshacer.')) return;
     const a = authGeneration, d = detailGeneration, order = selected; eraseBusy = true; $('erase-confirm').disabled = true; say('erase-error','Borrando…');
     try {
       // El servidor corta el acceso antes de borrar archivos. No se cambia el estado desde el navegador.
       if (!window.ErosOperaciones) throw new Error('No se cargaron los controles de publicación. Recargá el panel antes de borrar.');
       await window.ErosOperaciones.anularParaBorrado(order,$('erase-code').value.trim().toUpperCase()); if (!current(a,d)) return;
-      const files = await listObjects(order.id); if (!current(a,d)) return;
-      for (let i = 0; i < files.length; i += 100) { await api(client.storage.from('fotos').remove(files.slice(i,i+100).map(f => order.id + '/' + f.name))); if (!current(a,d)) return; }
-      if ((await listObjects(order.id)).length) throw new Error('Quedaron archivos en el bucket. Volvé a intentar el borrado.');
-      const extra = {juego:order.extras?.juego || '',sobre:!order.extras?.juego,contador:{activo:!!(order.extras?.contador === true || order.extras?.contador?.desde || order.extras?.contador?.activo)}};
-      await api(client.from('pedidos').update({para_quien:'Datos eliminados',de_parte:null,musica:'',whatsapp_cliente:null,datos:{},fotos_cantidad:0,notas:null,extras:extra}).eq('id',order.id).select('id').single());
-      if (!current(a,d)) return; $('erase-dialog').close(); await loadOrders(); await openDetail(order.id); say('erase-status','✓ Fotos y datos personales borrados de Supabase. Si exportaste una copia manual, retirala también de donde la hayas publicado.');
+      for (const bucket of ['fotos','audios']) await vaciarBucketPedido(bucket,order.id,a,d);
+      const result = await api(client.rpc('eros_finalizar_borrado_manual',{p_pedido_id:order.id}));
+      if (result?.limpiado !== true) throw new Error('El servidor no confirmó el borrado. Volvé a intentar.');
+      if (!current(a,d)) return; $('erase-dialog').close(); await loadOrders(); await openDetail(order.id); say('erase-status','✓ Fotos, audio y datos personales borrados de Supabase. Si exportaste una copia manual, retirala también de donde la hayas publicado.');
     } catch(e) { if (current(a,d)) say('erase-error','El borrado no terminó. Podés reintentar: ' + errorText(e)); }
     finally { eraseBusy = false; $('erase-confirm').disabled = false; }
   });

@@ -42,6 +42,6 @@ window.DATOS = {
   },
 
   firma: "", // Nombre o frase de quien regala.
-  musica: "", // Nombre de un archivo propio, por ejemplo "musica.mp3". Vacío = sin música.
+  audio: null, // El armador carga un MP3 opcional; no se aceptan enlaces ni catálogos.
   colorPrincipal: "" // Vacío usa el color del tema. También admite un color hexadecimal.
 };

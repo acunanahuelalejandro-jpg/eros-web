@@ -36,11 +36,11 @@ async function vaciarCarpeta(id: string, hasta: number): Promise<void> {
     if (!respuesta.ok) throw new ErrorStorageLimpieza("http", respuesta.status);
     return respuesta;
   }
-  async function carpeta(prefix: string, profundidad: number): Promise<void> {
+  async function carpeta(bucket: "fotos" | "audios", prefix: string, profundidad: number): Promise<void> {
     if (profundidad > 5 || (prefix !== id && !prefix.startsWith(id + "/"))) throw new ErrorStorageLimpieza("prefijo");
     let listaAnterior = "";
     while (true) {
-      const respuesta = await storage("object/list/fotos", "POST", { prefix, limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } });
+      const respuesta = await storage("object/list/" + bucket, "POST", { prefix, limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } });
       let lista: unknown;
       try { lista = await respuesta.json(); } catch { throw new ErrorStorageLimpieza("respuesta"); }
       if (!Array.isArray(lista) || lista.length > 100) throw new ErrorStorageLimpieza("respuesta");
@@ -58,13 +58,13 @@ async function vaciarCarpeta(id: string, hasta: number): Promise<void> {
       listaAnterior = huella;
       if (archivos.length) {
         // La API, no SQL, elimina los archivos físicos. Nunca se sale del UUID reclamado.
-        await storage("object/fotos", "DELETE", { prefixes: archivos });
+        await storage("object/" + bucket, "DELETE", { prefixes: archivos });
       }
-      for (const subcarpeta of subcarpetas) await carpeta(subcarpeta, profundidad + 1);
+      for (const subcarpeta of subcarpetas) await carpeta(bucket, subcarpeta, profundidad + 1);
       // Después de borrar siempre vuelve a offset 0: los índices anteriores ya cambiaron.
     }
   }
-  await carpeta(id, 0);
+  for (const bucket of ["fotos", "audios"] as const) await carpeta(bucket, id, 0);
 }
 
 export async function limpiarVencidos(req: Request): Promise<Response> {

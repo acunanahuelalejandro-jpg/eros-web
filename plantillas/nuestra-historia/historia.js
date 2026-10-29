@@ -37,7 +37,6 @@
       const rawSubtitle = text(principal.subtitulo);
       const title = rawTitle || (para ? "Nuestra historia, " + para : (isPreview ? "Nuestra historia para Nombre" : "Nuestra historia"));
       const subtitle = rawSubtitle || (isPreview ? "Un recorrido por momentos importantes…" : "");
-      const song = safeFile(data.musica);
       const preferredColor = text(data.colorPrincipal);
       const customColor = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(preferredColor) ? preferredColor : "";
       const apertura = window.ErosApertura.elegirApertura(data);
@@ -68,13 +67,13 @@
       const confettiLayer = document.getElementById("confettiLayer");
       const audio = document.getElementById("backgroundMusic");
       const musicToggle = document.getElementById("musicToggle");
-      const musicText = document.getElementById("musicText");
+      const music = window.ErosAudio?.montar(audio, musicToggle, data.audio?.src);
+      music?.escucharApertura(envelopeScreen);
       const photoDialog = document.getElementById("photoDialog");
       const lightboxImage = document.getElementById("lightboxImage");
       const effectsCanvas = document.getElementById("effectsCanvas");
       const validMoments = Array.isArray(data.momentos) ? data.momentos.slice(0, 8).filter((moment) => moment && typeof moment === "object") : [];
       if (isPreview) while (validMoments.length < 8) validMoments.push({});
-      let musicReady = Boolean(song);
       let gameInstance = null;
       let gameTimer = 0;
       let gameFinished = false;
@@ -404,6 +403,7 @@
         contentScreen.hidden = false;
         contentScreen.classList.toggle('is-opening', !settings.quiet);
         if (settings.quiet) contentScreen.classList.add('is-open');
+        if (!isPreview && !settings.quiet) music?.reproducir();
         ambientLayer.replaceChildren();
         startHearts();
         observeReveals();
@@ -422,6 +422,7 @@
       function finishGame() {
         if (!active || gameFinished) return;
         gameFinished = true;
+        if (!isPreview) music?.reproducir();
         cleanupGame();
         if (window.NucleoEfectos?.explotar) {
           const color = getComputedStyle(document.documentElement).getPropertyValue('--wine').trim() || '#8b3d52';
@@ -492,11 +493,11 @@
         if (startHandled) return;
         startHandled = true;
         intro.hidden = true;
-        if (musicReady) { audio.src = song; musicToggle.hidden = false; playMusic(); }
+        music?.reproducir();
         runOpening();
       }
       function jump(section) {
-        const id = { contador:'togetherCounter', recorrido:'timeline', cierre:'closingBlock' }[section];
+        const id = { contador:'togetherCounter', recorrido:'timeline', musica:'musicToggle', cierre:'closingBlock' }[section];
         if (!id) return;
         if (contentScreen.hidden) openContent({ quiet:true, scroll:savedScroll });
         cancelAnimationFrame(jumpFrame);
@@ -511,33 +512,6 @@
             requestRouteUpdate();
           }
         });
-      }
-
-      function updateMusicLabel() {
-        const paused = audio.paused;
-        const label = paused ? "Activar música" : "Pausar música";
-        musicText.textContent = label;
-        musicToggle.setAttribute("aria-label", label);
-        musicToggle.setAttribute("aria-pressed", String(!paused));
-      }
-      function hideMusic() {
-        musicReady = false;
-        audio.pause();
-        musicToggle.hidden = true;
-      }
-      function playMusic() {
-        if (!musicReady) return;
-        try {
-          const promise = audio.play();
-          if (promise && typeof promise.catch === "function") promise.catch((error) => {
-            if (error && error.name === "NotAllowedError") {
-              musicToggle.hidden = false;
-              updateMusicLabel();
-            } else hideMusic();
-          });
-        } catch (_) {
-          hideMusic();
-        }
       }
 
       function spawnTapHeart(event) {
@@ -561,13 +535,13 @@
         },
         isContentShown: () => contentShown,
         openContent, startExperience, skipGame, openPhoto, closePhoto,
-        updateMusicLabel, hideMusic, spawnTapHeart, updateRouteProgress, requestRouteUpdate,
-        toggleMusic() { if (!musicReady) return; if (audio.paused) playMusic(); else audio.pause(); updateMusicLabel(); },
+        spawnTapHeart, updateRouteProgress, requestRouteUpdate,
         destroy() {
           if (!active) return;
           active = false;
           generatedEvents.abort();
           counter?.detener();
+          music?.destruir();
           envelope?.destruir();
           cleanupGame();
           revealObserver?.disconnect();
@@ -606,10 +580,6 @@
   function bind(id, event, handler) { document.getElementById(id).addEventListener(event, handler); }
   bind('startButton', 'click', () => current?.startExperience());
   bind('rescueButton', 'click', () => current?.skipGame());
-  bind('musicToggle', 'click', () => current?.toggleMusic());
-  bind('backgroundMusic', 'play', () => current?.updateMusicLabel());
-  bind('backgroundMusic', 'pause', () => current?.updateMusicLabel());
-  bind('backgroundMusic', 'error', () => current?.hideMusic());
   bind('closePhoto', 'click', () => current?.closePhoto());
   bind('lightboxImage', 'click', () => current?.closePhoto());
   bind('photoDialog', 'click', (event) => { if (event.target.id === 'photoDialog') current?.closePhoto(); });

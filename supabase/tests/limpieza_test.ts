@@ -12,10 +12,10 @@ const idVigente = "00000000-0000-4000-8000-000000000002";
 type FilaLimpieza = {
   id: string; estado: string; limpiado_en: string | null; token: string | null;
   vence_en: string; datos: Record<string, unknown>; para_quien: string;
-  total: number; mp_payment_id: string; mp_preference_id: string;
+  total: number; mp_payment_id: string; mp_preference_id: string; audio_ruta?: string | null;
 };
 type SimularLimpieza = {
-  filas: FilaLimpieza[]; archivos: Set<string>; borrados: string[];
+  filas: FilaLimpieza[]; archivos: Set<string>; audios: Set<string>; borrados: string[]; errorBorrarAudio: boolean;
   llamadas: { ruta: string; body: Record<string, unknown> }[];
   logs: unknown[][]; validar: boolean; errorListar: boolean; errorBorrar: boolean;
   errorFinalizar: boolean; sinEfecto: boolean; nombreInvalido: boolean; loteInvalido: boolean;
@@ -35,7 +35,7 @@ async function simularLimpieza(prueba: (s: SimularLimpieza) => Promise<void>) {
   Object.entries(env).forEach(([k, v]) => Deno.env.set(k, v));
   const fetchOriginal = globalThis.fetch, errorOriginal = console.error;
   const s: SimularLimpieza = { filas: [nuevaFilaLimpieza(idVencido, true), nuevaFilaLimpieza(idVigente, false)],
-    archivos: new Set([idVencido + "/foto1.jpg", idVencido + "/foto2.jpg", idVigente + "/foto1.jpg"]), borrados: [], llamadas: [], logs: [],
+    archivos: new Set([idVencido + "/foto1.jpg", idVencido + "/foto2.jpg", idVigente + "/foto1.jpg"]), audios: new Set(), errorBorrarAudio:false, borrados: [], llamadas: [], logs: [],
     validar: true, errorListar: false, errorBorrar: false, errorFinalizar: false, sinEfecto: false,
     nombreInvalido: false, loteInvalido: false, finalizados: 0, falloClaim: false };
   console.error = (...args: unknown[]) => { s.logs.push(args); };
@@ -56,20 +56,21 @@ async function simularLimpieza(prueba: (s: SimularLimpieza) => Promise<void>) {
       if (rpc === "eros_finalizar_limpieza") {
         if (s.errorFinalizar) return json({ error: "CUERPO_PRIVADO" }, 503);
         const f = s.filas.find(f => f.id === body.p_pedido_id && f.token === body.p_token);
-        afirmarLimpieza(f && ![...s.archivos].some(path => path.startsWith(f.id + "/")));
-        f!.datos = {}; f!.para_quien = "Datos eliminados"; f!.limpiado_en = new Date().toISOString(); f!.token = null; s.finalizados++;
+        afirmarLimpieza(f && ![...s.archivos, ...s.audios].some(path => path.startsWith(f.id + "/")));
+        f!.audio_ruta = null; f!.datos = {}; f!.para_quien = "Datos eliminados"; f!.limpiado_en = new Date().toISOString(); f!.token = null; s.finalizados++;
         return json({ limpiado: true });
       }
       if (rpc === "eros_liberar_limpieza") { s.filas.forEach(f => { if (f.token === body.p_token) f.token = null; }); return json({ liberados: 0 }); }
       if (rpc === "eros_limpiezas_pendientes") return json({ pendientes: s.filas.some(puedeLimpiarse) });
     }
     if (url.pathname.startsWith("/storage/v1/")) afirmarLimpieza(init?.redirect === "error");
-    if (url.pathname === "/storage/v1/object/list/fotos") {
+    if (["/storage/v1/object/list/fotos", "/storage/v1/object/list/audios"].includes(url.pathname)) {
+      const almacen = url.pathname.endsWith("/audios") ? s.audios : s.archivos;
       if (s.errorListar) return json({ error: "CUERPO_PRIVADO" }, 500);
       afirmarLimpieza(body.offset === 0 && body.limit === 100);
       if (s.nombreInvalido) return json([{ id: "archivo", name: "../foto-de-otro.jpg" }]);
       const prefix = body.prefix + "/", entradas = new Map<string, Record<string, unknown>>();
-      for (const path of s.archivos) {
+      for (const path of almacen) {
         if (!path.startsWith(prefix)) continue;
         const resto = path.slice(prefix.length), slash = resto.indexOf("/");
         if (slash < 0) entradas.set("F:" + resto, { id: "archivo", name: resto, metadata: { size: 50 } });
@@ -77,13 +78,15 @@ async function simularLimpieza(prueba: (s: SimularLimpieza) => Promise<void>) {
       }
       return json([...entradas.values()].sort((a, b) => String(a.name).localeCompare(String(b.name))).slice(0, 100));
     }
-    if (url.pathname === "/storage/v1/object/fotos" && init?.method === "DELETE") {
+    if (["/storage/v1/object/fotos", "/storage/v1/object/audios"].includes(url.pathname) && init?.method === "DELETE") {
+      const esAudio = url.pathname.endsWith("/audios"), almacen = esAudio ? s.audios : s.archivos;
+      if (esAudio && s.errorBorrarAudio) return json({ error:"CUERPO_PRIVADO" },503);
       if (s.errorBorrar) return json({ error: "CUERPO_PRIVADO" }, 503);
       afirmarLimpieza(Array.isArray(body.prefixes) && body.prefixes.length <= 100);
       for (const path of body.prefixes) {
         afirmarLimpieza(path.startsWith(idVencido + "/"));
         afirmarLimpieza(s.filas.find(f => f.id === idVencido)?.estado === "vencido");
-        s.borrados.push(path); if (!s.sinEfecto) s.archivos.delete(path);
+        s.borrados.push(path); if (!s.sinEfecto) almacen.delete(path);
       }
       return json([]);
     }
@@ -177,4 +180,27 @@ Deno.test("limpieza: error del servidor y logs no incluyen secretos, IDs ni cont
   s.falloClaim = true; const r = await limpiarVencidos(peticionLimpieza()); igualLimpieza(r.status, 503);
   const salida = JSON.stringify({ respuesta: await r.json(), logs: s.logs });
   for (const valor of [secretoLocal, idVencido, "CUERPO_PRIVADO", "NOMBRE_PRIVADO", "TEXTO_PRIVADO", "clave-ficticia-local"]) afirmarLimpieza(!salida.includes(valor));
+}));
+
+Deno.test("limpieza: borra audio privado antes de redactar y vacía su ruta", () => simularLimpieza(async s => {
+  s.audios.add(idVencido + "/cancion.mp3"); s.audios.add(idVigente + "/cancion.mp3");
+  s.filas[0].audio_ruta = idVencido + "/cancion.mp3";
+  igualLimpieza((await limpiarVencidos(peticionLimpieza())).status,200);
+  afirmarLimpieza(!s.audios.has(idVencido + "/cancion.mp3"));
+  afirmarLimpieza(s.audios.has(idVigente + "/cancion.mp3"));
+  igualLimpieza(s.filas[0].audio_ruta,null); igualLimpieza(s.finalizados,1);
+  const borrado = s.llamadas.findIndex(c => c.ruta === "/storage/v1/object/audios");
+  const fin = s.llamadas.findIndex(c => c.ruta.endsWith("eros_finalizar_limpieza"));
+  afirmarLimpieza(borrado >= 0 && fin > borrado);
+}));
+Deno.test("limpieza: fallo de audio conserva datos y reintenta sin republicar", () => simularLimpieza(async s => {
+  s.audios.add(idVencido + "/cancion.mp3"); s.filas[0].audio_ruta = idVencido + "/cancion.mp3";
+  s.errorBorrarAudio = true;
+  igualLimpieza((await limpiarVencidos(peticionLimpieza())).status,207);
+  igualLimpieza(s.filas[0].estado,"vencido"); igualLimpieza(s.filas[0].limpiado_en,null);
+  igualLimpieza(s.filas[0].para_quien,"NOMBRE_PRIVADO"); igualLimpieza(s.finalizados,0);
+  afirmarLimpieza(s.audios.has(idVencido + "/cancion.mp3"));
+  s.errorBorrarAudio = false;
+  igualLimpieza((await limpiarVencidos(peticionLimpieza())).status,200);
+  igualLimpieza(s.filas[0].audio_ruta,null); igualLimpieza(s.finalizados,1);
 }));

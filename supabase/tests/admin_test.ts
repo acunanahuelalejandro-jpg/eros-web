@@ -12,18 +12,19 @@ const pedidoBase = { id, codigo: "TES234", estado: "nuevo", modelo: "carta-para-
   datos: { version: 2, para: "Nombre privado", carta: { titulo: "Texto privado" }, extras: { juego: "", sobre: true, contador: {} } },
   total: 5000, activar_el: null, fotos_cantidad: 0, mp_payment_id: null, mp_preference_id: null,
   pagado_en: null as string | null, publicado_en: null as string | null, vence_en: null as string | null,
-  limpiado_en: null as string | null, limpieza_intentada_en: null as string | null, pago_manual_en: null };
+  limpiado_en: null as string | null, limpieza_intentada_en: null as string | null, pago_manual_en: null, audio_ruta:null as string|null, audio_nombre:null as string|null, audio_bytes:null as number|null, audio_duracion:null as number|null, audio_consentimiento:false, audio_verificado_en:null as string|null, audio_sha256:null as string|null };
 const revision = (p: typeof pedidoBase) => ({ modelo: p.modelo, duracion: p.duracion, extras: p.extras, total: p.total, activar_el: p.activar_el,
   estado: p.estado, pagado_en: p.pagado_en, publicado_en: p.publicado_en, vence_en: p.vence_en });
-type Simulado = { pedido: typeof pedidoBase; authStatus: number; esAdmin: boolean; limite: boolean; previa: Record<string, unknown>; consultas: { path: string; body: Record<string, unknown> }[]; resultado: Record<string, unknown> };
+type Simulado = { pedido: typeof pedidoBase; authStatus: number; esAdmin: boolean; limite: boolean; audioEstado:number; previa: Record<string, unknown>; consultas: { path: string; body: Record<string, unknown> }[]; resultado: Record<string, unknown> };
 async function simular(probar: (s: Simulado) => Promise<void>) {
   const env = { SUPABASE_URL: "https://prueba.supabase.co", SUPABASE_SECRET_KEYS: '{"default":"servidor-ficticio"}', EROS_SITE_URL: "https://tienda.ejemplo.test/eros-web/", MP_MODO: "test", AVISOS_SECRETO: "" };
   const anterior = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)])), fetchAnterior = globalThis.fetch;
   Object.entries(env).forEach(([k,v]) => Deno.env.set(k,v));
-  const s: Simulado = { pedido: structuredClone(pedidoBase), authStatus: 200, esAdmin: true, limite: false, previa: { encontrada: false }, consultas: [], resultado: { ok: true, repetido: false, pedido: { id, codigo: "TES234", estado: "publicado" } } };
+  const s: Simulado = { pedido: structuredClone(pedidoBase), authStatus: 200, esAdmin: true, limite: false, audioEstado:404, previa: { encontrada: false }, consultas: [], resultado: { ok: true, repetido: false, pedido: { id, codigo: "TES234", estado: "publicado" } } };
   globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
     const u = new URL(String(input)), body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
     afirmar(u.origin === "https://prueba.supabase.co"); s.consultas.push({ path: u.pathname, body });
+    if (u.pathname === "/storage/v1/object/authenticated/audios/" + id + "/cancion.mp3") return Promise.resolve(new Response(null,{status:s.audioEstado}));
     let valor: unknown;
     if (u.pathname === "/auth/v1/user") {
       igual(new Headers(init?.headers).get("Authorization"), "Bearer sesion-ficticia-local");
@@ -105,4 +106,22 @@ Deno.test("panel: el borrado manual se marca en servidor antes de permitir tocar
 Deno.test("panel: limita acciones por admin antes de consultar o modificar un pedido", () => simular(async s => {
   s.limite = true; const r = await administrarPedido(req(s)); igual(r.status, 429);
   afirmar(!s.consultas.some(c => c.path === "/rest/v1/pedidos" || c.path.endsWith("eros_admin_accion")));
+}));
+
+Deno.test("panel: audio borrado bloquea pago manual, republicar y extender; anular sigue permitido", () => simular(async s => {
+  Object.assign(s.pedido,{audio_ruta:id+"/cancion.mp3",audio_nombre:"cancion.mp3",audio_bytes:1251,audio_duracion:.078,audio_consentimiento:true,audio_verificado_en:new Date().toISOString(),audio_sha256:"a".repeat(64)});
+  for (const accion of ["pago-manual","republicar","extender"]) {
+    const r = await administrarPedido(req(s,{accion,...(accion === "extender" ? {vence_en:new Date(Date.now()+86400000).toISOString()} : {})}));
+    igual(r.status,409); igual((await r.json()).error,"audio_ausente");
+  }
+  afirmar(!s.consultas.some(c=>c.path.endsWith("eros_admin_accion")));
+  igual((await administrarPedido(req(s,{accion:"anular"}))).status,200);
+  igual(s.consultas.filter(c=>c.path.endsWith("eros_admin_accion")).length,1);
+}));
+Deno.test("panel: no publica audio sin consentimiento o validación del servidor", () => simular(async s => {
+  Object.assign(s.pedido,{audio_ruta:id+"/cancion.mp3",audio_nombre:"cancion.mp3",audio_bytes:1251,audio_duracion:.078,audio_consentimiento:false});
+  igual((await administrarPedido(req(s))).status,409);
+  s.pedido.audio_consentimiento = true;
+  const r = await administrarPedido(req(s)); igual(r.status,409); igual((await r.json()).error,"audio_sin_verificar");
+  afirmar(!s.consultas.some(c=>c.path.startsWith("/storage/") || c.path.endsWith("eros_admin_accion")));
 }));

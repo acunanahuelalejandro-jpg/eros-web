@@ -1,4 +1,5 @@
 import { EROS_PRECIOS } from "../_compartido/precios.ts";
+import { verificarAudioPedido } from "../_compartido/audio.ts";
 import { buscarPedido, checkoutSeguro, credencialPedido, referenciaPrecio, revisionPedido, validarPrecio, type PedidoCobro } from "../_compartido/cobros.ts";
 import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, modoMercadoPago, responderError, responderJSON, responderPreflight, rpcCobro, urlSeguimiento } from "../_compartido/http.ts";
 import { apiMercadoPago, ErrorMercadoPago, mediosExcluidos, verificarVendedor } from "../_compartido/mercadopago.ts";
@@ -50,6 +51,7 @@ export async function crearPago(req: Request): Promise<Response> {
     const respuestaBase = { estado: pedido.estado, slug: pedido.slug, codigo: pedido.codigo, seguimiento_url: urlSeguimiento(pedido.slug) };
     if (pedido.estado === "publicado" || pedido.estado === "pagado") return responderJSON(respuestaBase, 200, headers);
     if (pedido.estado !== "nuevo") throw new ErrorCobro(410, "vencido", "El tiempo de este pedido ya terminó. Consultanos con tu código.");
+    await verificarAudioPedido(pedido, hasta);
     const calculo = validarPrecio(pedido);
     const referencia = await referenciaPrecio(pedido);
     const revision = revisionPedido(pedido);

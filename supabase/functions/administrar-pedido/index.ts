@@ -1,3 +1,4 @@
+import { verificarAudioPedido } from "../_compartido/audio.ts";
 import { jsonOrdenado, validarPrecio } from "../_compartido/cobros.ts";
 import { avisarPagoAdmin } from "../_compartido/avisos.ts";
 import { baseSupabaseServidor, cabecerasNavegador, consultarBD, ErrorCobro, fetchConTiempo, hashCobro, leerCuerpo, responderError, responderJSON, responderPreflight, rpcCobro, secretoServidor } from "../_compartido/http.ts";
@@ -83,7 +84,7 @@ export async function administrarPedido(req: Request): Promise<Response> {
       return respuesta;
     }
     if (vence && (Date.parse(vence) <= Date.now() || Date.parse(vence) > Date.now() + 366 * 86400000)) throw new ErrorCobro(400, "fecha", mensajesPanel.fecha);
-    const columnas = "id,codigo,slug,estado,modelo,duracion,extras,datos,total,activar_el,fotos_cantidad,mp_preference_id,mp_payment_id,pagado_en,publicado_en,vence_en,limpiado_en,limpieza_intentada_en,pago_manual_en";
+    const columnas = "id,codigo,slug,estado,modelo,duracion,extras,datos,total,activar_el,fotos_cantidad,mp_preference_id,mp_payment_id,pagado_en,publicado_en,vence_en,limpiado_en,limpieza_intentada_en,pago_manual_en,audio_ruta,audio_nombre,audio_bytes,audio_duracion,audio_consentimiento,audio_verificado_en,audio_sha256";
     const filas = await consultarBD("pedidos?select=" + columnas + "&id=eq." + encodeURIComponent(id) + "&codigo=eq." + encodeURIComponent(body.codigo) + "&limit=1", "GET", undefined, hasta) as PedidoPanel[];
     const pedido = Array.isArray(filas) ? filas[0] : null;
     if (!pedido) throw new ErrorCobro(404, "pedido", mensajesPanel.pedido);
@@ -92,6 +93,7 @@ export async function administrarPedido(req: Request): Promise<Response> {
     if (accion !== "anular") {
       if (pedido.limpiado_en || pedido.limpieza_intentada_en || !pedido.datos || !Object.keys(pedido.datos).length) throw new ErrorCobro(409, "limpieza", mensajesPanel.limpieza);
       totalEsperado = validarPrecio(pedido).total;
+      await verificarAudioPedido(pedido, hasta);
     }
     // El snapshot completo viaja solo entre el servidor y SQL; nunca se incluye
     // en la respuesta ni en la auditoría. SQL lo vuelve a comparar bajo bloqueo.

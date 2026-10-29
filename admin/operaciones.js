@@ -14,10 +14,11 @@
   function canonical(order) { try { return window.ErosPrecios.calcular(order).total === order.total; } catch (_) { return false; } }
   function cleaned(order) { return !!(order.limpiado_en || order.limpieza_intentada_en || order.limpieza_token || order.limpieza_en_curso); }
   function content(order) { return !!order.datos && typeof order.datos === 'object' && !Array.isArray(order.datos) && Object.keys(order.datos).length > 0; }
+  function audioValid(order) { return !order.audio_ruta ? !order.audio_bytes : order.audio_ruta === order.id + '/cancion.mp3' && order.audio_consentimiento === true && !!order.audio_verificado_en && /^[a-f0-9]{64}$/.test(order.audio_sha256 || '') && !order.audio_ausente; }
   function available(order,action) {
     if (!order || !getUserId()) return false;
     if (action === 'anular') return ['nuevo','pagado','publicado'].includes(order.estado);
-    if (!content(order) || cleaned(order) || !canonical(order)) return false;
+    if (!content(order) || cleaned(order) || !canonical(order) || !audioValid(order)) return false;
     if (action === 'pago-manual') return order.estado === 'nuevo' && !order.pagado_en;
     if (action === 'republicar') return ['pagado','publicado','vencido'].includes(order.estado) && !!order.pagado_en;
     return action === 'extender' && order.estado === 'publicado' && Number.isFinite(+new Date(order.vence_en)) && +new Date(order.vence_en) > Date.now();
@@ -38,6 +39,7 @@
   function controls(order) {
     for (const [id,action] of [['action-manual','pago-manual'],['action-republish','republicar'],['action-extend','extender'],['action-cancel','anular']]) $(id).disabled = busy || !available(order,action);
     const note = !content(order) || cleaned(order) ? 'La limpieza ya empezó o no queda contenido: no se puede publicar, republicar ni extender este pedido.'
+      : !audioValid(order) ? 'El audio falta o todavía no fue validado. No se puede publicar, republicar ni extender; sí podés anular.'
       : !canonical(order) ? 'El total no coincide con los precios del modelo y los extras. Revisá el pedido antes de publicarlo.'
       : 'Cada acción pide confirmar el código. Anular el acceso no reintegra el pago de Mercado Pago.';
     text('operations-note',note);
@@ -68,7 +70,7 @@
     if (action === 'pago-manual') return 'Confirmás que recibiste ' + window.ErosPrecios.formato(order.total) + ' fuera de Mercado Pago. Se publica el pedido por ' + days + (days === 1 ? ' día' : ' días') + ', respetando su fecha de activación. El servidor confirma las fechas.';
     if (action === 'republicar') return 'Publica ahora y elimina cualquier fecha de activación futura. Reinicia el plazo de este pedido por ' + days + (days === 1 ? ' día' : ' días') + '. No se realiza un cobro nuevo.';
     if (action === 'extender') return 'Vencimiento actual: ' + date(order.vence_en) + '. Elegí hasta cuándo seguirá disponible. No se realiza un cobro nuevo.';
-    return 'Corta el acceso al regalo y deja el pedido vencido. Esta acción no devuelve ni cancela el pago en Mercado Pago. La limpieza automática puede borrar sus fotos y textos después.';
+    return 'Corta el acceso al regalo y deja el pedido vencido. Esta acción no devuelve ni cancela el pago en Mercado Pago. La limpieza automática puede borrar sus fotos, audio y textos después.';
   }
   function open(action) {
     const order = getPedido(); if (busy || !available(order,action)) return;

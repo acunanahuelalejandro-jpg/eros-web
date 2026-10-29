@@ -117,7 +117,7 @@
     @keyframes petal-fall{0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--angle))}100%{opacity:0;transform:translate(calc(-50% + var(--fall-x)),calc(-50% + 120px)) rotate(calc(var(--angle) + 130deg))}}
     @media(min-width:600px){.content-screen{padding:40px 22px 26px}.album-card{padding:clamp(36px,6vw,56px)}.album-stage{height:min(70vw,68svh,590px)}.gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.album-controls{right:18px;top:18px}}
     @media(min-width:1000px){.content-screen{padding-top:50px}.album-card{width:min(100%,820px)}.album-stage-wrap{margin-top:28px}.album-stage{width:min(100%,470px);height:min(560px,66svh)}}
-    @media(max-width:400px){.content-screen{padding:76px 9px 18px}.album-card{padding:20px 14px;border-radius:23px}.album-stage{height:min(118vw,58svh);min-height:270px}.polaroid{padding:8px 8px 31px}.polaroid::after,.photo-placeholder{inset:8px 8px 31px}.album-controls{right:8px}.music-toggle,.auto-toggle{min-height:42px;padding:7px 10px;font-size:.8rem}.album-nav{gap:7px}.nav-button,.gallery-button{min-height:47px;padding:9px 12px}}
+    @media(max-width:400px){.content-screen{padding:76px 9px 18px}.album-card{padding:20px 14px;border-radius:23px}.album-stage{height:min(118vw,58svh);min-height:270px}.polaroid{padding:8px 8px 31px}.polaroid::after,.photo-placeholder{inset:8px 8px 31px}.album-controls{right:8px}.music-toggle,.auto-toggle{min-height:44px;padding:7px 10px;font-size:.8rem}.album-nav{gap:7px}.nav-button,.gallery-button{min-height:47px;padding:9px 12px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button,.content-screen,.reveal,.polaroid,.album-closing,.paint-progress-fill{transition-duration:.01ms!important}.ambient-heart{animation-duration:60s!important;opacity:.18}.galaxy-stars{animation:none!important;opacity:.25}.closing-heart{animation:none}.stack-card.is-leaving{transition-duration:.01ms!important}}
     .eros-preview-mode .preview-example{color:var(--muted);font-style:italic}
     .eros-preview-mode .photo-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1.5px dashed rgba(var(--wine-rgb),.5);color:var(--muted);background:linear-gradient(145deg,var(--pink-pale),var(--blue));font-style:italic}
@@ -160,7 +160,7 @@
           <span aria-hidden="true">♫</span><span id="musicText">Pausar música</span>
         </button>
       </div>
-      <audio id="backgroundMusic" preload="none" loop></audio>
+      <audio id="backgroundMusic" preload="metadata" loop></audio>
 
       <article class="album-card">
         <header class="album-header">
@@ -218,8 +218,8 @@
   <script src="../../compartido/contador.js"></script>
   <!-- Juegos, efectos y música reutilizan el núcleo común ya existente. -->
   <script src="../../plantillas/juegos-interactivos/nucleo/efectos.js"></script>
-  <script src="../../plantillas/juegos-interactivos/nucleo/musica.js"></script>
   <script src="../../compartido/apertura.js"></script>
+  <script src="../../compartido/audio.js"></script>
   <script src="album.js"></script>
   <script src="../../compartido/preview.js"></script>
 </body>

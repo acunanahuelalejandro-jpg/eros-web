@@ -10,6 +10,7 @@
   const slug = query.get('c') || '';
   const blobs = new Set();
   const permitidos = new Set();
+  const audiosPermitidos = new Set();
   const controllers = new Set();
   let run = 0, vencimiento = 0, timer = 0, modeloActual = '', rutaCorta = false, iniciado = false;
   document.documentElement.classList.add('eros-pagina-bloqueada');
@@ -38,7 +39,7 @@
     clearTimeout(timer); timer = 0;
     controllers.forEach(controller => controller.abort()); controllers.clear();
     window.ErosPlantilla?.destruir();
-    blobs.forEach(url => URL.revokeObjectURL(url)); blobs.clear(); permitidos.clear();
+    blobs.forEach(url => URL.revokeObjectURL(url)); blobs.clear(); permitidos.clear(); audiosPermitidos.clear();
   }
   function noDisponible(status) {
     if (status === 410) estado('Esta página ya venció', 'El tiempo acordado para este regalo terminó.');
@@ -76,14 +77,14 @@
         url.protocol === 'https:' && !url.username && !url.password && !!url.searchParams.get('token') && url.href.length < 8192 ? url.href : '';
     } catch (_) { return ''; }
   }
-  function musicaSegura(value, modelo) {
-    if (typeof value !== 'string' || !value) return '';
+  function audioFirmado(value) {
+    if (typeof value !== 'string' || value.length > 8192) return '';
     try {
-      const url = new URL(value,base), carpeta = new URL('musica/',base);
-      const carpetaModelo = new URL('plantillas/' + modelo + '/',base);
-      return url.origin === base.origin && url.protocol === base.protocol && !url.username && !url.password && !url.search && !url.hash &&
-        ((url.pathname.startsWith(carpeta.pathname) && /\.(mp3|m4a|ogg|wav)$/i.test(url.pathname)) ||
-          (url.pathname.startsWith(carpetaModelo.pathname) && /^musica\.(mp3|m4a|ogg|wav)$/i.test(url.pathname.slice(carpetaModelo.pathname.length)))) ? url.href : '';
+      const cfg = config(), url = new URL(value);
+      return url.origin === new URL(cfg.url).origin && url.protocol === 'https:' &&
+        !url.username && !url.password && !url.hash && !!url.searchParams.get('token') &&
+        /^\/storage\/v1\/object\/sign\/audios\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/cancion\.mp3$/.test(url.pathname)
+        ? url.href : '';
     } catch (_) { return ''; }
   }
   async function fotoLocal(url, hasta) {
@@ -99,10 +100,29 @@
     } catch (_) { return ''; }
     finally { clearTimeout(timeout); controllers.delete(controller); }
   }
+  async function audioLocal(url, hasta) {
+    if (!url || Date.now() >= hasta) return '';
+    const controller = new AbortController(); controllers.add(controller);
+    const timeout = setTimeout(() => controller.abort(), Math.max(1,hasta-Date.now()));
+    try {
+      const response = await fetch(url,{signal:controller.signal,credentials:'omit',cache:'no-store'});
+      const type = (response.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+      if (!response.ok || type !== 'audio/mpeg' || Number(response.headers.get('Content-Length')) > 10485760) return '';
+      const blob = await response.blob();
+      if (!blob.size || blob.size > 10485760) return '';
+      const local = URL.createObjectURL(blob); blobs.add(local); audiosPermitidos.add(local); return local;
+    } catch (_) { return ''; }
+    finally { clearTimeout(timeout); controllers.delete(controller); }
+  }
   async function prepararDatos(payload, token) {
     const photos = [...new Set(payload.fotos.slice(0,14).map(urlFirmada).filter(Boolean))];
     const conversion = new Map(); let index = 0, terminadas = 0;
     const hasta = Date.now()+15000;
+    const audioURL = payload.audio === payload.datos.audio?.src ? audioFirmado(payload.audio) : '';
+    const audioPromise = audioLocal(audioURL,hasta).then(local => {
+      if (token !== run && local) { URL.revokeObjectURL(local); blobs.delete(local); audiosPermitidos.delete(local); return ''; }
+      return local;
+    });
     async function siguiente() {
       while (index < photos.length) {
         const photo = photos[index++];
@@ -115,7 +135,7 @@
         if (description) description.textContent = 'Preparando tus fotos: ' + terminadas + ' de ' + photos.length + '…';
       }
     }
-    await Promise.all(Array.from({length:Math.min(4,photos.length)},siguiente));
+    const [audio] = await Promise.all([audioPromise, Promise.all(Array.from({length:Math.min(4,photos.length)},siguiente))]);
     const datos = structuredClone(payload.datos);
     function recorrer(value) {
       if (!value || typeof value !== 'object') return;
@@ -125,8 +145,9 @@
       }
     }
     recorrer(datos);
-    datos.musica = musicaSegura(datos.musica,payload.modelo);
-    if (datos.musica) permitidos.add(datos.musica);
+    // La firma del audio tiene su propio permiso: nunca autoriza una foto ni una URL externa.
+    datos.audio = audio ? {src:audio} : null;
+    delete datos.musica;
     return datos;
   }
   function vigilarVencimiento() {
@@ -168,5 +189,5 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) vigilarVencimiento(); });
   window.addEventListener('pagehide', () => { run++; liberar(); document.documentElement.classList.add('eros-pagina-bloqueada'); });
   window.addEventListener('pageshow',event => { if (event.persisted && iniciado) { if (rutaCorta) redirigir(); else iniciar(modeloActual); } });
-  window.ErosPagina = Object.freeze({ activa, iniciar, redirigir, esRecursoPermitido:value => permitidos.has(value) });
+  window.ErosPagina = Object.freeze({ activa, iniciar, redirigir, esRecursoPermitido:value => permitidos.has(value), esAudioPermitido:value => audiosPermitidos.has(value) });
 })();

@@ -31,7 +31,6 @@
       const subtitle = rawSubtitle || (preview ? "Tus recuerdos, uno por uno…" : "");
       const startTitle = cleanText(inicio.titulo) || (para ? "Una sorpresa para " + para : "Un regalo para vos");
       const startLabel = cleanText(inicio.boton) || "Tocá para empezar";
-      const song = safeFile(data.musica);
       const rawGame = cleanText(extras.juego);
       const gameName = ["pintar-corazon", "margarita", "laberinto"].includes(rawGame) ? rawGame : "";
       const query = new URLSearchParams(location.search);
@@ -84,6 +83,8 @@
       const effectsCanvas = document.getElementById("effectsCanvas");
       const audio = document.getElementById("backgroundMusic");
       const musicToggle = document.getElementById("musicToggle");
+      const music = window.ErosAudio?.montar(audio, musicToggle, data.audio?.src);
+      music?.escucharApertura(envelopeScreen);
       const autoControl = document.getElementById("autoControl");
       const autoToggle = document.getElementById("autoToggle");
       let index = 0;
@@ -122,13 +123,6 @@
       const counter = window.ErosContador?.montar(counterRoot, extras.contador);
       const aperture = window.ErosApertura.elegirApertura(data);
       let envelope = aperture === 'sobre' && window.ErosSobre ? window.ErosSobre.montar(envelopeScreen, openContent, { demo:preview }) : null;
-      musicToggle.hidden = !song;
-      if (song) audio.src = song;
-      const updateMusic = () => { const label = audio.paused ? 'Reproducir música' : 'Pausar música'; document.getElementById('musicText').textContent = label; musicToggle.setAttribute('aria-label',label); musicToggle.setAttribute('aria-pressed', String(!audio.paused)); };
-      const playMusic = () => { if (song) audio.play().catch(() => { updateMusic(); }); };
-      on(musicToggle, 'click', () => { if (audio.paused) playMusic(); else audio.pause(); });
-      on(audio, 'play', updateMusic); on(audio, 'pause', updateMusic); on(audio, 'error', () => { musicToggle.hidden = true; });
-      updateMusic();
       if (startSeconds) autoControl.hidden = false;
 
       function makeImageButton(record, photoIndex, stackClass) {
@@ -399,6 +393,7 @@
         envelopeScreen.hidden = true;
         contentScreen.hidden = false;
         contentScreen.classList.add("is-opening");
+        if (!preview) music?.reproducir();
         if (window.NucleoEfectos && typeof window.NucleoEfectos.iniciarLluvia === "function") {
           window.NucleoEfectos.iniciarLluvia(ambientLayer, reducedMotion.matches);
         }
@@ -437,6 +432,7 @@
         document.body.classList.remove("playing");
       }
       function finishGame() {
+        if (!preview) music?.reproducir();
         cleanupGame();
         if (window.NucleoEfectos && typeof window.NucleoEfectos.explotar === "function") {
           const color = getComputedStyle(document.documentElement).getPropertyValue("--wine").trim() || "#8b3d52";
@@ -485,7 +481,7 @@
         if (startHandled) return;
         startHandled = true;
         intro.hidden = true;
-        if (song) playMusic();
+        music?.reproducir();
         if (aperture === "juego" && gameName) loadGame();
         else showEnvelopeOrContent();
       }
@@ -514,12 +510,12 @@
             openContent();
           }
           if (options.irA) frame(() => {
-            const node = {contador:counterRoot,cierre:closingBlock,fotos:albumView,carta:albumTitle}[options.irA];
+            const node = {contador:counterRoot,cierre:closingBlock,fotos:albumView,carta:albumTitle,musica:musicToggle}[options.irA];
             // El scroll queda confinado al documento de la plantilla y no desplaza el armador.
             if (node && !node.hidden) window.scrollTo({top:Math.max(0,window.scrollY+node.getBoundingClientRect().top),behavior:'instant'});
           });
         },
-        destroy() { active = false; controller.abort(); counter?.detener(); envelope?.destruir(); cleanupGame(); stopAutomatic(); revealObserver?.disconnect(); effect?.destruir(); timers.forEach(clearTimeout); frames.forEach(cancelAnimationFrame); audio.pause(); audio.removeAttribute('src'); }
+        destroy() { active = false; controller.abort(); counter?.detener(); music?.destruir(); envelope?.destruir(); cleanupGame(); stopAutomatic(); revealObserver?.disconnect(); effect?.destruir(); timers.forEach(clearTimeout); frames.forEach(cancelAnimationFrame); audio.pause(); audio.removeAttribute('src'); }
       };
   }
   function render(data = {}, options = {}) {

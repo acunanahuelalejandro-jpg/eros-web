@@ -2,6 +2,7 @@ import { buscarPedido, referenciaPrecio, revisionPedido, validarPrecio } from ".
 import { cabecerasNavegador, ErrorCobro, leerCuerpo, limitarCobro, modoMercadoPago, responderError, responderJSON, responderPreflight, rpcCobro } from "../_compartido/http.ts";
 import { apiMercadoPago, firmaMercadoPagoValida, tipoAcreditacionInmediata, verificarVendedor } from "../_compartido/mercadopago.ts";
 import { avisarPagoAdmin } from "../_compartido/avisos.ts";
+import { verificarAudioPedido } from "../_compartido/audio.ts";
 
 export async function webhookMercadoPago(req: Request): Promise<Response> {
   let headers: Headers | undefined;
@@ -53,6 +54,10 @@ export async function webhookMercadoPago(req: Request): Promise<Response> {
     }
     const estados = ["approved", "pending", "in_process", "authorized", "in_mediation", "rejected", "cancelled", "refunded", "charged_back"];
     if (!estados.includes(String(pago.status))) return responderJSON({ recibido: true, accion: "estado_ignorado" }, 200, headers);
+    if (pago.status === "approved") {
+      try { await verificarAudioPedido(pedido, Date.now()+15000); }
+      catch { throw new ErrorCobro(503,"audio_no_disponible","El audio requiere una revisión antes de publicar."); }
+    }
     const actualizado = Date.parse(String(pago.date_last_updated || pago.date_created));
     const resultado = await rpcCobro("eros_registrar_pago", {
       p_pedido_id: pedido.id, p_payment_id: paymentId, p_estado: pago.status,

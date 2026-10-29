@@ -1,8 +1,8 @@
 import { EROS_PRECIOS, resolverModelo } from "./precios.ts";
-import { sitioEros } from "./http.ts";
+import type { AudioPedido } from "./audio.ts";
 
 type ObjetoPagina = Record<string, unknown>;
-export type PedidoPagina = {
+export type PedidoPagina = AudioPedido & {
   id: string; estado: string; modelo: string; datos: unknown; extras: unknown;
   tema: string; para_quien: string; de_parte: string | null;
   publicado_en: string | null; vence_en: string | null; activar_el: string | null;
@@ -39,16 +39,8 @@ export function nombreFotoPagina(valor: unknown): string {
   return match?.[1] || "";
 }
 
-export function musicaPagina(valor: unknown, modelo: string): string {
-  const ruta = textoPagina(valor, 300);
-  if (/^musica\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:mp3|ogg|wav|m4a)$/i.test(ruta)) return new URL(ruta, sitioEros()).href;
-  if (/^musica\.(?:mp3|ogg|wav|m4a)$/i.test(ruta)) return new URL("plantillas/" + modelo + "/" + ruta, sitioEros()).href;
-  // Un enlace de Spotify/YouTube no es un archivo de audio. Se conserva el flujo actual.
-  return "";
-}
-
 // Proyecta solo los campos públicos del regalo. No serializa el registro del pedido.
-export function datosPublicosPagina(pedido: PedidoPagina, resolverFoto: (nombre: string) => string): ObjetoPagina {
+export function datosPublicosPagina(pedido: PedidoPagina, resolverFoto: (nombre: string) => string, audioURL = ""): ObjetoPagina {
   const raw = objetoPagina(pedido.datos);
   const extra = objetoPagina(pedido.extras);
   const juegoRaw = textoPagina(extra.juego, 40);
@@ -90,7 +82,7 @@ export function datosPublicosPagina(pedido: PedidoPagina, resolverFoto: (nombre:
     version: 2, para: textoPagina(pedido.para_quien, 120), de: textoPagina(pedido.de_parte, 120),
     tema: temas.includes(pedido.tema) ? pedido.tema : "eros", extras,
     inicio: { titulo: textoPagina(inicio.titulo, 200), boton: textoPagina(inicio.boton, 80) || "Tocá para empezar" },
-    firma: textoPagina(raw.firma, 200), musica: musicaPagina(raw.musica, modelo),
+    firma: textoPagina(raw.firma, 200), audio: audioURL ? {src:audioURL} : null,
     colorPrincipal: typeof raw.colorPrincipal === "string" && /^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(raw.colorPrincipal) ? raw.colorPrincipal : "",
   };
   if (modelo === "carta-para-vos") {

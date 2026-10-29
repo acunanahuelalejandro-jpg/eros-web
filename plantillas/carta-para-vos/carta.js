@@ -35,7 +35,6 @@
       const letterTitle = rawLetterTitle || (isPreview ? (para ? "Para " + para : "Para Nombre") : (para ? "Una carta para " + para : "Una carta para vos"));
       const rawSignature = asText(raw.firma);
       const signature = rawSignature || (isPreview ? "Tu firma" : "");
-      const musicPath = safeRelativeFile(raw.musica);
       const requestedColor = asText(raw.colorPrincipal);
       const customColor = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(requestedColor) ? requestedColor : "";
       const textBlocks = Array.isArray(carta.bloques) ? carta.bloques : [];
@@ -55,7 +54,8 @@
       const siteFooter = document.getElementById("siteFooter");
       const audio = document.getElementById("backgroundMusic");
       const musicToggle = document.getElementById("musicToggle");
-      const musicText = document.getElementById("musicText");
+      const music = window.ErosAudio?.montar(audio, musicToggle, raw.audio?.src);
+      music?.escucharApertura(envelopeScreen);
       const ambientHearts = document.getElementById("ambientHearts");
       const tapHeartLayer = document.getElementById("tapHeartLayer");
       const confettiLayer = document.getElementById("confettiLayer");
@@ -63,7 +63,6 @@
       const lightboxImage = document.getElementById("lightboxImage");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       const svgNamespace = "http://www.w3.org/2000/svg";
-      let musicUsable = Boolean(musicPath);
       let confettiTimer = 0, openFrame = 0, observer = null, game = null, gameRoot = null, gameRun = 0;
       let active = true;
       let sharedEnvelope = null;
@@ -274,38 +273,6 @@
         confettiTimer = window.setTimeout(() => confettiLayer.replaceChildren(), 2600);
       }
 
-      function updateMusicButton() {
-        const paused = audio.paused;
-        musicText.textContent = paused ? "Activar música" : "Pausar música";
-        musicToggle.setAttribute("aria-label", paused ? "Activar música" : "Pausar música");
-        musicToggle.setAttribute("aria-pressed", String(!paused));
-      }
-
-      function hideMusic() {
-        musicUsable = false;
-        audio.pause();
-        musicToggle.hidden = true;
-      }
-
-      function playMusic() {
-        if (!musicUsable) return;
-        try {
-          const promise = audio.play();
-          if (promise && typeof promise.catch === "function") {
-            promise.catch((error) => {
-              if (error && error.name === "NotAllowedError") {
-                musicToggle.hidden = false;
-                updateMusicButton();
-                return;
-              }
-              hideMusic();
-            });
-          }
-        } catch (error) {
-          hideMusic();
-        }
-      }
-
       function openPhoto(image) {
         lightboxImage.src = image.currentSrc || image.src;
         lightboxImage.alt = image.alt;
@@ -334,6 +301,7 @@
         envelopeScreen.hidden = true;
         letterScreen.hidden = false;
         letterScreen.classList.add("is-opening");
+        if (!isPreview) music?.reproducir();
         addReveals();
         ambientHearts.replaceChildren();
         addAmbientHearts();
@@ -349,11 +317,7 @@
 
       function startExperience() {
         introScreen.hidden = true;
-        if (musicUsable) {
-          audio.src = musicPath;
-          musicToggle.hidden = false;
-          playMusic();
-        }
+        music?.reproducir();
         runOpening();
       }
 
@@ -373,7 +337,7 @@
         openFrame = requestAnimationFrame(() => { if (active) window.scrollTo({ top: scroll, behavior: 'instant' }); });
       }
       function jump(section) {
-        const selector = { contador: '#togetherCounter', carta: '#letterCard', fotos: '.photo-card', cierre: '#closingBlock' }[section];
+        const selector = { contador: '#togetherCounter', carta: '#letterCard', fotos: '.photo-card', musica: '#musicToggle', cierre: '#closingBlock' }[section];
         if (!selector) return;
         openFrame = requestAnimationFrame(() => {
           if (!active) return;
@@ -445,8 +409,7 @@
           else if (first) showFinal(savedScroll);
           if (options.irA) { if (letterScreen.hidden) showFinal(savedScroll); jump(options.irA); }
         },
-        startExperience, openPhoto, closePhoto, spawnTapHeart, hideMusic, updateMusicButton,
-        toggleMusic() { if (!musicUsable) return; if (audio.paused) playMusic(); else audio.pause(); updateMusicButton(); },
+        startExperience, openPhoto, closePhoto, spawnTapHeart,
         destroy() {
           active = false;
           stopGame();
@@ -454,6 +417,7 @@
           cancelAnimationFrame(openFrame);
           observer?.disconnect();
           counter?.detener();
+          music?.destruir();
           sharedEnvelope?.destruir();
           closePhoto();
           audio.pause(); audio.removeAttribute('src'); musicToggle.hidden = true;
@@ -478,10 +442,6 @@
   }
   function bind(id, event, handler) { document.getElementById(id).addEventListener(event, handler); }
   bind('startButton', 'click', () => current?.startExperience());
-  bind('musicToggle', 'click', () => current?.toggleMusic());
-  bind('backgroundMusic', 'play', () => current?.updateMusicButton());
-  bind('backgroundMusic', 'pause', () => current?.updateMusicButton());
-  bind('backgroundMusic', 'error', () => current?.hideMusic());
   bind('closePhoto', 'click', () => current?.closePhoto());
   bind('lightboxImage', 'click', () => current?.closePhoto());
   bind('photoDialog', 'click', (event) => { if (event.target.id === 'photoDialog') current?.closePhoto(); });

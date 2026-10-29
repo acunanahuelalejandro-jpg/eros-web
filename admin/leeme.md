@@ -2,32 +2,42 @@
 
 ## Entrar
 
-1. Subí `admin/`, `compartido/precios.js`, la etiqueta nueva de `index.html`, `armador/pedido.js`, los archivos actualizados de `plantillas/album-recuerdos/` y `robots.txt`. Conservá el resto del sitio.
-2. Abrí `https://acunanahuelalejandro-jpgi.github.io/eros-web/admin/`.
-3. Entrá con tu email y contraseña de Supabase. La cuenta debe tener `app_metadata.eros_admin = true`; los pasos para asignarlo están en `supabase/PASOS.md`. Si cambiaste ese permiso, salí y volvé a entrar. No hay registro desde el panel.
-4. La configuración se carga desde `../armador/config.js`: solo URL y clave pública. La sesión se guarda en el almacenamiento de esta pestaña, con una clave separada del armador. Usá **Salir** al terminar.
+1. Abrí la carpeta `admin/` de tu sitio publicado, por ejemplo `https://acunanahuelalejandro-jpg.github.io/eros-web/admin/`.
+2. Entrá con tu email y contraseña de Supabase. La cuenta debe tener `app_metadata.eros_admin = true`; los pasos están en `supabase/NUEVO-PROYECTO.md`. Si cambiaste ese permiso, salí y volvé a entrar. No hay registro desde el panel.
+3. La configuración se carga desde `../armador/config.js`: solo URL y clave pública. La sesión se guarda en el almacenamiento de esta pestaña, con una clave separada del armador. Usá **Salir** al terminar.
 
-Para usarlo localmente, serví la carpeta `erosweb/` con un servidor estático. Por ejemplo: `python3 -m http.server 8000`, y abrí `http://localhost:8000/admin/`. El panel descarga archivos de los modelos para armar el ZIP; requiere HTTP, no doble clic. Los paquetes exportados sí funcionan con doble clic.
+Para usarlo localmente, serví la carpeta `erosweb/` con un servidor estático. Por ejemplo: `python3 -m http.server 8000`, y abrí `http://localhost:8000/admin/`. El panel requiere HTTP. Las copias privadas exportadas se pueden abrir con doble clic después de descomprimirlas.
 
-## Preparar y publicar
+## Revisar un pedido y entregar el regalo
 
-- Abrí un pedido por su código. Revisá el contenido, las fotos y la verificación de total. El panel y el armador importan la misma tabla en `compartido/precios.js`.
-- Podés cambiar estado en la lista y guardar notas o fecha de activación desde el detalle. Cambiar el estado **no publica archivos**.
-- Las miniaturas usan enlaces firmados de 10 minutos. La vista previa descarga fotos privadas a URLs locales temporales; no las hace públicas ni las sube a otro lugar.
-- **Descargar paquete** genera `<codigo>.zip`. Descomprimí todo y abrí `p/<codigo>/index.html` para probarlo. El ZIP incluye `compartido/` y los módulos necesarios para esa prueba; con juego no incluye `sobre.js`.
-- Para publicar, copiá solo `p/<codigo>/` a la carpeta `p/` de tu sitio y subila a GitHub. Conservá los archivos compartidos actualizados. Las fotos del paquete son JPEG y van en `fotos/1.jpg`, `fotos/2.jpg`, etc.; las fotos opcionales del laberinto conservan nombres descriptivos.
-- Si hay un archivo de música elegido en `datos.musica`, debe existir en el sitio para incluirlo en el ZIP. Un link de Spotify/YouTube se muestra en el detalle, pero no se convierte en audio ni se descarga.
-- Comprobá el link final desde otro dispositivo antes de copiar el mensaje de entrega. Una vez publicado, guardá la fecha de activación y marcá el pedido como **Publicado**.
+- Abrí un pedido por su código. Revisá el contenido, las fotos y la verificación de total. El panel y el armador importan la tabla de `compartido/precios.js`; el servidor también recalcula el importe antes de cobrar o publicar.
+- Las miniaturas usan enlaces firmados de diez minutos. La vista previa descarga las fotos y el audio a URLs locales temporales; no los hace públicos ni los sube a otro lugar.
+- Si el pedido tiene MP3, **Audio del pedido** muestra su nombre, peso, estado de validación y un control para escucharlo con tu sesión. Si el enlace venció o el archivo no carga, tocá **Actualizar**. Los pedidos antiguos con enlaces o canciones del sistema anterior quedan sin música.
+- Podés guardar notas y definir una fecha de activación antes de confirmar el pago. Para registrar un cobro recibido por fuera de Mercado Pago, usá **Marcar pago manual** y confirmá el código solo después de verificar que lo recibiste.
+- **Republicar**, **Extender vigencia** y **Anular acceso** pasan por el servidor y piden confirmación. Publicar o ampliar un pedido se bloquea si el contenido entró en limpieza, el total no coincide o falta el MP3 que el pedido declaró.
+- Entregá el enlace de **Link para entregar**. Aparece cuando el pedido está publicado y vigente. **Copiar mensaje** incluye el vencimiento; **Mandar por WhatsApp** usa el número del cliente si lo cargó. La entrega usa `p/?c=<slug>` y acceso controlado por el servidor.
+
+## Copia privada del paquete
+
+**Descargar paquete** genera `<codigo>.zip` para revisar sin conexión. Descomprimí todo y abrí `p/<codigo>/index.html`. Incluye los módulos compartidos necesarios, las fotos y, si existe, `audio/cancion.mp3`. Con juego, el juego reemplaza al sobre.
+
+No subas ese ZIP ni su contenido a GitHub ni a un sitio público. Contiene archivos privados y la copia descargada no vence ni se borra automáticamente de tu dispositivo. La publicación normal usa el enlace del panel; no requiere subir una carpeta con las fotos y el MP3 del pedido al repositorio.
 
 ## Vencimiento y borrado
 
-El plazo empieza a las 00:00 de la fecha de activación en Argentina. Un día son 1 día calendario; una semana son 7 días; un mes llega al mismo día del mes siguiente (o al último día si no existe). Sin fecha de activación no se puede calcular el vencimiento.
+La vigencia confirmada está en **Publicación** y **Vencimiento**, en hora de Argentina. Las duraciones del servidor son de 1, 7 o 30 días según el plan. Si hay una activación futura, el regalo no se abre antes de esa fecha. Revisá siempre las fechas que devuelve el servidor.
 
-La lista de vencidos avisa pero no elimina ni retira nada sola. **Marcar vencido** cambia el estado del pedido. Para dar de baja una página ya publicada, eliminá su carpeta `p/<codigo>/` del repositorio y esperá la actualización de GitHub Pages.
+Al vencer, el regalo deja de entregar contenido. El proceso de limpieza borra los archivos mediante la API de Storage y después vacía los datos personales. Si falla parte del borrado, conserva la marca de limpieza para reintentar y bloquea la republicación.
 
-**Borrar fotos del pedido** pide escribir el código y una segunda confirmación. Borra todos los archivos del UUID en el bucket y vacía nombres, contenido, música, WhatsApp, notas y fechas personales del contador. Conserva código, modelo, importe y datos de operación sin contenido personal. No elimina publicaciones ni copias ZIP que ya hayas descargado.
+**Borrar fotos y audio del pedido** pide escribir el código y una segunda confirmación. Primero anula el acceso y marca la limpieza; después elimina los archivos del UUID en ambos buckets privados y vacía los datos personales, incluidos los metadatos del audio. Conserva el código, modelo, importe y datos de operación necesarios sin contenido personal. Si el proceso se interrumpe, volvé a abrir el pedido y reintentá el borrado.
 
-`robots.txt` y `noindex` desalientan indexación; la protección de pedidos y fotos la realizan Auth y RLS. El panel no agrega permisos SQL ni usa claves privilegiadas.
+El borrado de Supabase no elimina copias ZIP que hayas descargado ni archivos que hayas publicado por otro medio. Retiralos también de esos lugares.
+
+`robots.txt` y `noindex` desalientan la indexación; Auth, RLS y las funciones del servidor controlan el acceso a pedidos y archivos. El panel usa la clave pública y tu sesión, sin claves privilegiadas en el navegador.
+
+## Actualizar el sistema de audio
+
+Los pasos de SQL, funciones y publicación, junto con las pruebas, están en `docs/audio.md`. Requiere `supabase/06-audio.sql` y la función nueva `validar-audio`, además de actualizar las funciones existentes que allí se indican.
 
 ## Dependencia local
 

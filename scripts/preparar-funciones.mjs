@@ -11,7 +11,7 @@ const verification = spawnSync(process.execPath, [resolve(root, 'scripts/verific
 if (verification.status !== 0) process.exit(1);
 await mkdir(outputRoot, { recursive: true });
 
-for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obtener-pagina', 'limpiar-vencidos', 'avisar-admin', 'administrar-pedido']) {
+for (const name of ['crear-pago', 'webhook-mercadopago', 'estado-pedido', 'obtener-pagina', 'limpiar-vencidos', 'avisar-admin', 'administrar-pedido', 'validar-audio']) {
   const visited = new Set();
   const visiting = new Set();
   const chunks = [];
