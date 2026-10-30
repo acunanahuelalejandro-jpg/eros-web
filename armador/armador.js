@@ -375,6 +375,10 @@
   function scrollToOrder() {
     const builder = $('#order-builder');
     if (!builder) return;
+    if (document.body.classList.contains('armador-page')) {
+      builder.scrollIntoView({ block:'start', behavior:'instant' });
+      return;
+    }
     const targetTop = 90;
     if (matchMedia('(min-width:1024px)').matches) {
       const rect = builder.getBoundingClientRect();
@@ -616,6 +620,12 @@
 
   function init() {
     updatePrices(); const restored = readDraft(); if (restored) state = restored;
+    const options = new URLSearchParams(location.search);
+    const requestedModel = options.get('modelo');
+    if (Object.hasOwn(PRICE_TABLE.models, requestedModel)) { state.model = requestedModel; state.step = 2; }
+    if (options.get('extra') === 'contador') state.counter = true;
+    if (options.get('extra') === 'juego' && !state.game) state.game = 'pintar';
+    if (options.get('paso') === 'tema' && state.model && state.duration) state.step = 4;
     audioUpload = window.ErosAudioCarga?.montar(() => { saveDraft(); updateAvailability(); renderSummary(); }, state.audioPendiente);
     hydrateInputs(); renderContentFields(); renderPhotos();
     const success = (() => { try { const value = JSON.parse(localStorage.getItem(SUCCESS_KEY) || 'null'); return value && /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(value.code) && Number.isInteger(value.total) ? value : null; } catch (_) { return null; } })();

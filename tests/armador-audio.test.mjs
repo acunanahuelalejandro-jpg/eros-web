@@ -30,7 +30,7 @@ test('armador: sube una vez y reintenta validación sobre el mismo pedido',async
   const pending={id:'uuid',codigo:'ABC234',audio,uploadedAudio:false};
   await assert.rejects(a.enviarAudio(client,pending));await a.enviarAudio(client,pending);assert.equal(uploads,1);assert.equal(validations,2);
 });
-test('landing: único selector de MP3 sin enlaces ni catálogo',()=>{
-  const html=readFileSync(new URL('index.html',root),'utf8');assert.ok(html.includes('id="audio-upload-input"'));assert.ok(html.includes('audio/mpeg'));assert.ok(html.includes('Declaro que tengo derecho a usar este archivo y me hago responsable de su contenido'));
+test('armador: único selector de MP3 sin enlaces ni catálogo',()=>{
+  const html=readFileSync(new URL('armador/index.html',root),'utf8');assert.ok(html.includes('id="audio-upload-input"'));assert.ok(html.includes('audio/mpeg'));assert.ok(html.includes('Declaro que tengo derecho a usar este archivo y me hago responsable de su contenido'));
   assert.ok(!/id="music-(?:track|link|help|selection)"/.test(html));assert.ok(html.indexOf('src="armador/audio.js"')<html.indexOf('src="armador/armador.js"'));
 });

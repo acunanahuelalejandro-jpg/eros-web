@@ -85,7 +85,7 @@ const base={version:2,para:'Nombre de prueba',de:'Firma de prueba',tema:'eros',e
    if(path==='/functions/v1/estado-pedido')return route.fulfill({contentType:'application/json',body:JSON.stringify({estado:'nuevo',codigo:'AUD234',slug:'23456789abcdefgh23456789abcdefgh',total:5000})});
    throw new Error('Petición no prevista en la prueba: '+path);
   });
-  await page.goto(site,{waitUntil:'domcontentloaded'});
+  await page.goto(new URL('armador/',site).href,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>{
    localStorage.removeItem('erosweb-ultimo-pedido');
    sessionStorage.setItem('erosweb-pedido-v2',JSON.stringify({model:'carta',duration:'day',game:'',theme:'eros',counter:false,recipient:'Nombre de prueba',sender:'Firma de prueba',step:9,

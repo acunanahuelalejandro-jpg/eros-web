@@ -234,8 +234,6 @@
     }
 
   </style>
-  <link rel="stylesheet" href="armador/armador.css">
-  <link rel="stylesheet" href="armador/preview.css">
 </head>
 <body>
   <div class="announcement">Tu sorpresa en un link y un QR · Pago con Mercado Pago</div>
@@ -264,7 +262,7 @@
             <span class="step" role="listitem">3 Recibís el link y el QR</span>
           </div>
           <div class="hero-actions">
-            <a class="button button-primary hero-cta" href="#modelos">Ver modelos <span aria-hidden="true">↓</span></a>
+            <a class="button button-primary hero-cta" href="armador/">Armar pedido</a>
             <a class="button button-light" href="demos/carta-para-vos/" target="_blank" rel="noopener">Ver demo</a>
           </div>
         </div>
@@ -304,7 +302,7 @@
               <p class="price-from" data-model-start="carta"></p>
               <div class="duration-prices" data-model-prices="carta"></div>
               <div class="model-actions">
-                <button class="button button-primary model-order-link" type="button" data-order-model="carta">Elegir</button>
+                <a class="button button-primary model-order-link" href="armador/?modelo=carta" data-order-model="carta">Elegir</a>
                 <a class="button button-light" href="demos/carta-para-vos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
               </div>
               <p class="demo-note">Imágenes y texto de ejemplo</p>
@@ -323,7 +321,7 @@
               <p class="price-from" data-model-start="historia"></p>
               <div class="duration-prices" data-model-prices="historia"></div>
               <div class="model-actions">
-                <button class="button button-primary model-order-link" type="button" data-order-model="historia">Elegir</button>
+                <a class="button button-primary model-order-link" href="armador/?modelo=historia" data-order-model="historia">Elegir</a>
                 <a class="button button-light" href="demos/nuestra-historia/" target="_blank" rel="noopener noreferrer">Ver demo</a>
               </div>
             </div>
@@ -339,7 +337,7 @@
               <p class="price-from" data-model-start="album"></p>
               <div class="duration-prices" data-model-prices="album"></div>
               <div class="model-actions">
-                <button class="button button-primary model-order-link" type="button" data-order-model="album">Elegir</button>
+                <a class="button button-primary model-order-link" href="armador/?modelo=album" data-order-model="album">Elegir</a>
                 <a class="button button-light" href="demos/album-recuerdos/" target="_blank" rel="noopener noreferrer">Ver demo</a>
               </div>
               <p class="demo-note">Imágenes y texto de ejemplo</p>
@@ -366,7 +364,7 @@
               <article class="game-mini-card"><h4>Llegá a mí</h4><div class="game-mini-actions"><a class="button button-light" href="demos/juego-laberinto/" target="_blank" rel="noopener noreferrer">Ver demo</a></div></article>
             </div>
             <p class="games-more">Tenemos más juegos, consultanos.</p>
-            <button class="button button-primary" type="button" data-order-game>Sumar a mi pedido</button>
+            <a class="button button-primary" href="armador/?extra=juego" data-order-game>Sumar a mi pedido</a>
           </article>
 
           <article class="extra-card extra-card-counter">
@@ -375,7 +373,7 @@
               <div><h3>Contador de tiempo juntos</h3><span class="extra-price" data-extra-price="counter"></span></div>
             </div>
             <p>Años, meses, días, horas y segundos en tiempo real.</p>
-            <button class="button button-primary" type="button" data-order-counter>Sumar a mi pedido</button>
+            <a class="button button-primary" href="armador/?extra=contador" data-order-counter>Sumar a mi pedido</a>
           </article>
 
           <article class="extra-card extra-card-themes">
@@ -389,7 +387,7 @@
               <li><span class="theme-dot theme-rosa" aria-hidden="true"></span>Rosa</li><li><span class="theme-dot theme-atardecer" aria-hidden="true"></span>Atardecer</li><li><span class="theme-dot theme-bosque" aria-hidden="true"></span>Bosque</li>
               <li><span class="theme-dot theme-lavanda" aria-hidden="true"></span>Lavanda</li><li><span class="theme-dot theme-medianoche" aria-hidden="true"></span>Medianoche</li><li><span class="theme-dot theme-galaxia" aria-hidden="true"></span>Galaxia</li>
             </ul>
-            <div class="model-actions"><a class="button button-light" href="demos/temas/" target="_blank" rel="noopener noreferrer">Ver temas</a><button class="button button-primary" type="button" data-order-theme>Elegir tema</button></div>
+            <div class="model-actions"><a class="button button-light" href="demos/temas/" target="_blank" rel="noopener noreferrer">Ver temas</a><a class="button button-primary" href="armador/?paso=tema" data-order-theme>Elegir tema</a></div>
           </article>
 
           <article class="extra-card extra-card-envelope">
@@ -404,126 +402,6 @@
     </section>
 
 
-    <section class="order-section" id="pedido" aria-labelledby="order-title">
-      <div class="container">
-        <div class="section-heading"><h2 id="order-title">Armá tu pedido</h2><p>Mirá cómo queda tu página mientras la armás. Al enviar, recibís un código y el total.</p></div>
-        <div class="order-layout">
-          <div class="order-builder" id="order-builder">
-            <div class="order-progress-head"><span id="order-step-label">Paso 1 de 7</span><span id="order-progress-percent">14%</span></div>
-            <div class="order-progress-track" id="order-progress" role="progressbar" aria-label="Progreso del pedido" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1"><div class="order-progress-fill" id="order-progress-fill"></div></div>
-            <p class="sr-only" id="order-live" role="status" aria-live="polite"></p>
-
-            <div class="order-step-viewport" id="order-step-viewport">
-            <section class="order-step" data-order-step="1" aria-labelledby="order-step-1-title">
-              <h3 id="order-step-1-title" tabindex="-1">Elegí un modelo</h3><p class="order-step-intro">Cada modelo ya está diseñado. Elegí el que mejor va con tu regalo.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Modelo de página</legend><div class="order-model-grid">
-                <div class="order-model-option"><input class="order-radio" type="radio" name="order-model" id="order-model-carta" value="carta"><label class="order-choice-card" for="order-model-carta"><img src="assets/foto1.jpg" alt="Ejemplo del modelo Carta para vos" loading="lazy"><span><strong>Carta para vos</strong><small>Hasta 3 fotos</small></span></label><a href="demos/carta-para-vos/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-                <div class="order-model-option"><input class="order-radio" type="radio" name="order-model" id="order-model-historia" value="historia"><label class="order-choice-card" for="order-model-historia"><img src="assets/modelo-historia.jpg" alt="Ejemplo del modelo Nuestra historia" loading="lazy"><span><strong>Nuestra historia</strong><small>Hasta 8 fotos</small></span></label><a href="demos/nuestra-historia/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-                <div class="order-model-option"><input class="order-radio" type="radio" name="order-model" id="order-model-album" value="album"><label class="order-choice-card" for="order-model-album"><img src="assets/modelo-album.jpg" alt="Ejemplo del modelo Álbum de recuerdos" loading="lazy"><span><strong>Álbum de recuerdos</strong><small>Hasta 12 fotos</small></span></label><a href="demos/album-recuerdos/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-              </div></fieldset>
-            </section>
-
-            <section class="order-step" data-order-step="2" aria-labelledby="order-step-2-title" hidden><h3 id="order-step-2-title" tabindex="-1">Elegí la duración</h3><p class="order-step-intro" id="duration-instruction">Primero elegí un modelo para ver los precios.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Duración de la página</legend><div class="order-duration-grid">
-                <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-day" value="day"><label class="order-choice-card" for="order-duration-day"><strong>1 día</strong><small class="order-duration-price" data-duration-price="day"></small></label></div>
-                <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-week" value="week"><label class="order-choice-card" for="order-duration-week"><strong>1 semana</strong><small class="order-duration-price" data-duration-price="week"></small></label></div>
-                <div><input class="order-radio" type="radio" name="order-duration" id="order-duration-month" value="month"><label class="order-choice-card" for="order-duration-month"><strong>1 mes</strong><small class="order-duration-price" data-duration-price="month"></small></label></div>
-              </div></fieldset>
-            </section>
-
-            <section class="order-step" data-order-step="3" aria-labelledby="order-step-3-title" hidden><h3 id="order-step-3-title" tabindex="-1">¿Querés sumar un juego?</h3><p class="order-step-intro">Es opcional y suma <span data-extra-inline="game"></span>.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Juego interactivo</legend><div class="order-choice-grid order-game-grid">
-                <div><input class="order-radio" type="radio" name="order-game" id="order-game-none" value=""><label class="order-choice-card" for="order-game-none"><strong>No quiero juego</strong><small>Sin costo extra</small></label></div>
-                <div><input class="order-radio" type="radio" name="order-game" id="order-game-pintar" value="pintar"><label class="order-choice-card" for="order-game-pintar"><strong>Pintar el corazón</strong><small>La sorpresa se desbloquea pintándolo</small></label><a class="order-demo-link" href="demos/juego-pintar-corazon/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-                <div><input class="order-radio" type="radio" name="order-game" id="order-game-margarita" value="margarita"><label class="order-choice-card" for="order-game-margarita"><strong>Me ama / no me ama</strong><small>Un juego breve para llegar a la sorpresa</small></label><a class="order-demo-link" href="demos/juego-margarita/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-                <div><input class="order-radio" type="radio" name="order-game" id="order-game-laberinto" value="laberinto"><label class="order-choice-card" for="order-game-laberinto"><strong>Llegá a mí</strong><small>Un recorrido hasta el mensaje final</small></label><a class="order-demo-link" href="demos/juego-laberinto/" target="_blank" rel="noopener noreferrer">Ver demo</a></div>
-              </div></fieldset>
-              <p class="order-summary-note" id="order-opening-note" role="status" aria-live="polite">Sobre animado incluido. Si elegís juego interactivo, el juego reemplaza al sobre como apertura.</p>
-            </section>
-
-            <section class="order-step" data-order-step="4" aria-labelledby="order-step-4-title" hidden><h3 id="order-step-4-title" tabindex="-1">Elegí un tema de color</h3><p class="order-step-intro">Todos están incluidos. Podés abrir una vista previa de cada tema.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Tema de color</legend><div class="order-theme-grid">
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-eros" value="eros"><label class="order-choice-card" for="theme-eros"><span class="order-theme-dot theme-eros" aria-hidden="true"></span><strong>Eros</strong></label><a href="demos/carta-para-vos/?tema=eros" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-dorado" value="dorado"><label class="order-choice-card" for="theme-dorado"><span class="order-theme-dot theme-dorado" aria-hidden="true"></span><strong>Dorado</strong></label><a href="demos/carta-para-vos/?tema=dorado" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-azul-cielo" value="azul-cielo"><label class="order-choice-card" for="theme-azul-cielo"><span class="order-theme-dot theme-cielo" aria-hidden="true"></span><strong>Azul cielo</strong></label><a href="demos/carta-para-vos/?tema=azul-cielo" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-rosa" value="rosa"><label class="order-choice-card" for="theme-rosa"><span class="order-theme-dot theme-rosa" aria-hidden="true"></span><strong>Rosa</strong></label><a href="demos/carta-para-vos/?tema=rosa" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-atardecer" value="atardecer"><label class="order-choice-card" for="theme-atardecer"><span class="order-theme-dot theme-atardecer" aria-hidden="true"></span><strong>Atardecer</strong></label><a href="demos/carta-para-vos/?tema=atardecer" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-bosque" value="bosque"><label class="order-choice-card" for="theme-bosque"><span class="order-theme-dot theme-bosque" aria-hidden="true"></span><strong>Bosque</strong></label><a href="demos/carta-para-vos/?tema=bosque" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-lavanda" value="lavanda"><label class="order-choice-card" for="theme-lavanda"><span class="order-theme-dot theme-lavanda" aria-hidden="true"></span><strong>Lavanda</strong></label><a href="demos/carta-para-vos/?tema=lavanda" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-medianoche" value="medianoche"><label class="order-choice-card" for="theme-medianoche"><span class="order-theme-dot theme-medianoche" aria-hidden="true"></span><strong>Medianoche</strong></label><a href="demos/carta-para-vos/?tema=medianoche" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-                <div class="order-theme-option"><input class="order-radio" type="radio" name="order-theme" id="theme-galaxia" value="galaxia"><label class="order-choice-card" for="theme-galaxia"><span class="order-theme-dot theme-galaxia" aria-hidden="true"></span><strong>Galaxia</strong></label><a href="demos/carta-para-vos/?tema=galaxia" target="_blank" rel="noopener noreferrer">Ver tema</a></div>
-              </div></fieldset>
-            </section>
-
-            <section class="order-step" data-order-step="5" aria-labelledby="order-step-5-title" hidden><h3 id="order-step-5-title" tabindex="-1">¿Querés el contador de tiempo juntos?</h3><p class="order-step-intro">Es opcional y suma <span data-extra-inline="counter"></span>.</p>
-              <fieldset class="order-choice-fieldset"><legend class="sr-only">Contador de tiempo juntos</legend><div class="order-choice-grid">
-                <div><input class="order-radio" type="radio" name="order-counter" id="counter-no" value="no"><label class="order-choice-card" for="counter-no"><strong>No, gracias</strong><small>Sin costo extra</small></label></div>
-                <div><input class="order-radio" type="radio" name="order-counter" id="counter-yes" value="yes"><label class="order-choice-card" for="counter-yes"><strong>Sí, quiero sumarlo</strong><small>Indicá desde qué fecha cuentan</small></label></div>
-              </div></fieldset>
-              <div class="order-extra-fields" id="counter-date-wrap" hidden><label class="order-field" for="counter-date">Fecha desde la que cuentan<input id="counter-date" type="date" max="2099-12-31" autocomplete="off"></label></div>
-            </section>
-
-            <section class="order-step" data-order-step="6" aria-labelledby="order-step-6-title" hidden><h3 id="order-step-6-title" tabindex="-1">¿Para quién es el regalo?</h3><p class="order-step-intro">Con el pago aprobado, el link y el QR aparecen automáticamente en el seguimiento. Podés indicar una fecha futura para que el regalo se abra ese día.</p>
-              <div class="order-extra-fields">
-                <label class="order-field" for="recipient-name">Nombre de quien recibe <span aria-hidden="true">*</span><input id="recipient-name" type="text" maxlength="120" autocomplete="given-name" placeholder="Por ejemplo, Sofi" required></label>
-                <label class="order-field" for="sender-name">Tu nombre <span>(opcional)</span><input id="sender-name" type="text" maxlength="120" autocomplete="name" placeholder="Cómo querés firmar"></label>
-                <label class="order-field" for="activation-date">¿Para qué fecha es el regalo? <span>(opcional)</span><input id="activation-date" type="date" max="2099-12-31"></label>
-              </div>
-            </section>
-
-            <section class="order-step" data-order-step="7" aria-labelledby="order-step-7-title" hidden><h3 id="order-step-7-title" tabindex="-1">Cargá el contenido</h3><p class="order-step-intro">Completá los textos que van a aparecer en la página.</p><div id="content-fields" class="order-extra-fields"></div></section>
-
-            <section class="order-step" data-order-step="8" aria-labelledby="order-step-8-title" hidden><h3 id="order-step-8-title" tabindex="-1">Sumá tus fotos</h3><p class="order-step-intro" id="photo-limit-note">Podés cargar fotos desde el teléfono o la computadora.</p>
-              <label class="order-field upload-picker" for="photo-input">Elegir fotos<input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple><small>JPG, PNG o WebP; hasta 15 MB por archivo. Las optimizamos antes de subirlas.</small></label>
-              <p id="photo-error" class="inline-status" role="status" aria-live="polite"></p><div id="photo-list" class="photo-list"></div>
-              <div id="labyrinth-photos" class="order-extra-fields" hidden><h4>Fotos para el juego Llegá a mí <span>(opcionales)</span></h4>
-                <label class="order-field" for="maze-player-input">Foto de quien va a jugar<input id="maze-player-input" type="file" accept="image/jpeg,image/png,image/webp"><small>Se usa para mostrar a quien va a jugar.</small></label><div id="maze-player-preview" class="maze-preview"></div>
-                <label class="order-field" for="maze-giver-input">Foto de quien regala<input id="maze-giver-input" type="file" accept="image/jpeg,image/png,image/webp"><small>Se usa para mostrar a quien regala.</small></label><div id="maze-giver-preview" class="maze-preview"></div>
-              </div>
-              <p id="photo-total" class="photo-total" aria-live="polite">Tamaño total: 0 KB</p>
-            </section>
-
-            <section class="order-step" data-order-step="9" aria-labelledby="order-step-9-title" hidden><h3 id="order-step-9-title" tabindex="-1">Sumá tu canción <span>(opcional)</span></h3><p class="order-step-intro">Subí un MP3 de hasta 10 MB y 10 minutos. Se reproduce al abrir el regalo; si el navegador lo pide, hay que tocar “Reproducir música”.</p>
-              <label class="order-field" for="audio-upload-input">Archivo MP3<input id="audio-upload-input" type="file" accept=".mp3,audio/mpeg,audio/mp3" aria-describedby="audio-upload-help audio-upload-status"><small id="audio-upload-help">El archivo se guarda de forma privada y se borra cuando vence el regalo. Podés seguir sin música.</small></label>
-              <div id="audio-selected" class="audio-selected" hidden><div><strong id="audio-upload-name"></strong><small id="audio-upload-size"></small></div><button id="audio-remove" class="button button-light" type="button">Quitar audio</button></div>
-              <label id="audio-consent-row" class="consent-row" hidden><input id="audio-consent" type="checkbox"><span>Declaro que tengo derecho a usar este archivo y me hago responsable de su contenido</span></label>
-              <p id="audio-upload-status" class="inline-status" role="status" aria-live="polite"></p>
-            </section>
-
-            <section class="order-step" data-order-step="10" aria-labelledby="order-step-10-title" hidden><h3 id="order-step-10-title" tabindex="-1">Contacto y resumen</h3><p class="order-step-intro">Revisá que esté todo bien antes de enviar.</p>
-              <div class="order-extra-fields"><label class="order-field" for="client-whatsapp">Tu WhatsApp <span>(opcional, recomendado)</span><input id="client-whatsapp" type="tel" maxlength="30" inputmode="tel" autocomplete="tel" placeholder="54911..."><small>Solo números, con código de país. Ejemplo: 5491112345678.</small></label>
-                <label class="consent-row"><input id="privacy-consent" type="checkbox"><span>Confirmo que tengo permiso para usar estas fotos y acepto la <a href="privacidad.html" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</span></label>
-                <div class="honeypot" aria-hidden="true"><label for="website-field">Dejá este campo vacío<input id="website-field" type="text" tabindex="-1" autocomplete="off"></label></div>
-              </div>
-              <ul class="order-summary-list" id="order-summary-list"></ul><h4 class="order-summary-subtitle">Desglose</h4><ul class="order-breakdown" id="order-breakdown"></ul>
-              <div class="order-grand-total"><span>Total</span><output id="order-final-total" aria-live="polite">—</output></div>
-              <p class="order-summary-note">Al enviar, recibís tu código y el total. Después pagás con Mercado Pago y seguís el estado de tu pedido acá.</p>
-              <div class="order-summary-actions"><button class="button button-primary" id="send-order" type="button">Enviar mi pedido</button><button class="button button-light" id="fallback-whatsapp" type="button" hidden>Pedir ayuda por WhatsApp</button><button class="button button-light" id="order-reset" type="button">Empezar de nuevo</button></div>
-            </section>
-
-            <div id="order-progress-status" class="upload-progress" hidden><div class="order-progress-track" role="progressbar" aria-label="Envío del pedido" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="order-progress-fill" id="upload-progress-fill"></div></div><p id="upload-progress-text" role="status" aria-live="polite">Preparando el envío…</p></div>
-            <div id="order-success" class="order-success" hidden aria-live="polite"></div>
-            </div>
-            <p class="order-error" id="order-error" role="alert" aria-live="assertive"></p>
-            <div class="order-nav" aria-label="Navegación del armador"><button class="button button-light" id="order-back" type="button" hidden>Atrás</button><button class="button button-primary" id="order-next" type="button">Siguiente</button></div>
-            <div class="order-sidebar-card" aria-label="Resumen del total"><h3>Tu total</h3><output class="order-sidebar-total" id="order-sidebar-total" aria-live="polite">—</output><span class="order-sidebar-detail" id="order-sidebar-detail">Elegí un modelo y una duración</span></div>
-          </div>
-          <aside class="order-preview-column" aria-label="Vista previa en vivo">
-            <dialog class="order-preview-dialog" id="preview-dialog" aria-labelledby="preview-dialog-title">
-              <div class="preview-dialog-header"><h2 id="preview-dialog-title">Tu vista previa</h2><button class="small-action" id="preview-close" type="button" aria-label="Cerrar vista previa" autofocus>Cerrar ×</button></div>
-            <div id="preview-desktop-host">
-              <div class="order-preview-panel" id="preview-panel">
-                <div class="preview-phone" id="preview-phone"><div id="preview-frame-host" class="preview-frame-host"><p class="preview-placeholder" id="preview-placeholder" role="status">Elegí un modelo para empezar</p></div></div>
-                <div class="preview-controls" role="group" aria-label="Probar la sorpresa"><button class="small-action" type="button" data-preview-action="repetir">Repetir la apertura</button><button class="small-action" type="button" data-preview-action="contenido">Saltar al contenido</button><button class="small-action" type="button" data-preview-action="manual" hidden>Probar el juego yo</button></div>
-                <p class="preview-caption" id="preview-caption">Mirá cómo queda tu página mientras la armás.</p><p class="sr-only" id="preview-status" role="status" aria-live="polite"></p>
-              </div>
-            </div>
-            </dialog>
-          </aside>
-        </div>
-      </div>
-      <div class="order-mobile-bar" id="order-mobile-bar"><div><strong>Total estimado</strong><output id="order-mobile-total" aria-live="polite">—</output></div><button class="button button-primary" type="button" id="order-mobile-summary" hidden>Ver mi pedido</button><button class="button button-primary" type="button" id="preview-open">Ver cómo queda</button></div>
-    </section>
 
 
     <section class="how-it-works" aria-labelledby="how-title">
@@ -596,13 +474,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z"/><path d="M9 9c.7 2 2 3.3 4 4l1.3-1.1 2 1c-.2 1.3-1 2-2.3 2-3.4-.2-6.7-3.5-6.8-6.8 0-1.3.7-2.1 2-2.3l1 2L9 9Z"/></svg>
   </a>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" defer></script>
-  <script src="armador/config.js" defer></script>
-  <script src="compartido/apertura.js" defer></script>
   <script src="compartido/precios.js" defer></script>
-  <script src="armador/audio.js" defer></script>
-  <script src="armador/pagos.js" defer></script>
-  <script src="armador/armador.js" data-eros-armador defer></script>
-  <script src="armador/preview.js" defer></script>
+  <script src="compartido/landing.js" defer></script>
 </body>
 </html>

@@ -3,6 +3,7 @@
   'use strict';
 
   const debug = new URLSearchParams(location.search).get('debug') === '1';
+  const siteRoot = new URL('../', document.currentScript.src);
   const log = (event, details = {}) => {
     if (debug) console.info('[Eros preview padre]', event, JSON.stringify(details));
   };
@@ -130,7 +131,7 @@
     }
 
     function frameUrl(name, reload = false) {
-      const url = new URL('plantillas/' + name + '/index.html', location.href);
+      const url = new URL('plantillas/' + name + '/index.html', siteRoot);
       url.searchParams.set('preview', '1');
       if (debug) url.searchParams.set('debug', '1');
       if (reload) url.searchParams.set('eros-retry', String(Date.now()));
